@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -20,10 +19,10 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
   private final SimpleJdbcKafkaProducerAdapter<K, V> jdbcDelegate;
-  private final KafkaProducer<K, V> kafkaDelegate;
+  private final Producer<K, V> kafkaDelegate;
 
   public JdbcKafkaProducerAdapter(
-      KafkaProducer<K, V> kafkaDelegate, SimpleJdbcKafkaProducerAdapter<K, V> jdbcDelegate
+      Producer<K, V> kafkaDelegate, SimpleJdbcKafkaProducerAdapter<K, V> jdbcDelegate
   ) {
     this.kafkaDelegate = kafkaDelegate;
     this.jdbcDelegate = jdbcDelegate;

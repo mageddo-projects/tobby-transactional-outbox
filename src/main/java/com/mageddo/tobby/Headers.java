@@ -2,8 +2,6 @@ package com.mageddo.tobby;
 
 import java.util.List;
 
-import org.apache.kafka.common.header.Header;
-
 public class Headers {
 
   private final List<Header> headers;

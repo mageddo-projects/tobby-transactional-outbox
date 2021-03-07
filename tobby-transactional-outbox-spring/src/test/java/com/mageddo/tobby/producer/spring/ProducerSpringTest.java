@@ -28,7 +28,7 @@ class ProducerSpringTest {
   Producer producer;
 
   @Autowired
-  private JdbcTemplate jdbcTemplate;
+  JdbcTemplate jdbcTemplate;
 
   @Test
   void mustProduceMessagesSavingToDatabase(){
@@ -45,7 +45,6 @@ class ProducerSpringTest {
     final Map<String, Object> foundRecord = this.jdbcTemplate.queryForMap(
         "SELECT * FROM TTO_RECORD"
     );
-    System.out.println(foundRecord);
     assertNotNull(UUID.fromString((String) foundRecord.get("IDT_TTO_RECORD")));
     assertEquals("fruit", foundRecord.get("NAM_TOPIC"));
     assertEquals("c29tZSBrZXk=", foundRecord.get("TXT_KEY"));

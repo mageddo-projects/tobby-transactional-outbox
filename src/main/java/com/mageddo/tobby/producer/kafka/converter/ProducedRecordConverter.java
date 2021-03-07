@@ -1,6 +1,7 @@
 package com.mageddo.tobby.producer.kafka.converter;
 
 import java.sql.Timestamp;
+import java.util.zip.CRC32;
 
 import com.mageddo.tobby.ProducedRecord;
 
@@ -14,7 +15,9 @@ public class ProducedRecordConverter {
 
   public static RecordMetadata toMetadata(ProducedRecord record) {
     return new RecordMetadata(
-        new TopicPartition(record.getTopic(), record.getPartition()),
+        new TopicPartition(
+            record.getTopic(), record.getPartition() == null ? -1 : record.getPartition()
+        ),
         -1L,
         -1L,
         toMillis(record),
@@ -31,6 +34,9 @@ public class ProducedRecordConverter {
   }
 
   private static long toMillis(ProducedRecord record) {
+    if (record.getCreatedAt() == null) {
+      return -1;
+    }
     return Timestamp.valueOf(record.getCreatedAt())
         .toInstant()
         .toEpochMilli();
@@ -41,6 +47,13 @@ public class ProducedRecordConverter {
   }
 
   private static Long digest(ProducedRecord record) {
-    throw new UnsupportedOperationException();
+    final CRC32 digest = new CRC32();
+    if (record.getKey() != null) {
+      digest.update(record.getKey(), 0, record.getKey().length);
+    }
+    if (record.getValue() != null) {
+      digest.update(record.getValue(), 0, record.getValue().length);
+    }
+    return digest.getValue();
   }
 }

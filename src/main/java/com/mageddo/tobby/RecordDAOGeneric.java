@@ -94,6 +94,9 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   private String base64Encode(byte[] data) {
+    if(data == null){
+      return null;
+    }
     return Base64
         .getEncoder()
         .encodeToString(data);
