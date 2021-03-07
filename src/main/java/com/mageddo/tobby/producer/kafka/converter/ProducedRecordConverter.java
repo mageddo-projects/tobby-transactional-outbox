@@ -5,8 +5,11 @@ import java.util.zip.CRC32;
 
 import com.mageddo.tobby.ProducedRecord;
 
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
+
+import static com.mageddo.tobby.producer.kafka.converter.HeadersConverter.toKafkaHeaders;
 
 public class ProducedRecordConverter {
 
@@ -27,10 +30,17 @@ public class ProducedRecordConverter {
     );
   }
 
-  public static org.apache.kafka.clients.producer.ProducerRecord<String, byte[]> toKafkaProducerRecord(
+  public static org.apache.kafka.clients.producer.ProducerRecord<byte[], byte[]> toKafkaProducerRecord(
       ProducedRecord record
   ) {
-    throw new UnsupportedOperationException();
+    return new ProducerRecord<>(
+        record.getTopic(),
+        record.getPartition(),
+        record.getKey(),
+        record.getValue(),
+        toKafkaHeaders(record.getHeaders())
+    );
+
   }
 
   private static long toMillis(ProducedRecord record) {

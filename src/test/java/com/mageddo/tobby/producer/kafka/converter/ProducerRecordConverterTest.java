@@ -4,7 +4,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 
-import templates.ProducerRecordTemplates;
+import templates.KafkaProducerRecordTemplates;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,10 +14,10 @@ class ProducerRecordConverterTest {
 
 
   @Test
-  void must() {
+  void mustConvertFromKafkaProducerRecordToProducerRecord() {
 
     // arrange
-    final var record = ProducerRecordTemplates.coconut();
+    final var record = KafkaProducerRecordTemplates.coconut();
 
     // act
     final var result = ProducerRecordConverter.of(
@@ -26,8 +26,12 @@ class ProducerRecordConverterTest {
 
     // assert
     assertNotNull(record);
-    assertArrayEquals(record.key()
-        .getBytes(), result.getKey());
+    assertArrayEquals(
+        record
+            .key()
+            .getBytes(),
+        result.getKey()
+    );
     assertArrayEquals(record.value(), result.getValue());
     assertEquals(record.partition(), result.getPartition());
     assertEquals(record.topic(), result.getTopic());

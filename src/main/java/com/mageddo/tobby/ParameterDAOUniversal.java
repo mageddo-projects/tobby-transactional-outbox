@@ -19,7 +19,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
   ) {
     try (
         final PreparedStatement stm = connection
-            .prepareStatement("SELECT VAL_PARAMETER FROM TTO_PARAMETER WHERE IDT_PARAMETER = ?");
+            .prepareStatement("SELECT VAL_PARAMETER FROM TTO_PARAMETER WHERE IDT_TTO_PARAMETER = ?");
     ) {
       stm.setString(1, parameter.name());
       try (final ResultSet rs = stm.executeQuery()) {
@@ -43,10 +43,10 @@ public class ParameterDAOUniversal implements ParameterDAO {
 
   @Override
   public void insert(Connection connection, Parameter parameter, LocalDateTime value) {
-    final String sql = "INSERT INTO TTO_PARAMETER (IDT_PARAMETER, VAL_PARAMETER) VALUES (?, ?)";
+    final String sql = "INSERT INTO TTO_PARAMETER (IDT_TTO_PARAMETER, VAL_PARAMETER) VALUES (?, ?)";
     try (final PreparedStatement stm = connection.prepareStatement(sql)) {
-      stm.setString(1, value.toString());
-      stm.setString(2, parameter.name());
+      stm.setString(1, parameter.name());
+      stm.setString(2, value.toString());
       stm.executeUpdate();
       log.info("status=inserted, parameter={}, value={}", parameter.name(), value);
     } catch (SQLException e) {
@@ -60,7 +60,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
         .append("UPDATE TTO_PARAMETER SET \n")
         .append("  VAL_PARAMETER = ?, \n")
         .append("  DAT_UPDATED = CURRENT_TIMESTAMP \n")
-        .append("WHERE IDT_PARAMETER = ? \n");
+        .append("WHERE IDT_TTO_PARAMETER = ? \n");
 
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
       stm.setString(1, value.toString());

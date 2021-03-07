@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import templates.ProducedRecordTemplates;
-import templates.ProducerRecordTemplates;
+import templates.KafkaProducerRecordTemplates;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -33,7 +33,7 @@ class JdbcKafkaProducerTest {
   @Test
   void mustConvertAndProduceRecord(){
     // arrange
-    final var fruit = ProducerRecordTemplates.coconut();
+    final var fruit = KafkaProducerRecordTemplates.coconut();
     doReturn(ProducedRecordTemplates.coconut()).when(this.delegate).send(any());
 
     // act

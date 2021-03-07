@@ -5,7 +5,7 @@ import java.util.List;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
 
-public class ProducerRecordTemplates {
+public class KafkaProducerRecordTemplates {
   public static ProducerRecord<String, byte[]> coconut() {
     return new ProducerRecord<>(
         "fruit",

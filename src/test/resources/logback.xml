@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <property
+    name="logPattern"
+    value="%d{HH:mm:ss.SSS} \${LOG_LEVEL_PATTERN:-%5p} \${PID:- } [%15.15t] %-20.20logger{20} : %m%n}"
+  />
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${logPattern}</pattern>
+      <charset>utf8</charset>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+  <logger name="com.mageddo.tobby" level="TRACE"/>
+
+</configuration>

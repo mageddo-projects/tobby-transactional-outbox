@@ -2,14 +2,14 @@ package com.mageddo.tobby.producer.jdbi;
 
 import java.util.Map;
 
-import com.mageddo.tobby.ProducedRecord;
-import com.mageddo.tobby.ProducerRecord;
 import com.radcortez.flyway.test.annotation.DataSource;
 import com.radcortez.flyway.test.annotation.FlywayTest;
 
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import templates.ProducerRecordTemplates;
 
 import static com.mageddo.tobby.producer.jdbi.ProducerJdbi3Test.DATA_SOURCE;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,10 +37,10 @@ class ProducerJdbi3Test {
   void mustPersistMessage() {
 
     // arrange
-    final ProducerRecord record = new ProducerRecord("fruit", "Strawberry".getBytes(), "Strawberry".getBytes());
+    final var record = ProducerRecordTemplates.strawberry();
 
     // act
-    final ProducedRecord send = this.producerJdbi3.send(record);
+    final var send = this.producerJdbi3.send(record);
 
     // assert
     assertNotNull(send);
