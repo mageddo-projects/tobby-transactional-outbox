@@ -3,11 +3,7 @@ package com.mageddo.tobby.replicator;
 import java.time.Duration;
 import java.util.concurrent.Future;
 
-import com.mageddo.tobby.ParameterDAO;
-import com.mageddo.tobby.ParameterDAOUniversal;
-import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.RecordDAOHsqldb;
-import com.mageddo.tobby.producer.ProducerJdbc;
+import com.mageddo.tobby.Tobby;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,32 +27,28 @@ class KafkaReplicatorTest {
   @Mock
   Producer<byte[], byte[]> mockProducer;
 
-  KafkaReplicator kafkaReplicator;
+  KafkaReplicator replicator;
 
   com.mageddo.tobby.producer.Producer producer;
 
   @BeforeEach
-  void beforeEach(){
+  void beforeEach() {
     final var dataSource = DBMigration.migrateHSQLDB();
-    RecordDAO recordDAO = new RecordDAOHsqldb();
-    this.producer = new ProducerJdbc(recordDAO, dataSource);
-    ParameterDAO parameterDao = new ParameterDAOUniversal();
-    this.kafkaReplicator = new KafkaReplicator(
-        this.mockProducer, dataSource,
-        recordDAO, parameterDao,
-        Duration.ofMillis(600)
-    );
+    final var tobby = Tobby.build(dataSource);
+    this.replicator = tobby.replicator(this.mockProducer, Duration.ofMillis(600));
+    this.producer = tobby.producerJdbc();
   }
 
   @Test
-  void mustReplicateDataToKafka(){
+  void mustReplicateDataToKafka() {
     // arrange
-    doReturn(mock(Future.class)).when(this.mockProducer).send(any());
+    doReturn(mock(Future.class)).when(this.mockProducer)
+        .send(any());
     this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
-    this.kafkaReplicator.replicate();
+    this.replicator.replicate();
 
     // assert
     verify(this.mockProducer, times(2)).send(any());
