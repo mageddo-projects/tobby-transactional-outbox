@@ -24,8 +24,8 @@ import org.apache.kafka.common.serialization.Serializer;
 
 public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
+  final ExecutorService executorService;
   private final JdbcKafkaProducer<K, V> jdbcKafkaProducer;
-  private final ExecutorService executorService;
 
   public SimpleJdbcKafkaProducerAdapter(
       Serializer<K> keySerializer, Serializer<V> valueSerializer, ProducerJdbc producerJdbc
@@ -111,10 +111,11 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   @Override
   public void close(long timeout, TimeUnit unit) {
     try {
+      this.executorService.shutdown();
       this.executorService.awaitTermination(timeout, unit);
     } catch (InterruptedException e) {
+      this.executorService.shutdownNow();
     }
-    this.executorService.shutdownNow();
   }
 
   private void transactionUnsupportedError() {

@@ -1,9 +1,9 @@
 package com.mageddo.tobby.producer.kafka;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +16,7 @@ import templates.RecordMetadataTemplates;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
@@ -25,7 +26,7 @@ class SimpleJdbcKafkaProducerAdapterTest {
   @Mock
   JdbcKafkaProducer<String, String> jdbcKafkaProducer;
 
-  Producer<String, String> producer;
+  SimpleJdbcKafkaProducerAdapter<String, String> producer;
 
   @BeforeEach
   void beforeEach() {
@@ -73,6 +74,34 @@ class SimpleJdbcKafkaProducerAdapterTest {
     final RecordMetadata metadata = future.get();
     assertEquals("fruit-1@-1", metadata.toString());
     assertEquals("fruit-1@-1", callbackMetadata.get().toString());
+
+  }
+
+  @Test
+  void mustClose(){
+
+    // arrange
+
+    // act
+    this.producer.close();
+
+    // assert
+    assertTrue(this.producer.executorService.isShutdown());
+    assertTrue(this.producer.executorService.isTerminated());
+
+  }
+
+  @Test
+  void mustCloseWithTimeout(){
+
+    // arrange
+
+    // act
+    this.producer.close(3, TimeUnit.SECONDS);
+
+    // assert
+    assertTrue(this.producer.executorService.isShutdown());
+    assertTrue(this.producer.executorService.isTerminated());
 
   }
 }
