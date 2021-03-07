@@ -11,19 +11,19 @@ import lombok.NoArgsConstructor;
 public class DBMigration {
 
   public static DataSource migrateEmbeddedH2() {
-    return migrate("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", null, null, "classpath:db/migration-h2");
+    return cleanAndMigrate("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", null, null, "classpath:db/migration-h2");
   }
 
   public static DataSource migrateEmbeddedHSQLDB() {
-    return migrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
+    return cleanAndMigrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
   }
 
   public static DataSource migrateEmbeddedOracle() {
-    return migrate("jdbc:hsqldb:mem:testdb;sql.syntax_ora=true", null, null, "classpath:db/migration-oracle");
+    return cleanAndMigrate("jdbc:hsqldb:mem:PUBLIC;sql.syntax_ora=true", null, null, "classpath:db/migration-oracle");
   }
 
   public static DataSource migrateEmbeddedPostgres() {
-    return migrate(
+    return cleanAndMigrate(
         "jdbc:postgresql://localhost:5429/postgres?currentSchema=postgres",
         "postgres", "postgres",
         "classpath:db/migration-postgres"
@@ -38,21 +38,29 @@ public class DBMigration {
     );
   }
 
-  public static void migrate(DataSource dataSource, String... locations) {
-    final var flyway = Flyway.configure()
-        .dataSource(dataSource)
-        .locations(locations)
-        .load();
-//    flyway.clean();
-    flyway.migrate();
-  }
-
-  public static DataSource migrate(String url, String user, String password, String... locations) {
-    final var flyway = Flyway.configure()
+  public static Flyway setup(String url, String user, String password, String... locations) {
+    return Flyway.configure()
         .dataSource(url, user, password)
         .locations(locations)
         .load();
-//    flyway.clean();
+  }
+
+  public static DataSource migrate(String url, String user, String password, String... locations) {
+    return migrate(setup(url, user, password, locations));
+  }
+
+  public static DataSource migrate(Flyway flyway) {
+    flyway.migrate();
+    return flyway.getConfiguration()
+        .getDataSource();
+  }
+
+  public static DataSource cleanAndMigrate(String url, String user, String password, String... locations) {
+    return cleanAndMigrate(setup(url, user, password, locations));
+  }
+
+  public static DataSource cleanAndMigrate(Flyway flyway) {
+    flyway.clean();
     flyway.migrate();
     return flyway.getConfiguration()
         .getDataSource();

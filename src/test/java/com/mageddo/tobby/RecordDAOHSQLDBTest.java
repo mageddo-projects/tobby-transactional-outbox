@@ -9,4 +9,9 @@ class RecordDAOHSQLDBTest extends RecordDAOTest {
   DataSource dataSource() {
     return DBMigration.migrateEmbeddedHSQLDB();
   }
+
+  @Override
+  void shutdown() {
+    this.execute("SHUTDOWN");
+  }
 }

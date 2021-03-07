@@ -32,9 +32,9 @@ abstract class RecordDAOTest {
     this.recordDAO = tobby.recordDAO();
     this.connection = dataSource().getConnection();
   }
-
   @AfterEach
   void afterEach() throws SQLException {
+    this.shutdown();
     this.connection.close();
   }
 
@@ -55,11 +55,12 @@ abstract class RecordDAOTest {
     assertEquals(record.getTopic(), producedRecord.getTopic());
     final var headers = producedRecord.getHeaders();
     assertEquals(encodeBase64(record.getHeaders()), encodeBase64(headers));
-    assertEquals("1", new String(headers.getFirst("version").getValue()));
+    assertEquals("1", new String(headers.getFirst("version")
+        .getValue()));
   }
 
   @Test
-  void mustIterateOverRecords(){
+  void mustIterateOverRecords() {
     // arrange
     final var counter = new AtomicInteger();
     this.recordDAO.save(this.connection, strawberryWithHeaders());
@@ -79,4 +80,15 @@ abstract class RecordDAOTest {
     // assert
   }
 
+  void execute(String sql) {
+    try (var stm = this.connection.prepareStatement(sql)) {
+      stm.executeUpdate();
+    } catch (SQLException e){
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  void shutdown(){
+
+  }
 }

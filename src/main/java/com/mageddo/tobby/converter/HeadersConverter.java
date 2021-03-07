@@ -15,6 +15,9 @@ public class HeadersConverter {
   public static final String HEADER_DELIMITER = "\n";
 
   public static String encodeBase64(Headers headers) {
+    if (headers == null) {
+      return null;
+    }
     final StringBuilder sb = new StringBuilder();
     for (Header header : headers) {
       sb.append(HeaderConverter.encodeBase64(header));
