@@ -1,0 +1,4 @@
+dependencies {
+  implementation(project(":"))
+  implementation group: 'org.jdbi', name: 'jdbi3-core', version: '3.18.0'
+}

@@ -1,4 +1,4 @@
-package com.mageddo.tobby.producer;
+package com.mageddo.tobby.producer.jdbi;
 
 import java.sql.Connection;
 
@@ -6,6 +6,8 @@ import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordDAOUniversal;
+
+import com.mageddo.tobby.producer.Producer;
 
 import org.jdbi.v3.core.Jdbi;
 
