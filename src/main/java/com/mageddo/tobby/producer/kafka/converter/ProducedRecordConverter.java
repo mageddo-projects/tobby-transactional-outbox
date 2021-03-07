@@ -1,4 +1,4 @@
-package com.mageddo.tobby.adapters.kafka.converter;
+package com.mageddo.tobby.producer.kafka.converter;
 
 import java.sql.Timestamp;
 

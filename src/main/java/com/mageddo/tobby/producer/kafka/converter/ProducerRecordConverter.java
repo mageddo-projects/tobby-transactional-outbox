@@ -1,9 +1,8 @@
-package com.mageddo.tobby.adapters.kafka.converter;
+package com.mageddo.tobby.producer.kafka.converter;
 
 import com.mageddo.tobby.Headers;
-import com.mageddo.tobby.ProducerRecordReq;
+import com.mageddo.tobby.ProducerRecord;
 
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serializer;
 
 public class ProducerRecordConverter {
@@ -11,10 +10,10 @@ public class ProducerRecordConverter {
   private ProducerRecordConverter() {
   }
 
-  public static <K, V> ProducerRecordReq of(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer, ProducerRecord<K, V> record
+  public static <K, V> ProducerRecord of(
+      Serializer<K> keySerializer, Serializer<V> valueSerializer, org.apache.kafka.clients.producer.ProducerRecord record
   ) {
-    return new ProducerRecordReq(
+    return new ProducerRecord(
         record.topic(), record.partition(),
         keySerializer.serialize(record.topic(), record.key()),
         valueSerializer.serialize(record.topic(), record.value()),
@@ -23,7 +22,7 @@ public class ProducerRecordConverter {
   }
 
 
-  private static <K, V> Headers encodeHeaders(ProducerRecord<K, V> record) {
+  private static <K, V> Headers encodeHeaders(org.apache.kafka.clients.producer.ProducerRecord record) {
     throw new UnsupportedOperationException();
   }
 }

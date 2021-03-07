@@ -1,6 +1,6 @@
 package com.mageddo.tobby;
 
-public class ProducerRecordReq {
+public class ProducerRecord {
 
   private final String topic;
   private final Integer partition;
@@ -8,7 +8,7 @@ public class ProducerRecordReq {
   private final byte[] value;
   private final Headers headers;
 
-  public ProducerRecordReq(String topic, Integer partition, byte[] key, byte[] value,
+  public ProducerRecord(String topic, Integer partition, byte[] key, byte[] value,
       Headers headers) {
     this.topic = topic;
     this.partition = partition;

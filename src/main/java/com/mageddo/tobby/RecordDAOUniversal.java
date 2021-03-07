@@ -14,7 +14,7 @@ public class RecordDAOUniversal implements RecordDAO {
   }
 
   @Override
-  public ProducedRecord save(ProducerRecordReq record) {
+  public ProducedRecord save(ProducerRecord record) {
     try (Connection con = this.dataSource.getConnection()){
     } catch (SQLException e){
       throw new UncheckedSQLException(e);

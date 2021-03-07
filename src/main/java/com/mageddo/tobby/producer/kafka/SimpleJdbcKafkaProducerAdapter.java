@@ -1,4 +1,4 @@
-package com.mageddo.tobby.adapters.kafka;
+package com.mageddo.tobby.producer.kafka;
 
 import java.util.Collections;
 import java.util.List;

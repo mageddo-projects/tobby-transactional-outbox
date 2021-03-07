@@ -1,9 +1,8 @@
-package com.mageddo.tobby.adapters.kafka;
+package com.mageddo.tobby.producer.kafka;
 
-import com.mageddo.tobby.ProducerRecordReq;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.adapters.kafka.converter.ProducedRecordConverter;
-import com.mageddo.tobby.adapters.kafka.converter.ProducerRecordConverter;
+import com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter;
+import com.mageddo.tobby.producer.kafka.converter.ProducerRecordConverter;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -23,10 +22,11 @@ public class JdbcKafkaProducer<K, V> {
     this.valueSerializer = valueSerializer;
   }
 
-  public RecordMetadata send(ProducerRecord<K, V> record) {
-    final ProducerRecordReq recordReq = ProducerRecordConverter.of(
-        this.keySerializer, this.valueSerializer, record
-    );
-    return ProducedRecordConverter.toMetadata(this.delegate.save(recordReq));
+  public RecordMetadata send(ProducerRecord<K,V> record) {
+    return ProducedRecordConverter.toMetadata(this.delegate.save(
+        ProducerRecordConverter.of(
+            this.keySerializer, this.valueSerializer, record
+        )
+    ));
   }
 }

@@ -1,4 +1,4 @@
-package com.mageddo.tobby.adapters.kafka;
+package com.mageddo.tobby.producer.kafka;
 
 import java.util.List;
 import java.util.Map;
