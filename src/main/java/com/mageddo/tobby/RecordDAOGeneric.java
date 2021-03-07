@@ -14,7 +14,7 @@ import com.mageddo.tobby.converter.ProducedRecordConverter;
 
 public class RecordDAOGeneric implements RecordDAO {
 
-  public static final int BATCH_SIZE = 1000;
+  public static final int BATCH_SIZE = 10000;
 
   @Override
   public ProducedRecord save(Connection connection, ProducerRecord record) {
