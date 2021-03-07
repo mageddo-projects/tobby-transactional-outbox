@@ -8,7 +8,9 @@ import java.util.concurrent.ExecutionException;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.ParameterDAO;
+import com.mageddo.tobby.ParameterDAOUniversal;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.RecordDAOUniversal;
 import com.mageddo.tobby.UncheckedSQLException;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -26,8 +28,14 @@ public class KafkaReplicator {
   private final Producer<String, byte[]> producer;
   private final DataSource dataSource;
 
-  public KafkaReplicator(RecordDAO recordDAO, ParameterDAO parameterDAO,
-      Producer<String, byte[]> producer, DataSource dataSource) {
+  public KafkaReplicator(Producer<String, byte[]> producer, DataSource dataSource) {
+    this(producer, dataSource, new RecordDAOUniversal(), new ParameterDAOUniversal());
+  }
+
+  public KafkaReplicator(
+      Producer<String, byte[]> producer, DataSource dataSource,
+      RecordDAO recordDAO, ParameterDAO parameterDAO
+  ) {
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.producer = producer;
@@ -40,7 +48,7 @@ public class KafkaReplicator {
         final boolean autoCommit = connection.getAutoCommit();
         connection.setAutoCommit(false);
         final LocalDateTime lastUpdate =
-            this.parameterDAO.findAsDateTime(connection, LAST_PROCESSED_TIMESTAMP);
+            this.parameterDAO.findAsDateTime(connection, LAST_PROCESSED_TIMESTAMP, );
         this.recordDAO.iterateNotProcessedRecords(connection, (record) -> {
           while (true) {
             try {
