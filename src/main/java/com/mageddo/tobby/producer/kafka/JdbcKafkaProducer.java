@@ -1,6 +1,6 @@
 package com.mageddo.tobby.producer.kafka;
 
-import com.mageddo.tobby.producer.Producer;
+import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter;
 import com.mageddo.tobby.producer.kafka.converter.ProducerRecordConverter;
 
@@ -10,12 +10,12 @@ import org.apache.kafka.common.serialization.Serializer;
 
 public class JdbcKafkaProducer<K, V> {
 
-  private final Producer delegate;
+  private final ProducerJdbc delegate;
   private final Serializer<K> keySerializer;
   private final Serializer<V> valueSerializer;
 
   public JdbcKafkaProducer(
-      Producer delegate, Serializer<K> keySerializer, Serializer<V> valueSerializer
+      ProducerJdbc delegate, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
     this.delegate = delegate;
     this.keySerializer = keySerializer;

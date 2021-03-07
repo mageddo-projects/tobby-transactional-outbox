@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.producer.ProducerJdbc;
+
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -31,7 +33,7 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
       DataSource dataSource, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
     this(new JdbcKafkaProducer<>(
-        new com.mageddo.tobby.producer.Producer(dataSource), keySerializer, valueSerializer
+        new ProducerJdbc(dataSource), keySerializer, valueSerializer
     ));
   }
 

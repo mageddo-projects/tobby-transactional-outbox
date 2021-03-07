@@ -1,12 +1,11 @@
 package com.mageddo.tobby;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 
 public interface ParameterDAO {
 
-  String findAsText(Parameter parameter);
+  LocalDateTime findAsDateTime(Connection connection, Parameter parameter);
 
-  LocalDateTime findAsDateTime(Parameter parameter);
-
-  void update(Parameter parameter, LocalDateTime value);
+  void update(Connection connection, Parameter parameter, LocalDateTime value);
 }

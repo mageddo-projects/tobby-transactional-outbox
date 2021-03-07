@@ -8,38 +8,27 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-import javax.sql.DataSource;
-
 import com.mageddo.tobby.mapper.ProducedRecordMapper;
 
 public class RecordDAOUniversal implements RecordDAO {
 
   public static final int BATCH_SIZE = 1000;
-  private final DataSource dataSource;
 
-  public RecordDAOUniversal(DataSource dataSource) {
-    this.dataSource = dataSource;
+  @Override
+  public ProducedRecord save(Connection connection, ProducerRecord record) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public ProducedRecord save(ProducerRecord record) {
-    try (Connection con = this.dataSource.getConnection()) {
-    } catch (SQLException e) {
-      throw new UncheckedSQLException(e);
-    }
-    return null;
-  }
-
-  @Override
-  public void iterateNotProcessedRecords(Consumer<ProducedRecord> consumer, LocalDateTime from) {
-    try (
-        Connection con = this.dataSource.getConnection();
-        PreparedStatement stm = this.createStm(con)
-    ) {
+  public void iterateNotProcessedRecords(
+      Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
+  ) {
+    try (PreparedStatement stm = this.createStm(connection)) {
       stm.setTimestamp(1, Timestamp.valueOf(from));
-      final ResultSet rs = stm.executeQuery();
-      while (rs.next()) {
-        consumer.accept(ProducedRecordMapper.map(rs));
+      try (ResultSet rs = stm.executeQuery()) {
+        while (rs.next()) {
+          consumer.accept(ProducedRecordMapper.map(rs));
+        }
       }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
