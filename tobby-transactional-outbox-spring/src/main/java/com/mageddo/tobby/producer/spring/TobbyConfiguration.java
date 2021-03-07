@@ -14,18 +14,19 @@ import com.mageddo.tobby.internal.utils.StringUtils;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.KafkaTemplate;
 
 @Configuration
-//@ConditionalOnExpression(value =
-//    "#{ ${tobby.transactional.outbox.enabled:true} == 'true' }"
-//)
-//@EnableConfigurationProperties(KafkaPro)
+@ConditionalOnProperty(value = "tobby.transactional.outbox.enabled", matchIfMissing = true)
+@EnableKafka
 public class TobbyConfiguration {
 
   @Bean
@@ -34,12 +35,12 @@ public class TobbyConfiguration {
   }
 
   @Bean
-  public SimpleJdbcKafkaProducerAdapter simpleJdbcKafkaProducerAdapter(
+  public SimpleJdbcKafkaProducerAdapter<?, ?> simpleJdbcKafkaProducerAdapter(
       RecordDAO recordDAO, DataSource dataSource,
       @Value("${spring.kafka.producer.key-serializer:}") String keySerializer,
       @Value("${spring.kafka.producer.value-serializer:}") String valueSerializer
   ) {
-    return new SimpleJdbcKafkaProducerAdapter(
+    return new SimpleJdbcKafkaProducerAdapter<>(
         createSerializerInstance(keySerializer, StringSerializer.class.getName()),
         createSerializerInstance(valueSerializer, StringSerializer.class.getName()),
         new ProducerJdbc(recordDAO, dataSource)
@@ -47,8 +48,9 @@ public class TobbyConfiguration {
   }
 
   @Bean
-  public KafkaTemplate kafkaTemplate(SimpleJdbcKafkaProducerAdapter producer){
-    return new KafkaTemplate(() -> producer);
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.override-kafka-template", matchIfMissing = true)
+  public KafkaTemplate<?, ?> kafkaTemplate(Producer<?, ?> producer) {
+    return new KafkaTemplate<>(() -> producer);
   }
 
   @Bean
@@ -61,7 +63,7 @@ public class TobbyConfiguration {
   }
 
   private Serializer createSerializerInstance(String className, String defaultClass) {
-    if(StringUtils.isBlank(className)){
+    if (StringUtils.isBlank(className)) {
       return (Serializer) newInstance(defaultClass);
     }
     return (Serializer) newInstance(className);

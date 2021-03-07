@@ -21,7 +21,7 @@ charset = utf-8
 indent_size = 2
 indent_style = space
 trim_trailing_whitespace = true
-max_line_length = 100
+max_line_length = 120
 ij_formatter_off_tag = @formatter:off
 ij_formatter_on_tag = @formatter:on
 # end::generic[]
