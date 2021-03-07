@@ -17,15 +17,23 @@ import lombok.Value;
 @Builder
 public class KafkaReplicatorFactory {
 
+  public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(90);
+
   DataSource dataSource;
   RecordDAO recordDAO;
   ParameterDAO parameterDAO;
 
   public KafkaReplicator create(Producer<byte[], byte[]> producer) {
-    return this.create(producer, Duration.ZERO);
+    return this.create(producer, Duration.ZERO, DEFAULT_MAX_RECORD_DELAY_TO_COMMIT);
   }
 
-  public KafkaReplicator create(Producer<byte[], byte[]> producer, Duration idleTimeout) {
-    return new KafkaReplicator(producer, this.dataSource, this.recordDAO, this.parameterDAO, idleTimeout);
+  public KafkaReplicator create(
+      Producer<byte[], byte[]> producer, Duration idleTimeout, Duration maxRecordDelayToCommit
+  ) {
+    return new KafkaReplicator(
+        producer, this.dataSource,
+        this.recordDAO, this.parameterDAO,
+        idleTimeout, maxRecordDelayToCommit
+    );
   }
 }

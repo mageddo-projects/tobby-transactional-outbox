@@ -19,6 +19,8 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 
+import static com.mageddo.tobby.factory.KafkaReplicatorFactory.DEFAULT_MAX_RECORD_DELAY_TO_COMMIT;
+
 @Singleton
 @Component(
     modules = {
@@ -55,8 +57,14 @@ public interface TobbyConfig {
   KafkaReplicatorFactory replicatorFactory();
 
   default KafkaReplicator replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
+    return this.replicator(producer, idleTimeout, DEFAULT_MAX_RECORD_DELAY_TO_COMMIT);
+  }
+
+  default KafkaReplicator replicator(
+      Producer<byte[], byte[]> producer, Duration idleTimeout, Duration maxRecordDelayToCommit
+  ) {
     return this.replicatorFactory()
-        .create(producer, idleTimeout);
+        .create(producer, idleTimeout, maxRecordDelayToCommit);
   }
 
   RecordDAO recordDAO();

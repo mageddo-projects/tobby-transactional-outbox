@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
+import com.mageddo.tobby.internal.utils.ExceptionUtils;
 
 public class RecordDAOGeneric implements RecordDAO {
 
@@ -58,6 +59,9 @@ public class RecordDAOGeneric implements RecordDAO {
   ) {
     try (PreparedStatement stm = this.createStm(connection)) {
       stm.setTimestamp(1, Timestamp.valueOf(from));
+      stm.setTimestamp(2, Timestamp.valueOf(from.plusDays(2)));
+      stm.setTimestamp(3, Timestamp.valueOf(from));
+      stm.setTimestamp(4, Timestamp.valueOf(from.plusDays(2)));
       try (ResultSet rs = stm.executeQuery()) {
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -68,11 +72,36 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
+  // FIXME FAZER SAVEPOINT PORQUE TEM BANCOS QUE FAZEM ROLLBACK QUANDO TOMAM ERROR, e.g Postgres
+  @Override
+  public void acquire(Connection connection, UUID id) {
+    try (PreparedStatement stm = connection.prepareStatement("INSERT INTO TTO_RECORD_PROCESSED VALUES (?)")) {
+      stm.setString(1, String.valueOf(id));
+      stm.executeUpdate();
+    } catch (SQLException e) {
+      if (ExceptionUtils.getRootCauseMessage(e)
+          .toUpperCase()
+          .contains("TTO_RECORD_PROCESSED_PK")) {
+        throw new DuplicatedRecordException(id, e);
+      }
+      throw new UncheckedSQLException(e);
+    }
+  }
+
   private PreparedStatement createStm(Connection con) throws SQLException {
+    final StringBuilder sql = new StringBuilder()
+        .append("SELECT * FROM TTO_RECORD R \n")
+        .append("WHERE DAT_CREATED > ? \n")
+        .append("AND DAT_CREATED < ? \n")
+        .append("AND NOT EXISTS ( \n")
+        .append("  SELECT 1 FROM TTO_RECORD_PROCESSED \n")
+        .append("  WHERE IDT_TTO_RECORD = R.IDT_TTO_RECORD \n")
+        .append("  AND DAT_CREATED > ? \n")
+        .append("  AND DAT_CREATED < ? \n")
+        .append(") \n")
+        .append("ORDER BY DAT_CREATED ASC \n");
     final PreparedStatement stm = con.prepareStatement(
-        "SELECT * FROM TTO_RECORD WHERE DAT_CREATED > ? ORDER BY DAT_CREATED ASC",
-        ResultSet.TYPE_FORWARD_ONLY,
-        ResultSet.CONCUR_READ_ONLY
+        sql.toString(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
     );
     stm.setFetchSize(BATCH_SIZE);
     return stm;
