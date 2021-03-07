@@ -1,4 +1,4 @@
-package com.mageddo.tobby.producer.jdbi;
+package com.mageddo.tobby.producer.spring;
 
 import java.sql.Connection;
 
