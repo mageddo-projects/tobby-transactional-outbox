@@ -11,7 +11,8 @@ public class ProducerRecordConverter {
   }
 
   public static <K, V> ProducerRecord of(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer, org.apache.kafka.clients.producer.ProducerRecord record
+      Serializer<K> keySerializer, Serializer<V> valueSerializer,
+      org.apache.kafka.clients.producer.ProducerRecord<K, V> record
   ) {
     return new ProducerRecord(
         record.topic(), record.partition(),
@@ -21,8 +22,10 @@ public class ProducerRecordConverter {
     );
   }
 
-
-  private static <K, V> Headers encodeHeaders(org.apache.kafka.clients.producer.ProducerRecord record) {
+  private static <K, V> Headers encodeHeaders(
+      org.apache.kafka.clients.producer.ProducerRecord<K, V> record
+  ) {
     throw new UnsupportedOperationException();
   }
+
 }

@@ -24,6 +24,12 @@ public class ProducedRecordConverter {
     );
   }
 
+  public static org.apache.kafka.clients.producer.ProducerRecord<String, byte[]> toKafkaProducerRecord(
+      ProducedRecord record
+  ) {
+    throw new UnsupportedOperationException();
+  }
+
   private static long toMillis(ProducedRecord record) {
     return Timestamp.valueOf(record.getCreatedAt())
         .toInstant()

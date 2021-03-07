@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 public class ProducedRecord {
 
   private final Long id;
+  
+  /**
+   * https://stackoverflow.com/a/37067544/2979435
+   */
   private final String topic;
   private final Integer partition;
   private final byte[] key;
