@@ -24,7 +24,7 @@ public class ProducedRecordConverter {
               .toLocalDateTime())
           .id(UUID.fromString(rs.getString("IDT_TTO_RECORD")))
           .partition(getInteger(rs))
-          .headers(HeadersConverter.decodeFromBase64(rs.getString("JSN_HEADERS")))
+          .headers(HeadersConverter.decodeFromBase64(rs.getString("TXT_HEADERS")))
           .build();
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);

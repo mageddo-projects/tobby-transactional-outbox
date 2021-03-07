@@ -22,7 +22,7 @@ public class RecordDAOGeneric implements RecordDAO {
     final StringBuilder sql = new StringBuilder()
         .append("INSERT INTO TTO_RECORD ( \n")
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, \n")
-        .append("  TXT_KEY, TXT_VALUE, JSN_HEADERS \n")
+        .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
         .append("  ?, ?, ?, \n")
         .append("  ?, ?, ? \n")

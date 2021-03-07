@@ -14,6 +14,14 @@ public class DBMigration {
     return migrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
   }
 
+  public static DataSource migrateEmbeddedPostgres() {
+    return migrate(
+        "jdbc:postgresql://localhost:5429/postgres?currentSchema=postgres",
+        "postgres", "postgres",
+        "classpath:db/migration-postgres"
+    );
+  }
+
   public static DataSource migratePostgres() {
     return migrate(
         "jdbc:postgresql://localhost:5432/db?currentSchema=tobby",

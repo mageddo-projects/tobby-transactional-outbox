@@ -46,7 +46,7 @@ public class KafkaTemplateTest {
     assertNotNull(UUID.fromString((String) foundRecord.get("IDT_TTO_RECORD")));
     assertEquals("fruit", foundRecord.get("NAM_TOPIC"));
     assertEquals("T3Jhbmdl", foundRecord.get("TXT_VALUE"));
-    assertNull(foundRecord.get("JSN_HEADERS"));
+    assertNull(foundRecord.get("TXT_HEADERS"));
     assertNull(foundRecord.get("NUM_PARTITION"));
     assertNotNull(foundRecord.get("DAT_CREATED"));
   }

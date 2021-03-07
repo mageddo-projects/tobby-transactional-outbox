@@ -49,7 +49,7 @@ class ProducerSpringTest {
     assertEquals("fruit", foundRecord.get("NAM_TOPIC"));
     assertEquals("c29tZSBrZXk=", foundRecord.get("TXT_KEY"));
     assertEquals("R3JhcGU=", foundRecord.get("TXT_VALUE"));
-    assertNull(foundRecord.get("JSN_HEADERS"));
+    assertNull(foundRecord.get("TXT_HEADERS"));
     assertNull(foundRecord.get("NUM_PARTITION"));
     assertNotNull(foundRecord.get("DAT_CREATED"));
   }

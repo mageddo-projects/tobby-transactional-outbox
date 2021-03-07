@@ -47,5 +47,7 @@ dependencies {
   testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
   testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
   testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.2.19'
+  testImplementation("io.zonky.test:embedded-postgres:1.2.9")
+  testRuntimeOnly enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:10.4.0")
 
 }
