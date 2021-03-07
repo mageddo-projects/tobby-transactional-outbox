@@ -2,6 +2,8 @@ package com.mageddo.tobby;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -9,11 +11,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.mageddo.tobby.converter.HeadersConverter.encodeBase64;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static templates.ProducerRecordTemplates.strawberryWithHeaders;
 
+@Slf4j
 abstract class RecordDAOTest {
 
   RecordDAO recordDAO;
@@ -51,6 +56,27 @@ abstract class RecordDAOTest {
     final var headers = producedRecord.getHeaders();
     assertEquals(encodeBase64(record.getHeaders()), encodeBase64(headers));
     assertEquals("1", new String(headers.getFirst("version").getValue()));
+  }
+
+  @Test
+  void mustIterateOverRecords(){
+    // arrange
+    final var counter = new AtomicInteger();
+    this.recordDAO.save(this.connection, strawberryWithHeaders());
+    this.recordDAO.save(this.connection, strawberryWithHeaders());
+    this.recordDAO.save(this.connection, strawberryWithHeaders());
+
+    // act
+    this.recordDAO.iterateNotProcessedRecords(
+        this.connection,
+        producedRecord -> {
+          log.info("record={}", producedRecord);
+          counter.incrementAndGet();
+        },
+        LocalDateTime.parse("2020-01-01T00:00:00")
+    );
+
+    // assert
   }
 
 }
