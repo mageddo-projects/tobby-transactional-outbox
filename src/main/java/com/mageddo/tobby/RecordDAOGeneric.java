@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import com.mageddo.db.DB;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
-import com.mageddo.tobby.internal.utils.DB;
 
 public class RecordDAOGeneric implements RecordDAO {
 
@@ -65,7 +65,8 @@ public class RecordDAOGeneric implements RecordDAO {
   ) {
     try (PreparedStatement stm = this.createStm(connection)) {
       // prevent scanning too many future partitions
-      final Timestamp to = Timestamp.valueOf(LocalDateTime.now().plusDays(2));
+      final Timestamp to = Timestamp.valueOf(LocalDateTime.now()
+          .plusDays(2));
       stm.setTimestamp(1, Timestamp.valueOf(from));
       stm.setTimestamp(2, to);
       stm.setTimestamp(3, Timestamp.valueOf(from));
@@ -88,7 +89,12 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setString(1, String.valueOf(id));
       stm.executeUpdate();
     } catch (SQLException e) {
-      throw DuplicatedRecordException.check(this.db, id, e);
+      if (e.getMessage()
+          .toUpperCase()
+          .contains("TTO_RECORD_PROCESSED_PK")) {
+        throw new DuplicatedRecordException(id, e);
+      }
+      throw new UncheckedSQLException(e);
     }
   }
 

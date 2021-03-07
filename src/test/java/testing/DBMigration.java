@@ -11,22 +11,31 @@ import lombok.NoArgsConstructor;
 public class DBMigration {
 
   public static DataSource migrateEmbeddedH2() {
-    return cleanAndMigrate("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", null, null, "classpath:db/migration-h2");
+    return cleanAndMigrate(
+        "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", null, null,
+        "classpath:com/mageddo/tobby/db/migration-h2"
+    );
   }
 
   public static DataSource migrateEmbeddedHSQLDB() {
-    return cleanAndMigrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
+    return cleanAndMigrate(
+        "jdbc:hsqldb:mem:testdb", null, null,
+        "classpath:com/mageddo/tobby/db/migration-hsqldb"
+    );
   }
 
   public static DataSource migrateEmbeddedOracle() {
-    return cleanAndMigrate("jdbc:hsqldb:mem:PUBLIC;sql.syntax_ora=true", null, null, "classpath:db/migration-oracle");
+    return cleanAndMigrate(
+        "jdbc:hsqldb:mem:PUBLIC;sql.syntax_ora=true", null, null,
+        "classpath:com/mageddo/tobby/db/migration-oracle"
+    );
   }
 
   public static DataSource migrateEmbeddedPostgres() {
     return cleanAndMigrate(
         "jdbc:postgresql://localhost:5429/postgres?currentSchema=postgres",
         "postgres", "postgres",
-        "classpath:db/migration-postgres"
+        "classpath:com/mageddo/tobby/db/migration-postgres"
     );
   }
 
@@ -34,7 +43,7 @@ public class DBMigration {
     return migrate(
         "jdbc:postgresql://localhost:5432/db?currentSchema=tobby",
         "root", "root",
-        "classpath:db/migration-postgres"
+        "classpath:com/mageddo/tobby/db/migration-postgres"
     );
   }
 

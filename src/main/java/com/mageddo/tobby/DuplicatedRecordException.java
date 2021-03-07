@@ -3,8 +3,8 @@ package com.mageddo.tobby;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.mageddo.tobby.internal.utils.DB;
-import com.mageddo.tobby.internal.utils.SqlErrorCodes;
+import com.mageddo.db.DB;
+import com.mageddo.db.SqlErrorCodes;
 
 public class DuplicatedRecordException extends RuntimeException {
   public DuplicatedRecordException(UUID id, SQLException e) {

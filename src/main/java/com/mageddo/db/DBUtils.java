@@ -1,4 +1,4 @@
-package com.mageddo.tobby.internal.utils;
+package com.mageddo.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.UncheckedSQLException;
+import com.mageddo.tobby.internal.utils.Validator;
 
 public class DBUtils {
 

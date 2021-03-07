@@ -1,9 +1,12 @@
-package com.mageddo.tobby.internal.utils;
+package com.mageddo.db;
 
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.mageddo.tobby.internal.utils.ObjectUtils;
+import com.mageddo.tobby.internal.utils.Sets;
 
 import lombok.Builder;
 import lombok.Value;
@@ -18,7 +21,7 @@ public class SqlErrorCodes {
 
   public static SqlErrorCodes build(DB db) {
     switch (db) {
-      case POSTGRES: {
+      case POSTGRESQL: {
         return put(
             db,
             SqlErrorCodes
@@ -90,7 +93,15 @@ public class SqlErrorCodes {
   }
 
   public boolean isDuplicateKeyError(SQLException e) {
-    return isDuplicateKeyError(e.getErrorCode());
+    return isDuplicateKeyError(ObjectUtils.firstNonNull(parseIntOrNull(e.getSQLState()), e.getErrorCode()));
+  }
+
+  private Integer parseIntOrNull(String text) {
+    try {
+      return Integer.parseInt(text);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   public boolean isDuplicateKeyError(int errorCode) {

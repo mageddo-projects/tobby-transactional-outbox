@@ -1,7 +1,7 @@
-package com.mageddo.tobby.internal.utils;
+package com.mageddo.db;
 
 public enum DB {
-  POSTGRES,
+  POSTGRESQL,
   SQLSERVER,
   MYSQL,
   SQLITE,

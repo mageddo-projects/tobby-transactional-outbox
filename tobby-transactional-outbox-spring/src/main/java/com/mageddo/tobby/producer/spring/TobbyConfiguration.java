@@ -5,7 +5,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
-import com.mageddo.tobby.internal.utils.DBUtils;
+import com.mageddo.db.DBUtils;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 
