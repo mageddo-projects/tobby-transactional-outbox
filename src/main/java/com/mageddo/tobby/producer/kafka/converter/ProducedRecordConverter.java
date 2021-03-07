@@ -15,8 +15,8 @@ public class ProducedRecordConverter {
   public static RecordMetadata toMetadata(ProducedRecord record) {
     return new RecordMetadata(
         new TopicPartition(record.getTopic(), record.getPartition()),
-        0L,
-        (long) record.getId(),
+        -1L,
+        -1L,
         toMillis(record),
         digest(record),
         calcSize(record.getKey()),

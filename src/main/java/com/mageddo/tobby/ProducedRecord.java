@@ -1,11 +1,12 @@
 package com.mageddo.tobby;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class ProducedRecord {
 
-  private final Long id;
-  
+  private final UUID id;
+
   /**
    * https://stackoverflow.com/a/37067544/2979435
    */
@@ -16,7 +17,7 @@ public class ProducedRecord {
   private final Headers headers;
   private final LocalDateTime createdAt;
 
-  public ProducedRecord(Long id, String topic, Integer partition, byte[] key, byte[] value,
+  public ProducedRecord(UUID id, String topic, Integer partition, byte[] key, byte[] value,
       Headers headers, LocalDateTime createdAt) {
     this.id = id;
     this.topic = topic;
@@ -27,7 +28,7 @@ public class ProducedRecord {
     this.createdAt = createdAt;
   }
 
-  public Long getId() {
+  public UUID getId() {
     return id;
   }
 

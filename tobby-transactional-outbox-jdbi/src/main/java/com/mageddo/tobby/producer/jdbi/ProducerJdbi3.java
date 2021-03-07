@@ -5,7 +5,7 @@ import java.sql.Connection;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.RecordDAOUniversal;
+import com.mageddo.tobby.RecordDAOHsqldb;
 
 import com.mageddo.tobby.producer.Producer;
 
@@ -17,7 +17,7 @@ public class ProducerJdbi3 implements Producer {
   private final Jdbi jdbi;
 
   public ProducerJdbi3(Jdbi jdbi) {
-    this(new RecordDAOUniversal(), jdbi);
+    this(new RecordDAOHsqldb(), jdbi);
   }
 
   public ProducerJdbi3(RecordDAO recordDAO, Jdbi jdbi) {

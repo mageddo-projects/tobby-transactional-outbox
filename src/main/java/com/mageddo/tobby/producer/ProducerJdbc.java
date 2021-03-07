@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.RecordDAOUniversal;
+import com.mageddo.tobby.RecordDAOHsqldb;
 import com.mageddo.tobby.UncheckedSQLException;
 
 public class ProducerJdbc implements Producer {
@@ -17,7 +17,7 @@ public class ProducerJdbc implements Producer {
   private final DataSource dataSource;
 
   public ProducerJdbc(DataSource dataSource) {
-    this(new RecordDAOUniversal(), dataSource);
+    this(new RecordDAOHsqldb(), dataSource);
   }
 
   public ProducerJdbc(RecordDAO recordDAO, DataSource dataSource) {
