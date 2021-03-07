@@ -30,7 +30,7 @@ class ProducerJdbi3Test {
         "",
         ""
     );
-    this.producerJdbi3 = new ProducerJdbi3(jdbi);
+    this.producerJdbi3 = new ProducerJdbi3(this.jdbi);
   }
 
   @Test
