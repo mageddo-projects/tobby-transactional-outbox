@@ -74,4 +74,8 @@ public class Headers implements Iterable<Header> {
         .map(it -> it.get(0))
         .orElse(null);
   }
+
+  public boolean isEmpty() {
+    return this.headers.isEmpty();
+  }
 }
