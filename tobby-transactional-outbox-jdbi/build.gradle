@@ -1,4 +1,6 @@
 dependencies {
   implementation(project(":"))
   implementation group: 'org.jdbi', name: 'jdbi3-core', version: '3.0.0'
+  testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
+  testImplementation group: 'com.radcortez.flyway', name: 'flyway-junit5-extension', version: '1.1.1'
 }
