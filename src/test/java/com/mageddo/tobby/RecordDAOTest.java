@@ -78,6 +78,7 @@ abstract class RecordDAOTest {
     );
 
     // assert
+    assertEquals(3, counter.get());
   }
 
   void execute(String sql) {
