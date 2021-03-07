@@ -12,11 +12,17 @@ import java.util.function.Consumer;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
-import com.mageddo.tobby.internal.utils.ExceptionUtils;
+import com.mageddo.tobby.internal.utils.DB;
 
 public class RecordDAOGeneric implements RecordDAO {
 
   public static final int BATCH_SIZE = 10000;
+
+  private final DB db;
+
+  public RecordDAOGeneric(DB db) {
+    this.db = db;
+  }
 
   @Override
   public ProducedRecord save(Connection connection, ProducerRecord record) {
@@ -82,12 +88,7 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setString(1, String.valueOf(id));
       stm.executeUpdate();
     } catch (SQLException e) {
-      if (ExceptionUtils.getRootCauseMessage(e)
-          .toUpperCase()
-          .contains("TTO_RECORD_PROCESSED_PK")) {
-        throw new DuplicatedRecordException(id, e);
-      }
-      throw new UncheckedSQLException(e);
+      throw DuplicatedRecordException.check(this.db, id, e);
     }
   }
 

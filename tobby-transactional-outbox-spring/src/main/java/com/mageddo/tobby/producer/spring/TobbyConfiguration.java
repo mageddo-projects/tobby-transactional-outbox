@@ -1,12 +1,8 @@
 package com.mageddo.tobby.producer.spring;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.internal.utils.DBUtils;
@@ -53,11 +49,7 @@ public class TobbyConfiguration {
 
   @Bean
   public RecordDAO recordDAO(DataSource dataSource) {
-    try (Connection connection = dataSource.getConnection()) {
-      return DAOFactory.createRecordDao(DBUtils.discoverDB(connection));
-    } catch (SQLException e) {
-      throw new UncheckedSQLException(e);
-    }
+    return DAOFactory.createRecordDao(DBUtils.discoverDB(dataSource));
   }
 
 

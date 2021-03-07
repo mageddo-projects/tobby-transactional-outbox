@@ -16,6 +16,6 @@
     <appender-ref ref="CONSOLE"/>
   </root>
 
-  <logger name="com.mageddo.tobby" level="TRACE"/>
+  <logger name="com.mageddo.tobby" level="INFO"/>
 
 </configuration>

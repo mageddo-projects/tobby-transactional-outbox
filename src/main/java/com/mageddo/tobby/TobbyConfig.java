@@ -5,8 +5,12 @@ import java.time.Duration;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.factory.KafkaReplicatorFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
+import com.mageddo.tobby.internal.utils.DB;
+import com.mageddo.tobby.internal.utils.DBUtils;
+import com.mageddo.tobby.internal.utils.SqlErrorCodes;
 import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
@@ -80,8 +84,16 @@ public interface TobbyConfig {
 
     @Provides
     @Singleton
-    public RecordDAO recordDAO() {
-      return new RecordDAOHsqldb();
+    DB db() {
+      final DB db = DBUtils.discoverDB(this.dataSource);
+      SqlErrorCodes.build(db);
+      return db;
+    }
+
+    @Provides
+    @Singleton
+    public RecordDAO recordDAO(DB db) {
+      return DAOFactory.createRecordDao(db);
     }
 
     @Provides

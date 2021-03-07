@@ -8,4 +8,6 @@ public enum DB {
   HSQLDB,
   H2,
   ORACLE,
+  ;
+
 }
