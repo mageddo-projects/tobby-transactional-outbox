@@ -33,7 +33,7 @@ class KafkaReplicatorTest {
 
   @BeforeEach
   void beforeEach() {
-    final var dataSource = DBMigration.migrateHSQLDB();
+    final var dataSource = DBMigration.migrateEmbeddedHSQLDB();
     final var tobby = Tobby.build(dataSource);
     this.replicator = tobby.replicator(this.mockProducer, Duration.ofMillis(600));
     this.producer = tobby.producerJdbc();

@@ -4,9 +4,10 @@ import javax.sql.DataSource;
 
 import testing.DBMigration;
 
-class RecordDAOHSQLDBTest extends RecordDAOTest {
+class RecordDAOH2Test extends RecordDAOTest {
+
   @Override
   DataSource dataSource() {
-    return DBMigration.migrateEmbeddedHSQLDB();
+    return DBMigration.migrateEmbeddedH2();
   }
 }

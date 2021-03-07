@@ -10,8 +10,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DBMigration {
 
-  public static DataSource migrateHSQLDB() {
+  public static DataSource migrateEmbeddedH2() {
+    return migrate("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1", null, null, "classpath:db/migration-h2");
+  }
+
+  public static DataSource migrateEmbeddedHSQLDB() {
     return migrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
+  }
+
+  public static DataSource migrateEmbeddedOracle() {
+    return migrate("jdbc:hsqldb:mem:testdb;sql.syntax_ora=true", null, null, "classpath:db/migration-oracle");
   }
 
   public static DataSource migrateEmbeddedPostgres() {
