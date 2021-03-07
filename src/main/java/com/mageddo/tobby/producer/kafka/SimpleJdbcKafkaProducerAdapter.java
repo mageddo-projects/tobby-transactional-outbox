@@ -36,7 +36,11 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   }
 
   public SimpleJdbcKafkaProducerAdapter(JdbcKafkaProducer<K, V> jdbcKafkaProducer) {
-    this(Executors.newFixedThreadPool(5), jdbcKafkaProducer);
+    this(Executors.newFixedThreadPool(5, r -> {
+      Thread t = Executors.defaultThreadFactory().newThread(r);
+      t.setDaemon(true);
+      return t;
+    }), jdbcKafkaProducer);
   }
 
   public SimpleJdbcKafkaProducerAdapter(

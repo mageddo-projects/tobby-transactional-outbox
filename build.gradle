@@ -12,14 +12,18 @@ allprojects {
 
   dependencies {
 
+    implementation("com.google.dagger:dagger:2.33")
+    annotationProcessor("com.google.dagger:dagger-compiler:2.33")
+
+    compileOnly 'org.projectlombok:lombok:1.18.16'
+    annotationProcessor 'org.projectlombok:lombok:1.18.16'
+
     implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '0.11.0.3'
+
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
     testImplementation("org.mockito:mockito-junit-jupiter:3.7.7")
     testImplementation(project(":templates"))
     testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-
-    compileOnly 'org.projectlombok:lombok:1.18.16'
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
 
     testCompileOnly 'org.projectlombok:lombok:1.18.16'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
@@ -42,4 +46,6 @@ allprojects {
 dependencies {
   testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
   testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
+  testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.2.19'
+
 }

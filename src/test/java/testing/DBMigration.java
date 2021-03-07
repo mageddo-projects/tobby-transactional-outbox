@@ -14,12 +14,21 @@ public class DBMigration {
     return migrate("jdbc:hsqldb:mem:testdb", null, null, "classpath:db/migration-hsqldb");
   }
 
+  public static DataSource migratePostgres() {
+    return migrate(
+        "jdbc:postgresql://localhost:5432/db?currentSchema=tobby",
+        "root", "root",
+        "classpath:db/migration-postgres"
+    );
+  }
+
   public static void migrate(DataSource dataSource, String... locations) {
-    Flyway.configure()
+    final var flyway = Flyway.configure()
         .dataSource(dataSource)
         .locations(locations)
-        .load()
-        .migrate();
+        .load();
+    flyway.clean();
+    flyway.migrate();
   }
 
   public static DataSource migrate(String url, String user, String password, String... locations) {
@@ -27,6 +36,7 @@ public class DBMigration {
         .dataSource(url, user, password)
         .locations(locations)
         .load();
+    flyway.clean();
     flyway.migrate();
     return flyway.getConfiguration()
         .getDataSource();

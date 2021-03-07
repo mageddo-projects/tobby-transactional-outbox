@@ -1,6 +1,5 @@
 package com.mageddo.tobby.producer.spring;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -9,13 +8,12 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.factory.DAOFactory;
+import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.internal.utils.DBUtils;
-import com.mageddo.tobby.internal.utils.StringUtils;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,8 +39,8 @@ public class TobbyConfiguration {
       @Value("${spring.kafka.producer.value-serializer:}") String valueSerializer
   ) {
     return new SimpleJdbcKafkaProducerAdapter<>(
-        createSerializerInstance(keySerializer, StringSerializer.class.getName()),
-        createSerializerInstance(valueSerializer, StringSerializer.class.getName()),
+        SerializerCreator.create(keySerializer, StringSerializer.class.getName()),
+        SerializerCreator.create(valueSerializer, StringSerializer.class.getName()),
         new ProducerJdbc(recordDAO, dataSource)
     );
   }
@@ -62,22 +60,6 @@ public class TobbyConfiguration {
     }
   }
 
-  private Serializer createSerializerInstance(String className, String defaultClass) {
-    if (StringUtils.isBlank(className)) {
-      return (Serializer) newInstance(defaultClass);
-    }
-    return (Serializer) newInstance(className);
-  }
-
-  private Object newInstance(String keySerializer) {
-    try {
-      return Class.forName(keySerializer)
-          .getDeclaredConstructor()
-          .newInstance();
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
 
 }

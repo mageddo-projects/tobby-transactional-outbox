@@ -9,7 +9,7 @@ public class KafkaProducerRecordTemplates {
   public static ProducerRecord<String, byte[]> coconut() {
     return new ProducerRecord<>(
         "fruit",
-        55,
+        0,
         "greenFruits",
         "coconuts".getBytes(),
         List.of(new RecordHeader("version", "1".getBytes()))
