@@ -1,12 +1,17 @@
 package com.mageddo.tobby;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder(toBuilder = true)
 public class ProducerRecord {
 
-  private final String topic;
-  private final Integer partition;
-  private final byte[] key;
-  private final byte[] value;
-  private final Headers headers;
+  private String topic;
+  private Integer partition;
+  private byte[] key;
+  private byte[] value;
+  private Headers headers;
 
   public ProducerRecord(String topic, byte[] value) {
     this(topic, null, value);
@@ -30,23 +35,4 @@ public class ProducerRecord {
     this.headers = headers;
   }
 
-  public String getTopic() {
-    return topic;
-  }
-
-  public Integer getPartition() {
-    return partition;
-  }
-
-  public byte[] getKey() {
-    return key;
-  }
-
-  public byte[] getValue() {
-    return value;
-  }
-
-  public Headers getHeaders() {
-    return headers;
-  }
 }

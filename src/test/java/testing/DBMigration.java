@@ -27,7 +27,7 @@ public class DBMigration {
         .dataSource(dataSource)
         .locations(locations)
         .load();
-    flyway.clean();
+//    flyway.clean();
     flyway.migrate();
   }
 
@@ -36,7 +36,7 @@ public class DBMigration {
         .dataSource(url, user, password)
         .locations(locations)
         .load();
-    flyway.clean();
+//    flyway.clean();
     flyway.migrate();
     return flyway.getConfiguration()
         .getDataSource();

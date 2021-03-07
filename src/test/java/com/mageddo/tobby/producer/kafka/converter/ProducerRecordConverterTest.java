@@ -39,7 +39,7 @@ class ProducerRecordConverterTest {
         record.headers()
             .toArray().length,
         result.getHeaders()
-            .getHeaders()
+            .asList()
             .size()
     );
     final var headersArr = record
@@ -48,7 +48,7 @@ class ProducerRecordConverterTest {
     for (int i = 0; i < headersArr.length; i++) {
       final var expected = headersArr[i];
       final var actual = result.getHeaders()
-          .getHeaders()
+          .asList()
           .get(i);
       assertEquals(expected.key(), actual.getKey());
       assertArrayEquals(expected.value(), actual.getValue());

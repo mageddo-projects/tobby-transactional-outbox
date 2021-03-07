@@ -17,7 +17,7 @@ public class HeadersConverter {
 
   public static Headers toKafkaHeaders(com.mageddo.tobby.Headers headers) {
     final RecordHeaders kafkaHeaders = new RecordHeaders();
-    for (com.mageddo.tobby.Header header : headers.getHeaders()) {
+    for (com.mageddo.tobby.Header header : headers.asList()) {
       kafkaHeaders.add(toKafkaHeader(header));
     }
     return kafkaHeaders;

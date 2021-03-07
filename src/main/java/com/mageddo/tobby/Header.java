@@ -10,6 +10,14 @@ public class Header {
     this.value = value;
   }
 
+  public static Header of(String key, String value) {
+    return of(key, value.getBytes());
+  }
+
+  public static Header of(String key, byte[] value) {
+    return new Header(key, value);
+  }
+
   public String getKey() {
     return key;
   }

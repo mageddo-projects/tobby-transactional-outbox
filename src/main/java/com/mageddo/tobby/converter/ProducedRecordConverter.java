@@ -5,11 +5,9 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.UUID;
 
-import com.mageddo.tobby.Headers;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.UncheckedSQLException;
-import com.mageddo.tobby.internal.utils.StringUtils;
 
 public class ProducedRecordConverter {
 
@@ -25,19 +23,17 @@ public class ProducedRecordConverter {
           .createdAt(rs.getTimestamp("DAT_CREATED")
               .toLocalDateTime())
           .id(UUID.fromString(rs.getString("IDT_TTO_RECORD")))
-          .partition(rs.getInt("NUM_PARTITION"))
-          .headers(parseHeaders(rs.getString("JSN_HEADERS")))
+          .partition(getInteger(rs))
+          .headers(HeadersConverter.decodeFromBase64(rs.getString("JSN_HEADERS")))
           .build();
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
   }
 
-  private static Headers parseHeaders(String json) {
-    if(StringUtils.isBlank(json)){
-      return new Headers();
-    }
-    throw new UnsupportedOperationException();
+  private static Integer getInteger(ResultSet rs) throws SQLException {
+    final int v = rs.getInt("NUM_PARTITION");
+    return rs.wasNull() ? null : v;
   }
 
   private static byte[] getBytesFromBase64(ResultSet rs, String name) throws SQLException {

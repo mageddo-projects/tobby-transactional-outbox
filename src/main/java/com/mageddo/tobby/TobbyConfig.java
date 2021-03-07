@@ -59,6 +59,8 @@ public interface TobbyConfig {
         .create(producer, idleTimeout);
   }
 
+  RecordDAO recordDAO();
+
   @Module
   public static class ConnectionBasedModule {
 

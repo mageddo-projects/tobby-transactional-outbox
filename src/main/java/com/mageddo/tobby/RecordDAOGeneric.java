@@ -6,11 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
+import com.mageddo.tobby.internal.utils.Base64;
 
 public class RecordDAOGeneric implements RecordDAO {
 
@@ -83,22 +84,10 @@ public class RecordDAOGeneric implements RecordDAO {
     stm.setString(1, id.toString());
     stm.setString(2, record.getTopic());
     stm.setObject(3, record.getPartition());
-    stm.setString(4, base64Encode(record.getKey()));
-    stm.setString(5, base64Encode(record.getValue()));
-    stm.setString(6, encode(record.getHeaders()));
+    stm.setString(4, Base64.encodeToString(record.getKey()));
+    stm.setString(5, Base64.encodeToString(record.getValue()));
+    stm.setString(6, HeadersConverter.encodeBase64(record.getHeaders()));
     return id;
   }
 
-  private String encode(Headers headers) {
-    return null;
-  }
-
-  private String base64Encode(byte[] data) {
-    if(data == null){
-      return null;
-    }
-    return Base64
-        .getEncoder()
-        .encodeToString(data);
-  }
 }

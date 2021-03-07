@@ -1,5 +1,6 @@
 package templates;
 
+import com.mageddo.tobby.Headers;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.kafka.converter.ProducerRecordConverter;
 
@@ -14,6 +15,13 @@ public class ProducerRecordTemplates {
 
   public static ProducerRecord strawberry() {
     return new ProducerRecord("fruit", "Strawberry".getBytes(), "Strawberry".getBytes());
+  }
+
+  public static ProducerRecord strawberryWithHeaders() {
+    return strawberry()
+        .toBuilder()
+        .headers(Headers.of("version", "1".getBytes()))
+        .build();
   }
 
   public static ProducerRecord coconut() {
