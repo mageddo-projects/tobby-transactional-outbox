@@ -1,6 +1,5 @@
 package com.mageddo.tobby.adapters.kafka;
 
-import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,10 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import com.mageddo.tobby.Headers;
-import com.mageddo.tobby.ProducedRecord;
-import com.mageddo.tobby.ProducerRecordReq;
-import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordDAOUniversal;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -29,30 +24,26 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.Serializer;
 
-public class SimpleJdbcProducer<K, V> implements Producer<K, V> {
+public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
+  private final JdbcKafkaProducer<K, V> jdbcKafkaProducer;
   private final ExecutorService executorService;
-  private final RecordDAO recordDAO;
-  private final Serializer<K> keySerializer;
-  private final Serializer<V> valueSerializer;
 
-  public SimpleJdbcProducer(
+  public SimpleJdbcKafkaProducerAdapter(
       DataSource dataSource, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
-    this(new RecordDAOUniversal(dataSource), keySerializer, valueSerializer);
+    this(new JdbcKafkaProducer<>(new RecordDAOUniversal(dataSource), keySerializer, valueSerializer));
   }
 
-  public SimpleJdbcProducer(RecordDAO recordDAO, Serializer<K> keySerializer,
-      Serializer<V> valueSerializer) {
-    this(Executors.newFixedThreadPool(5), recordDAO, keySerializer, valueSerializer);
+  public SimpleJdbcKafkaProducerAdapter(JdbcKafkaProducer<K, V> jdbcKafkaProducer) {
+    this(Executors.newFixedThreadPool(5), jdbcKafkaProducer);
   }
 
-  public SimpleJdbcProducer(ExecutorService executorService, RecordDAO recordDAO,
-      Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+  public SimpleJdbcKafkaProducerAdapter(
+      ExecutorService executorService, JdbcKafkaProducer<K, V> jdbcKafkaProducer
+  ) {
     this.executorService = executorService;
-    this.recordDAO = recordDAO;
-    this.keySerializer = keySerializer;
-    this.valueSerializer = valueSerializer;
+    this.jdbcKafkaProducer = jdbcKafkaProducer;
   }
 
   @Override
@@ -84,15 +75,14 @@ public class SimpleJdbcProducer<K, V> implements Producer<K, V> {
 
   @Override
   public Future<RecordMetadata> send(ProducerRecord<K, V> record) {
-    final ProducedRecord produced = this.save(record);
+    final RecordMetadata produced = this.save(record);
     return this.buildPromise(produced);
   }
 
   @Override
   public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
-    final ProducedRecord produced = this.save(record);
+    final RecordMetadata metadata = this.save(record);
     return this.executorService.submit(() -> {
-      final RecordMetadata metadata = this.buildMetadata(produced);
       callback.onCompletion(metadata, null);
       return metadata;
     });
@@ -133,50 +123,12 @@ public class SimpleJdbcProducer<K, V> implements Producer<K, V> {
     );
   }
 
-  private Future<RecordMetadata> buildPromise(ProducedRecord record) {
-    return this.executorService.submit(() -> this.buildMetadata(record));
+  private Future<RecordMetadata> buildPromise(RecordMetadata metadata) {
+    return this.executorService.submit(() -> metadata);
   }
 
-  private RecordMetadata buildMetadata(ProducedRecord record) {
-    return new RecordMetadata(
-        new TopicPartition(record.getTopic(), record.getPartition()),
-        0L,
-        (long) record.getId(),
-        toMillis(record),
-        this.digest(record),
-        calcSize(record.getKey()),
-        calcSize(record.getValue())
-    );
+  private RecordMetadata save(ProducerRecord<K, V> record) {
+    return this.jdbcKafkaProducer.send(record);
   }
 
-  private long toMillis(ProducedRecord record) {
-    return Timestamp.valueOf(record.getCreatedAt())
-        .toInstant()
-        .toEpochMilli();
-  }
-
-  private int calcSize(byte[] record) {
-    return record == null ? 0 : record.length;
-  }
-
-  private Long digest(ProducedRecord record) {
-    throw new UnsupportedOperationException();
-  }
-
-  private ProducedRecord save(ProducerRecord<K, V> record) {
-    return this.recordDAO.save(this.toRecord(record));
-  }
-
-  private ProducerRecordReq toRecord(ProducerRecord<K, V> record) {
-    return new ProducerRecordReq(
-        record.topic(), record.partition(),
-        this.keySerializer.serialize(record.topic(), record.key()),
-        this.valueSerializer.serialize(record.topic(), record.value()),
-        this.encodeHeaders(record)
-    );
-  }
-
-  private Headers encodeHeaders(ProducerRecord<K, V> record) {
-    throw new UnsupportedOperationException();
-  }
 }

@@ -1,96 +1,32 @@
 package com.mageddo.tobby.adapters.kafka;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import com.mageddo.tobby.ProducerRecordReq;
+import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.adapters.kafka.converter.ProducedRecordConverter;
+import com.mageddo.tobby.adapters.kafka.converter.ProducerRecordConverter;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.Metric;
-import org.apache.kafka.common.MetricName;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.ProducerFencedException;
+import org.apache.kafka.common.serialization.Serializer;
 
-public class JdbcKafkaProducer<K, V> implements Producer<K, V> {
+public class JdbcKafkaProducer<K, V> {
 
-  private final SimpleJdbcProducer<K, V> jdbcDelegate;
-  private final KafkaProducer<K, V> kafkaDelegate;
+  private final RecordDAO delegate;
+  private final Serializer<K> keySerializer;
+  private final Serializer<V> valueSerializer;
 
   public JdbcKafkaProducer(
-      KafkaProducer<K, V> kafkaDelegate, SimpleJdbcProducer<K, V> jdbcDelegate
+      RecordDAO delegate, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
-    this.kafkaDelegate = kafkaDelegate;
-    this.jdbcDelegate = jdbcDelegate;
+    this.delegate = delegate;
+    this.keySerializer = keySerializer;
+    this.valueSerializer = valueSerializer;
   }
 
-  @Override
-  public Future<RecordMetadata> send(ProducerRecord<K, V> record) {
-    return this.jdbcDelegate.send(record);
+  public RecordMetadata send(ProducerRecord<K, V> record) {
+    final ProducerRecordReq recordReq = ProducerRecordConverter.of(
+        this.keySerializer, this.valueSerializer, record
+    );
+    return ProducedRecordConverter.toMetadata(this.delegate.save(recordReq));
   }
-
-  @Override
-  public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
-    return this.jdbcDelegate.send(record, callback);
-  }
-
-  @Override
-  public List<PartitionInfo> partitionsFor(String topic) {
-    return this.kafkaDelegate.partitionsFor(topic);
-  }
-
-  @Override
-  public Map<MetricName, ? extends Metric> metrics() {
-    return this.kafkaDelegate.metrics();
-  }
-
-  @Override
-  public void flush() {
-    this.kafkaDelegate.flush();
-  }
-
-  @Override
-  public void close() {
-    this.jdbcDelegate.close();
-    this.kafkaDelegate.close();
-  }
-
-  @Override
-  public void close(long timeout, TimeUnit unit) {
-    this.jdbcDelegate.close(timeout, unit);
-    this.kafkaDelegate.close(timeout, unit);
-  }
-
-  @Override
-  public void initTransactions() {
-    this.jdbcDelegate.initTransactions();
-  }
-
-  @Override
-  public void beginTransaction() throws ProducerFencedException {
-    this.jdbcDelegate.initTransactions();
-  }
-
-  @Override
-  public void sendOffsetsToTransaction(
-      Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId
-  ) {
-    this.jdbcDelegate.initTransactions();
-  }
-
-  @Override
-  public void commitTransaction() throws ProducerFencedException {
-    this.jdbcDelegate.initTransactions();
-  }
-
-  @Override
-  public void abortTransaction() throws ProducerFencedException {
-    this.jdbcDelegate.initTransactions();
-  }
-
 }
