@@ -58,10 +58,12 @@ public class RecordDAOGeneric implements RecordDAO {
       Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
     try (PreparedStatement stm = this.createStm(connection)) {
+      // prevent scanning too many future partitions
+      final Timestamp to = Timestamp.valueOf(LocalDateTime.now().plusDays(2));
       stm.setTimestamp(1, Timestamp.valueOf(from));
-      stm.setTimestamp(2, Timestamp.valueOf(from.plusDays(2)));
+      stm.setTimestamp(2, to);
       stm.setTimestamp(3, Timestamp.valueOf(from));
-      stm.setTimestamp(4, Timestamp.valueOf(from.plusDays(2)));
+      stm.setTimestamp(4, to);
       try (ResultSet rs = stm.executeQuery()) {
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -75,7 +77,8 @@ public class RecordDAOGeneric implements RecordDAO {
   // FIXME FAZER SAVEPOINT PORQUE TEM BANCOS QUE FAZEM ROLLBACK QUANDO TOMAM ERROR, e.g Postgres
   @Override
   public void acquire(Connection connection, UUID id) {
-    try (PreparedStatement stm = connection.prepareStatement("INSERT INTO TTO_RECORD_PROCESSED VALUES (?)")) {
+    final String sql = "INSERT INTO TTO_RECORD_PROCESSED (IDT_TTO_RECORD) VALUES (?)";
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
       stm.executeUpdate();
     } catch (SQLException e) {

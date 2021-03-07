@@ -74,7 +74,7 @@ abstract class RecordDAOTest {
           log.info("record={}", producedRecord);
           counter.incrementAndGet();
         },
-        LocalDateTime.now().minusDays(1)
+        LocalDateTime.parse("2020-01-01T00:00:00")
     );
 
     // assert
