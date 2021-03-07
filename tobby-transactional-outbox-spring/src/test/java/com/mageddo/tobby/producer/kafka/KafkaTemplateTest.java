@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -25,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @SpringBootTest
 @EnableKafka
 @ExtendWith(SpringExtension.class)
-public class JdbcKafkaProducerAdapterTest {
+public class KafkaTemplateTest {
 
   @Autowired
   KafkaTemplate<String, String> kafkaTemplate;
@@ -52,26 +51,4 @@ public class JdbcKafkaProducerAdapterTest {
     assertNotNull(foundRecord.get("DAT_CREATED"));
   }
 
-  @Configuration
-  static class Config {
-//    @Bean
-//    @Primary
-//    public KafkaTemplate<String, String> producerFactory(
-//        final ProducerFactory<String, String> factory, final RecordDAO recordDAO,
-//        DataSource dataSource){
-//      return new KafkaTemplate<>(new ProducerFactory<String, String>() {
-//        @Override
-//        public Producer<String, String> createProducer() {
-//          return new JdbcKafkaProducerAdapter<String, String>(
-//              factory.createProducer(),
-//              new SimpleJdbcKafkaProducerAdapter<String, String>(
-//                  factory.getKeySerializerSupplier().get(),
-//                  factory.getValueSerializerSupplier().get(),
-//                  new ProducerJdbc(recordDAO, dataSource)
-//              )
-//          );
-//        }
-//      });
-//    }
-  }
 }
