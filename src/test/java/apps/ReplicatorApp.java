@@ -34,6 +34,7 @@ public class ReplicatorApp {
     final var config = new HikariConfig();
     config.setDriverClassName("org.postgresql.Driver");
     config.setMinimumIdle(size);
+    config.setAutoCommit(false);
     config.setMaximumPoolSize(size);
     config.setJdbcUrl("jdbc:postgresql://localhost:5432/db?currentSchema=tobby");
     config.setUsername("root");

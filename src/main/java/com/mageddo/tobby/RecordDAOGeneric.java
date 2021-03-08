@@ -13,7 +13,11 @@ import com.mageddo.db.DB;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
+import com.mageddo.tobby.internal.utils.StopWatch;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class RecordDAOGeneric implements RecordDAO {
 
   public static final int BATCH_SIZE = 10000;
@@ -26,6 +30,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public ProducedRecord save(Connection connection, ProducerRecord record) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
         .append("INSERT INTO TTO_RECORD ( \n")
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, \n")
@@ -40,6 +45,10 @@ public class RecordDAOGeneric implements RecordDAO {
       return ProducedRecordConverter.from(id, record);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
+    } finally {
+      if(log.isTraceEnabled()){
+        log.trace("status=save, statementTime={}", stopWatch.getTime());
+      }
     }
   }
 
