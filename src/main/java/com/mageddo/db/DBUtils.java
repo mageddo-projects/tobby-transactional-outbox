@@ -21,7 +21,7 @@ public class DBUtils {
     final String url = connection
         .getMetaData()
         .getURL();
-    return DB.valueOf(findDBName(url).toUpperCase());
+    return DB.of(findDBName(url));
   }
 
   public static DB discoverDB(DataSource dataSource) {

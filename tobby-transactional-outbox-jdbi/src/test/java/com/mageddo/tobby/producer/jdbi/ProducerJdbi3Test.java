@@ -2,6 +2,7 @@ package com.mageddo.tobby.producer.jdbi;
 
 import java.util.Map;
 
+import com.mageddo.tobby.TobbyConfig;
 import com.radcortez.flyway.test.annotation.DataSource;
 import com.radcortez.flyway.test.annotation.FlywayTest;
 
@@ -25,12 +26,14 @@ class ProducerJdbi3Test {
 
   @BeforeEach
   void beforeEach() {
+
     this.jdbi = Jdbi.create(
         DATA_SOURCE,
         "",
         ""
     );
-    this.producerJdbi3 = new ProducerJdbi3(this.jdbi);
+    final var tobby = TobbyConfig.build(DATA_SOURCE, "", "");
+    this.producerJdbi3 = new ProducerJdbi3(tobby.recordDAO(), this.jdbi);
   }
 
   @Test

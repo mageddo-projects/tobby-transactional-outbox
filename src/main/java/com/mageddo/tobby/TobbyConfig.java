@@ -5,6 +5,7 @@ import java.time.Duration;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.db.SimpleDataSource;
 import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.factory.KafkaReplicatorFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
@@ -118,6 +119,10 @@ public interface TobbyConfig {
           .recordDAO(recordDAO)
           .build();
     }
+  }
+
+  static TobbyConfig build(String url, String username, String password) {
+    return build(new SimpleDataSource(url, password, username));
   }
 
   static TobbyConfig build(DataSource dataSource) {

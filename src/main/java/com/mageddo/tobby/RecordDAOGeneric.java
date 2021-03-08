@@ -89,12 +89,13 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setString(1, String.valueOf(id));
       stm.executeUpdate();
     } catch (SQLException e) {
-      if (e.getMessage()
-          .toUpperCase()
-          .contains("TTO_RECORD_PROCESSED_PK")) {
-        throw new DuplicatedRecordException(id, e);
-      }
-      throw new UncheckedSQLException(e);
+      throw DuplicatedRecordException.check(this.db, id, e);
+//      if (e.getMessage()
+//          .toUpperCase()
+//          .contains("TTO_RECORD_PROCESSED_PK")) {
+//        throw new DuplicatedRecordException(id, e);
+//      }
+//      throw new UncheckedSQLException(e);
     }
   }
 

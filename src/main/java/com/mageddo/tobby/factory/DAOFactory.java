@@ -9,7 +9,7 @@ public class DAOFactory {
   }
 
   public static RecordDAO createRecordDao(DB db){
-    switch (db){
+    switch (db.getName()){
       default:
         return new RecordDAOGeneric(db);
 //      case ORACLE:
