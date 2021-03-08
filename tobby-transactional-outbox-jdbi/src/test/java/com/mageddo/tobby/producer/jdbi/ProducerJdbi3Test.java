@@ -15,7 +15,7 @@ import templates.ProducerRecordTemplates;
 import static com.mageddo.tobby.producer.jdbi.ProducerJdbi3Test.DATA_SOURCE;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@FlywayTest(additionalLocations = "classpath:db/migration-hsqldb", value = @DataSource(url = DATA_SOURCE))
+@FlywayTest(additionalLocations = "classpath:com/mageddo/tobby/db/migration-hsqldb", value = @DataSource(url = DATA_SOURCE))
 class ProducerJdbi3Test {
 
   public static final String DATA_SOURCE = "jdbc:hsqldb:mem:testdb";
