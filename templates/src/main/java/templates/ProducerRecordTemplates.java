@@ -29,4 +29,12 @@ public class ProducerRecordTemplates {
         new StringSerializer(), new ByteArraySerializer(), KafkaProducerRecordTemplates.coconut()
     );
   }
+
+  public static ProducerRecord grape() {
+    return new ProducerRecord(
+        "fruit",
+        "some key".getBytes(),
+        "Grape".getBytes()
+    );
+  }
 }

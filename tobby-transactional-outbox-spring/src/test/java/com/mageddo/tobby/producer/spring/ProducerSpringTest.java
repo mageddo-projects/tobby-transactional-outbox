@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import templates.ProducerRecordTemplates;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -33,11 +35,7 @@ class ProducerSpringTest {
   @Test
   void mustProduceMessagesSavingToDatabase(){
     // arrange
-    final ProducerRecord record = new ProducerRecord(
-        "fruit",
-        "some key".getBytes(),
-        "Grape".getBytes()
-    );
+    final ProducerRecord record = ProducerRecordTemplates.grape();
     // act
     this.producer.send(record);
 
