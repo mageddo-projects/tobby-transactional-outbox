@@ -27,7 +27,7 @@ public class StopWatch {
   }
 
   public long getSplitTime(){
-    return this.calc(this.splitAt);
+    return this.calc(ObjectUtils.firstNonNull(this.splitAt, this.startedAt));
   }
 
   public static StopWatch createStarted() {

@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
 
-  public static final int BATCH_SIZE = 10000;
+  public static final int BATCH_SIZE = 20_000;
 
   private final DB db;
 
@@ -75,16 +75,16 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStm(connection)) {
       // prevent scanning too many future partitions
-      final Timestamp to = Timestamp
-          .valueOf(LocalDateTime.now()
-          .plusDays(2));
+      final LocalDateTime to = LocalDateTime.now()
+          .plusDays(2);
+      final Timestamp toTimestamp = Timestamp.valueOf(to);
       stm.setTimestamp(1, Timestamp.valueOf(from));
-      stm.setTimestamp(2, to);
+      stm.setTimestamp(2, toTimestamp );
       stm.setTimestamp(3, Timestamp.valueOf(from));
-      stm.setTimestamp(4, to);
+      stm.setTimestamp(4, toTimestamp );
       try (ResultSet rs = stm.executeQuery()) {
-        if(log.isTraceEnabled()){
-          log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        if(log.isDebugEnabled()){
+          log.debug("status=queryExecuted, time={}, from={}, to={}", stopWatch.getDisplayTime(), from, to);
         }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -128,7 +128,9 @@ public class RecordDAOGeneric implements RecordDAO {
     final PreparedStatement stm = con.prepareStatement(
         sql.toString(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
     );
-    stm.setFetchSize(BATCH_SIZE);
+    stm.setFetchSize(BATCH_SIZE); // records to pull by time, in other words, the buffer size
+//    stm.setMaxRows(BATCH_SIZE * 5); // the maximum records this statement can retrieve at all, nao setar senao cai
+//    a performance da query
     return stm;
   }
 

@@ -17,7 +17,7 @@ import lombok.Value;
 @Builder
 public class KafkaReplicatorFactory {
 
-  public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(90);
+  public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(15);
 
   DataSource dataSource;
   RecordDAO recordDAO;

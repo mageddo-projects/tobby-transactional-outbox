@@ -13,7 +13,6 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.RecordDAOGeneric;
 import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.StopWatch;
 
@@ -87,9 +86,8 @@ public class KafkaReplicator {
   }
 
   private void processWave(AtomicReference<LocalDateTime> lastTimeProcessed, int wave) {
-    final long millis = System.currentTimeMillis();
     if (log.isDebugEnabled()) {
-      log.debug("wave={}, status=loading-wave,", wave);
+      log.debug("wave={}, status=loading-wave", wave);
     }
     try (Connection connection = this.dataSource.getConnection()) {
       final boolean autoCommit = connection.getAutoCommit();
@@ -99,6 +97,9 @@ public class KafkaReplicator {
       final AtomicInteger counter = new AtomicInteger();
       final AtomicReference<LocalDateTime> lastRecordCreatedAt = new AtomicReference<>();
       this.recordDAO.iterateNotProcessedRecords(connection, (record) -> {
+        // FIXME criar um lote via codigo e commitar toda vez que esse lote atingir o limite,
+        // fazer os updates e inserts em outra conexao para nao dar commit na que esta fazendo o select,
+        // senao ela aborta o streaming
         while (true) {
           try {
             final StopWatch recordStopWatch = StopWatch.createStarted();
@@ -113,31 +114,21 @@ public class KafkaReplicator {
             final long produceTime = recordStopWatch.getSplitTime();
             recordStopWatch.split();
 
-            final boolean mustCommit = counter.incrementAndGet() % RecordDAOGeneric.BATCH_SIZE == 0;
-            long commitTime = -1;
-            if (mustCommit) {
-              this.updateLastUpdate(connection, lastRecordCreatedAt.get());
-              connection.commit();
-              commitTime = stopWatch.getSplitTime();
-            }
             if (log.isTraceEnabled()) {
               log.trace(
-                  "wave={}, status=recordProcessed, acquire={}, produce={}, commit={}, record={}, mustCommit={}, id={}",
+                  "wave={}, status=recordProcessed, acquire={}, produce={}, record={}, id={}",
                   finalWave,
                   StopWatch.display(acquireTime),
                   StopWatch.display(produceTime),
-                  StopWatch.display(commitTime),
                   recordStopWatch.getTime(),
-                  mustCommit,
                   record.getId()
               );
             }
             lastRecordCreatedAt.set(record.getCreatedAt());
+            counter.incrementAndGet();
             break;
           } catch (InterruptedException | ExecutionException e) {
             log.warn("wave={}, status=failed-to-post-to-kafka, msg={}", finalWave, e.getMessage(), e);
-          } catch (SQLException e) {
-            throw new UncheckedSQLException(e);
           } finally {
             lastTimeProcessed.set(LocalDateTime.now());
           }
@@ -148,14 +139,14 @@ public class KafkaReplicator {
       connection.setAutoCommit(autoCommit);
       if (counter.get() > 0) {
         log.info(
-            "wave={}, status=wave-ended, total={}, avg={}",
-            wave, stopWatch.getDisplayTime(), stopWatch.getTime() / counter.get()
+            "wave={}, status=wave-ended, count={}, time={}, avg={}",
+            wave, StopWatch.display(counter.get()), stopWatch.getDisplayTime(), stopWatch.getTime() / counter.get()
         );
       } else {
         if (log.isDebugEnabled()) {
           log.debug(
-              "wave={}, status=wave-ended, total={}, avg={}",
-              wave, stopWatch.getDisplayTime(), stopWatch.getTime() / counter.get()
+              "wave={}, status=wave-ended, count={}, time={}",
+              wave, counter.get(), stopWatch.getDisplayTime()
           );
         }
       }

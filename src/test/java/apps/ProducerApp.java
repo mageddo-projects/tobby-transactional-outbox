@@ -10,13 +10,12 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import lombok.extern.slf4j.Slf4j;
 import templates.KafkaProducerRecordTemplates;
-import testing.DBMigration;
 
 @Slf4j
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-    DBMigration.migratePostgres();
+//    DBMigration.migratePostgres();
     final var tobby = Tobby.build(ReplicatorApp.dataSource(60));
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class
@@ -30,7 +29,7 @@ public class ProducerApp {
           stopWatch.start();
           for (int j = 1; true; j++) {
             producer.send(KafkaProducerRecordTemplates.coconut());
-            if (j % 1000 == 0) {
+            if (j % 300 == 0) {
               log.info("status=produced, count={}, thread={}, avg={}",
                   Thread
                       .currentThread()
