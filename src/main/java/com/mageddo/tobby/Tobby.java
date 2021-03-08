@@ -56,6 +56,11 @@ public class Tobby {
   //
   // replicators
   //
+
+  public KafkaReplicator replicator(Producer<byte[], byte[]> producer) {
+    return this.replicator(producer, Duration.ZERO);
+  }
+
   public KafkaReplicator replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
     return this.tobbyConfig.replicator(producer, idleTimeout);
   }

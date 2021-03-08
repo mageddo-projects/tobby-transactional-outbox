@@ -65,7 +65,8 @@ public class RecordDAOGeneric implements RecordDAO {
   ) {
     try (PreparedStatement stm = this.createStm(connection)) {
       // prevent scanning too many future partitions
-      final Timestamp to = Timestamp.valueOf(LocalDateTime.now()
+      final Timestamp to = Timestamp
+          .valueOf(LocalDateTime.now()
           .plusDays(2));
       stm.setTimestamp(1, Timestamp.valueOf(from));
       stm.setTimestamp(2, to);

@@ -23,6 +23,7 @@ import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter
 
 public class KafkaReplicator {
 
+  public static final int NOTHING_TO_PROCESS_INTERVAL_SECONDS = 10;
   private final Logger log = LoggerFactory.getLogger(getClass());
 
   /**
@@ -118,14 +119,22 @@ public class KafkaReplicator {
             wave, Duration.ofMillis(System.currentTimeMillis() - millis)
         );
       }
+//      if(millisPassed(lastTimeProcessed.get()) / 1000 % NOTHING_TO_PROCESS_INTERVAL_SECONDS == 0){
+//        log.info("status=nothing-to-process, idle={}", NOTHING_TO_PROCESS_INTERVAL_SECONDS);
+//      }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
   }
 
+
   private boolean shouldRun(LocalDateTime lastTimeProcessed) {
     return this.idleTimeout == Duration.ZERO
-        || ChronoUnit.MILLIS.between(lastTimeProcessed, LocalDateTime.now()) < this.idleTimeout.toMillis();
+        || millisPassed(lastTimeProcessed) < this.idleTimeout.toMillis();
+  }
+
+  private long millisPassed(LocalDateTime lastTimeProcessed) {
+    return ChronoUnit.MILLIS.between(lastTimeProcessed, LocalDateTime.now());
   }
 
   private void updateLastUpdate(Connection connection, com.mageddo.tobby.ProducedRecord record) {
