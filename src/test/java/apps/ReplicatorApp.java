@@ -36,7 +36,7 @@ public class ReplicatorApp {
     config.setMinimumIdle(size);
     config.setAutoCommit(false);
     config.setMaximumPoolSize(size);
-    config.setJdbcUrl("jdbc:postgresql://localhost:5432/db?currentSchema=tobby");
+    config.setJdbcUrl("jdbc:postgresql://localhost:5436/db?currentSchema=tobby");
     config.setUsername("root");
     config.setPassword("root");
     return new HikariDataSource(config);

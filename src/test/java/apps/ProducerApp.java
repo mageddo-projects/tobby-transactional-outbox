@@ -23,14 +23,14 @@ public class ProducerApp {
     );
 
     final var executorService = Executors.newFixedThreadPool(50);
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 50; i++) {
       executorService.submit(() -> {
         try {
           final var stopWatch = new StopWatch();
           stopWatch.start();
           for (int j = 1; true; j++) {
             producer.send(KafkaProducerRecordTemplates.coconut());
-            if (j % 100 == 0) {
+            if (j % 1000 == 0) {
               log.info("status=produced, count={}, thread={}, avg={}",
                   Thread
                       .currentThread()

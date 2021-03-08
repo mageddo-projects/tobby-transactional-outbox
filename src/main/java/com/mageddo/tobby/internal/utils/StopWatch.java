@@ -6,9 +6,15 @@ public class StopWatch {
 
   private Long startedAt;
   private Long stoppedAt;
+  private Long splitAt;
 
   public StopWatch start() {
     this.startedAt = System.nanoTime();
+    return this;
+  }
+
+  public StopWatch split(){
+    this.splitAt = System.nanoTime();
     return this;
   }
 
@@ -17,9 +23,11 @@ public class StopWatch {
   }
 
   public long getTime() {
-    return Duration
-        .ofNanos(ObjectUtils.firstNonNull(this.stoppedAt, System.nanoTime()) - this.startedAt)
-        .toMillis();
+    return this.calc(this.startedAt);
+  }
+
+  public long getSplitTime(){
+    return this.calc(this.splitAt);
   }
 
   public static StopWatch createStarted() {
@@ -30,4 +38,19 @@ public class StopWatch {
     this.stoppedAt = System.nanoTime();
     return this;
   }
+
+  public String getDisplayTime() {
+    return display(this.getTime());
+  }
+
+  public static String display(long time) {
+    return String.format("%,d", time);
+  }
+
+  private long calc(Long snapshot) {
+    return Duration
+        .ofNanos(ObjectUtils.firstNonNull(this.stoppedAt, System.nanoTime()) - snapshot)
+        .toMillis();
+  }
+
 }

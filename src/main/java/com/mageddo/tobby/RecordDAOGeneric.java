@@ -72,6 +72,7 @@ public class RecordDAOGeneric implements RecordDAO {
   public void iterateNotProcessedRecords(
       Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStm(connection)) {
       // prevent scanning too many future partitions
       final Timestamp to = Timestamp
@@ -82,6 +83,9 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setTimestamp(3, Timestamp.valueOf(from));
       stm.setTimestamp(4, to);
       try (ResultSet rs = stm.executeQuery()) {
+        if(log.isTraceEnabled()){
+          log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
         }
