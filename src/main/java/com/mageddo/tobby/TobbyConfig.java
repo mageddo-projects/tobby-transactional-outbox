@@ -5,15 +5,16 @@ import java.time.Duration;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.db.DB;
+import com.mageddo.db.DBUtils;
 import com.mageddo.db.SimpleDataSource;
+import com.mageddo.db.SqlErrorCodes;
 import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.factory.KafkaReplicatorFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
-import com.mageddo.db.DB;
-import com.mageddo.db.DBUtils;
-import com.mageddo.db.SqlErrorCodes;
 import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.ProducerJdbc;
+import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 import com.mageddo.tobby.replicator.KafkaReplicator;
 
@@ -29,19 +30,16 @@ import static com.mageddo.tobby.factory.KafkaReplicatorFactory.DEFAULT_MAX_RECOR
 @Singleton
 @Component(
     modules = {
-//        TobbyConfig.Modules.class
         TobbyConfig.ConnectionBasedModule.class
     }
 )
 public interface TobbyConfig {
-//  @Module
-//  interface Modules {
-//    @Binds
-//    @Singleton
-//    FruitDAO bind(FruitDAOStdout impl);
-//  }
 
   ProducerJdbc producerJdbc();
+
+  KafkaReplicatorFactory replicatorFactory();
+
+  RecordDAO recordDAO();
 
   default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
       Class<? extends Serializer<K>> keySerializer, Class<? extends Serializer<V>> valueSerializer
@@ -53,13 +51,31 @@ public interface TobbyConfig {
     );
   }
 
+  default <K, V> JdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
+      Producer<K, V> delegate, Serializer<K> keySerializer, Serializer<V> valueSerializer
+  ) {
+    return new JdbcKafkaProducerAdapter<>(delegate, this.jdbcProducerAdapter(keySerializer, valueSerializer));
+  }
+
+  default <K, V> JdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
+      Producer<K, V> delegate,
+      Class<? extends Serializer<K>> keySerializer,
+      Class<? extends Serializer<V>> valueSerializer
+  ) {
+    return new JdbcKafkaProducerAdapter<>(
+        delegate,
+        this.jdbcProducerAdapter(
+            SerializerCreator.create(keySerializer, null),
+            SerializerCreator.create(valueSerializer, null)
+        )
+    );
+  }
+
   default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
       Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
     return new SimpleJdbcKafkaProducerAdapter<>(keySerializer, valueSerializer, this.producerJdbc());
   }
-
-  KafkaReplicatorFactory replicatorFactory();
 
   default KafkaReplicator replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
     return this.replicator(producer, idleTimeout, DEFAULT_MAX_RECORD_DELAY_TO_COMMIT);
@@ -71,8 +87,6 @@ public interface TobbyConfig {
     return this.replicatorFactory()
         .create(producer, idleTimeout, maxRecordDelayToCommit);
   }
-
-  RecordDAO recordDAO();
 
   @Module
   public static class ConnectionBasedModule {
