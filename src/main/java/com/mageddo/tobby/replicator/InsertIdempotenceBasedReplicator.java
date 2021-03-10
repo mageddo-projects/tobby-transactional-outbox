@@ -25,7 +25,8 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   private final Duration maxRecordDelayToCommit;
   private LocalDateTime lastRecordCreatedAt;
 
-  public InsertIdempotenceBasedReplicator(Connection readConn, Connection writeConn, RecordDAO recordDAO, ParameterDAO parameterDAO, BufferedReplicator bufferedReplicator,
+  public InsertIdempotenceBasedReplicator(Connection readConn, Connection writeConn, RecordDAO recordDAO,
+      ParameterDAO parameterDAO, BufferedReplicator bufferedReplicator,
       Duration maxRecordDelayToCommit) {
     this.bufferedReplicator = bufferedReplicator;
     this.readConn = readConn;
