@@ -8,9 +8,10 @@ Tobby - A transactional outbox implementation
 Tests made on Postgres 10 using a producer with 50 java threads producing messages while the replicator was
 replicating at the same time
 using **DELETE** idempotency strategy (which is the faster one) achieved a result of 8,300 k/s messages committed by
-the producer to the database, also the replicator read the records and committed to the Kafka broker, in other
-words you will be able to process around  500 thousand messages per minute or 30 million messages per hour using
-Tobby while your have the Transactional Outbox guarantee,
+the producer to the database, also the replicator read the records and committed to the Kafka broker.
+
+In other words, you will be able to process around  500 thousand messages per minute or 30 million messages per hour
+using Tobby while your have the Transactional Outbox guarantee,
 these numbers should increase considerably at a decent production environment hardware.
 
 ### Specs
