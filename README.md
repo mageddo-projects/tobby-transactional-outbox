@@ -25,7 +25,7 @@ Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
 ```
 
 #### Memory
-4 RAM slots with te following specs
+4 RAM slots with the following specs
 ```
 Total Width: 64 bits
 Data Width: 64 bits
