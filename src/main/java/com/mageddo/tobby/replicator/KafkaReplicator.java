@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.UncheckedSQLException;
+import com.mageddo.tobby.internal.utils.StopWatch;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.slf4j.Logger;
@@ -76,12 +77,27 @@ public class KafkaReplicator {
     log.info("status=replication-started");
 //    final AtomicReference<LocalDateTime> lastTimeProcessed = new AtomicReference<>(LocalDateTime.now());
     for (int wave = 1; true; wave++) {
-      this.processWave(wave);
+      final StopWatch stopWatch = StopWatch.createStarted();
+      final int processed = this.processWave(wave);
+      if (stopWatch.getDuration()
+          .toMillis() >= 1000) {
+        log.info(
+            "wave={}, status=wave-ended, count={}, time={}, avg={}",
+            wave, StopWatch.display(processed), stopWatch.getDisplayTime(), stopWatch.getTime() / processed
+        );
+      } else {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "wave={}, status=wave-ended, count={}, time={}",
+              wave, processed, stopWatch.getDisplayTime()
+          );
+        }
+      }
     }
 //    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
   }
 
-  private void processWave(int wave) {
+  private int processWave(int wave) {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
@@ -90,13 +106,13 @@ public class KafkaReplicator {
         Connection writeConn = this.dataSource.getConnection()
     ) {
 //      final StopWatch stopWatch = StopWatch.createStarted();
-      final Replicator replicator = this.createReplicator(readConn, writeConn, wave);
-      replicator.iterate();
-      replicator.flush();
+      final StreamingIterator replicator = this.createReplicator(readConn, writeConn, wave);
+      return replicator.iterate();
 //      if (replicator.size() > 0) {
 //        log.info(
 //            "wave={}, status=wave-ended, count={}, time={}, avg={}",
-//            wave, StopWatch.display(replicator.size()), stopWatch.getDisplayTime(), stopWatch.getTime() / replicator.size()
+//            wave, StopWatch.display(replicator.size()), stopWatch.getDisplayTime(), stopWatch.getTime() /
+//            replicator.size()
 //        );
 //      } else {
 //        if (log.isDebugEnabled()) {
@@ -114,7 +130,7 @@ public class KafkaReplicator {
     }
   }
 
-  private Replicator createReplicator(Connection readConn, Connection writeConn, int wave) {
+  private StreamingIterator createReplicator(Connection readConn, Connection writeConn, int wave) {
     switch (this.idempotenceStrategy) {
       case INSERT:
         return new InsertIdempotenceBasedReplicator(

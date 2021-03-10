@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.ProducedRecord;
@@ -15,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.mageddo.tobby.Parameter.LAST_PROCESSED_TIMESTAMP;
 
 @Slf4j
-public class InsertIdempotenceBasedReplicator implements Replicator {
+public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
   private final BufferedReplicator bufferedReplicator;
   private final Connection readConn;
@@ -25,7 +26,8 @@ public class InsertIdempotenceBasedReplicator implements Replicator {
   private final Duration maxRecordDelayToCommit;
   private LocalDateTime lastRecordCreatedAt;
 
-  public InsertIdempotenceBasedReplicator(BufferedReplicator bufferedReplicator, Connection readConn, Connection writeConn,
+  public InsertIdempotenceBasedReplicator(BufferedReplicator bufferedReplicator, Connection readConn,
+      Connection writeConn,
       RecordDAO recordDAO, ParameterDAO parameterDAO, Duration maxRecordDelayToCommit) {
     this.bufferedReplicator = bufferedReplicator;
     this.readConn = readConn;
@@ -36,10 +38,13 @@ public class InsertIdempotenceBasedReplicator implements Replicator {
   }
 
   @Override
-  public void send(ProducedRecord record) {
+  public boolean send(ProducedRecord record) {
     this.lastRecordCreatedAt = record.getCreatedAt();
     this.recordDAO.acquireInserting(this.writeConn, record.getId());
-    this.bufferedReplicator.send(record);
+    if (this.bufferedReplicator.send(record)) {
+      this.flush();
+    }
+    return false;
   }
 
   @Override
@@ -59,10 +64,18 @@ public class InsertIdempotenceBasedReplicator implements Replicator {
   }
 
   @Override
-  public void iterate() {
+  public int iterate() {
+    final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
-        this.readConn, this::send, this.findLastUpdate(this.readConn)
+        this.readConn,
+        (record) -> {
+          counter.incrementAndGet();
+          this.send(record);
+        },
+        this.findLastUpdate(this.readConn)
     );
+    this.flush();
+    return counter.get();
   }
 
   private void updateLastSent() {

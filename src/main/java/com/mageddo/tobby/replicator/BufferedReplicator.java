@@ -31,15 +31,15 @@ public class BufferedReplicator implements Replicator {
   }
 
   @Override
-  public void send(ProducedRecord record) {
+  public boolean send(ProducedRecord record) {
     this.buffer.add(record);
     if (this.buffer.size() < this.bufferSize) {
       if (log.isTraceEnabled()) {
         log.trace("status=addToBuffer, id={}", record.getId());
       }
-      return;
+      return false;
     }
-    this.flush();
+    return true;
   }
 
   @Override
@@ -104,11 +104,6 @@ public class BufferedReplicator implements Replicator {
     final long time = this.stopWatch.getTime();
     this.stopWatch.reset();
     return time;
-  }
-
-  @Override
-  public void iterate() {
-    throw new UnsupportedOperationException();
   }
 
   public int size() {
