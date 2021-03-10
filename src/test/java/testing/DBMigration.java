@@ -41,7 +41,7 @@ public class DBMigration {
 
   public static DataSource migratePostgres() {
     return migrate(
-        "jdbc:postgresql://localhost:5432/db?currentSchema=tobby",
+        "jdbc:postgresql://localhost:5436/db?currentSchema=tobby2",
         "root", "root",
         "classpath:com/mageddo/tobby/db/migration-postgres"
     );

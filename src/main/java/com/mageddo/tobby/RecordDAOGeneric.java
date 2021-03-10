@@ -133,7 +133,9 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD")) {
       try (ResultSet rs = stm.executeQuery()) {
-        log.info("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        if(log.isTraceEnabled()){
+          log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
         }
@@ -145,7 +147,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeleting(Connection connection, UUID id) {
-    final String sql = "DELETE FROM RECORD_PROCESSED WHERE IDT_RECORD_PROCESSED = ? ";
+    final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
       Validator.isTrue(stm.executeUpdate() == 1, "Couldn't delete record: %s", id);

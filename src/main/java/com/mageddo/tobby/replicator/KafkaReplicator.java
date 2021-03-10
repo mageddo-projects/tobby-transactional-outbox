@@ -17,6 +17,8 @@ import org.apache.kafka.clients.producer.Producer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.mageddo.tobby.internal.utils.StopWatch.display;
+
 public class KafkaReplicator {
 
   public static final int NOTHING_TO_PROCESS_INTERVAL_SECONDS = 10;
@@ -73,26 +75,42 @@ public class KafkaReplicator {
   }
 
   public void replicate() {
+    int totalProcessed = 0;
     log.info("status=replication-started");
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
       final int processed = this.processWave(wave);
+      totalProcessed += processed;
       if (stopWatch.getDuration()
           .toMillis() >= 1000) {
         log.info(
-            "wave={}, status=wave-ended, count={}, time={}, avg={}",
-            wave, StopWatch.display(processed), stopWatch.getDisplayTime(), stopWatch.getTime() / processed
+            "wave={}, status=wave-ended, processed={}, time={}, avg={}, totalProcessed={}",
+            display(wave), display(processed), stopWatch.getDisplayTime(),
+            safeDivide(stopWatch, processed), display(totalProcessed)
         );
       } else {
         if (log.isDebugEnabled()) {
           log.debug(
-              "wave={}, status=wave-ended, count={}, time={}",
-              wave, processed, stopWatch.getDisplayTime()
+              "wave={}, status=wave-ended, processed={}, time={}, totalProcessed={}",
+              display(wave), display(processed), stopWatch.getDisplayTime(), display(totalProcessed)
+          );
+        }
+        if (wave % 10_000 == 0) {
+          log.info(
+              "wave={}, status=waveReporting, totalProcessed={}",
+              display(wave), display(totalProcessed)
           );
         }
       }
     }
 //    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
+  }
+
+  private long safeDivide(StopWatch stopWatch, int processed) {
+    if (processed == 0) {
+      return 0;
+    }
+    return stopWatch.getTime() / processed;
   }
 
   private int processWave(int wave) {

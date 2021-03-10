@@ -17,5 +17,6 @@
   </root>
 
   <logger name="com.mageddo.tobby" level="INFO"/>
+<!--  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="TRACE"/>-->
 
 </configuration>

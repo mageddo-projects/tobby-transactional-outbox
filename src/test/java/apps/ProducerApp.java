@@ -10,12 +10,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import lombok.extern.slf4j.Slf4j;
 import templates.KafkaProducerRecordTemplates;
+import testing.DBMigration;
 
 @Slf4j
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-//    DBMigration.migratePostgres();
+    DBMigration.migratePostgres();
     final var tobby = Tobby.build(ReplicatorApp.dataSource(60));
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class

@@ -35,7 +35,7 @@ public class KafkaReplicatorFactory {
         producer, this.dataSource,
         this.recordDAO, this.parameterDAO,
         idleTimeout, maxRecordDelayToCommit,
-        IdempotenceStrategy.INSERT
+        IdempotenceStrategy.DELETE
     );
   }
 }

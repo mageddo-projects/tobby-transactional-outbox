@@ -18,22 +18,22 @@ public class BufferedReplicator implements Replicator {
 
   private final Producer<byte[], byte[]> producer;
   private final List<ProducedRecord> buffer;
-  private final int bufferSize;
+  private final int maxBufferSize;
   private final int wave;
   private final StopWatch stopWatch;
 
   public BufferedReplicator(Producer<byte[], byte[]> producer, int wave) {
     this.producer = producer;
     this.wave = wave;
-    this.bufferSize = 50_000;
-    this.buffer = new ArrayList<>(this.bufferSize);
+    this.maxBufferSize = 50_000;
+    this.buffer = new ArrayList<>(this.maxBufferSize);
     this.stopWatch = new StopWatch();
   }
 
   @Override
   public boolean send(ProducedRecord record) {
     this.buffer.add(record);
-    if (this.buffer.size() < this.bufferSize) {
+    if (this.buffer.size() < this.maxBufferSize) {
       if (log.isTraceEnabled()) {
         log.trace("status=addToBuffer, id={}", record.getId());
       }
@@ -79,7 +79,7 @@ public class BufferedReplicator implements Replicator {
           );
         }
 
-        if (this.bufferSize > 1000) {
+        if (this.buffer.size() > 1000) {
           log.info(
               "wave={}, quantity={}, status=kafkaSendFlushed, timeSinceLastFlush={}, produceTime={}, recordsTime={}",
               this.wave,
