@@ -5,20 +5,16 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.UncheckedSQLException;
-import com.mageddo.tobby.internal.utils.StopWatch;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.mageddo.tobby.Parameter.LAST_PROCESSED_TIMESTAMP;
 
 public class KafkaReplicator {
 
@@ -54,6 +50,8 @@ public class KafkaReplicator {
    */
   private final Duration maxRecordDelayToCommit;
 
+  private final IdempotenceStrategy idempotenceStrategy;
+
   private final RecordDAO recordDAO;
 
   private final ParameterDAO parameterDAO;
@@ -62,52 +60,52 @@ public class KafkaReplicator {
       Producer<byte[], byte[]> producer, DataSource dataSource,
       RecordDAO recordDAO, ParameterDAO parameterDAO,
       Duration idleTimeout,
-      Duration maxRecordDelayToCommit
-  ) {
+      Duration maxRecordDelayToCommit,
+      IdempotenceStrategy idempotenceStrategy) {
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.producer = producer;
     this.dataSource = dataSource;
     this.idleTimeout = idleTimeout;
     this.maxRecordDelayToCommit = maxRecordDelayToCommit;
+    this.idempotenceStrategy = idempotenceStrategy;
   }
 
   public void replicate() {
-    final long millis = System.currentTimeMillis();
+//    final long millis = System.currentTimeMillis();
     log.info("status=replication-started");
-    final AtomicReference<LocalDateTime> lastTimeProcessed = new AtomicReference<>(LocalDateTime.now());
-    for (int wave = 1; this.shouldRun(lastTimeProcessed.get()); wave++) {
-      this.processWave(lastTimeProcessed, wave);
+//    final AtomicReference<LocalDateTime> lastTimeProcessed = new AtomicReference<>(LocalDateTime.now());
+    for (int wave = 1; true; wave++) {
+      this.processWave(wave);
     }
-    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
+//    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
   }
 
-  private void processWave(AtomicReference<LocalDateTime> lastTimeProcessed, int wave) {
+  private void processWave(int wave) {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
-    try (Connection readConn = this.dataSource.getConnection(); Connection writeConn = this.dataSource.getConnection()) {
-      final StopWatch stopWatch = StopWatch.createStarted();
-      final BufferedReplicator sender = this.createSender(writeConn, wave);
-      this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(readConn, (record) -> {
-        sender.send(record);
-        lastTimeProcessed.set(LocalDateTime.now());
-      }, this.findLastUpdate(readConn));
-      sender.flush();
-      sender.updateLastSent();
-      if (sender.size() > 0) {
-        log.info(
-            "wave={}, status=wave-ended, count={}, time={}, avg={}",
-            wave, StopWatch.display(sender.size()), stopWatch.getDisplayTime(), stopWatch.getTime() / sender.size()
-        );
-      } else {
-        if (log.isDebugEnabled()) {
-          log.debug(
-              "wave={}, status=wave-ended, count={}, time={}",
-              wave, sender.size(), stopWatch.getDisplayTime()
-          );
-        }
-      }
+    try (
+        Connection readConn = this.dataSource.getConnection();
+        Connection writeConn = this.dataSource.getConnection()
+    ) {
+//      final StopWatch stopWatch = StopWatch.createStarted();
+      final Replicator replicator = this.createReplicator(readConn, writeConn, wave);
+      replicator.iterate();
+      replicator.flush();
+//      if (replicator.size() > 0) {
+//        log.info(
+//            "wave={}, status=wave-ended, count={}, time={}, avg={}",
+//            wave, StopWatch.display(replicator.size()), stopWatch.getDisplayTime(), stopWatch.getTime() / replicator.size()
+//        );
+//      } else {
+//        if (log.isDebugEnabled()) {
+//          log.debug(
+//              "wave={}, status=wave-ended, count={}, time={}",
+//              wave, replicator.size(), stopWatch.getDisplayTime()
+//          );
+//        }
+//      }
 //      if(millisPassed(lastTimeProcessed.get()) / 1000 % NOTHING_TO_PROCESS_INTERVAL_SECONDS == 0){
 //        log.info("status=nothing-to-process, idle={}", NOTHING_TO_PROCESS_INTERVAL_SECONDS);
 //      }
@@ -116,10 +114,17 @@ public class KafkaReplicator {
     }
   }
 
-  private BufferedReplicator createSender(Connection writeConn, int wave) {
-    return new BufferedReplicator(
-        writeConn, this.recordDAO, this.parameterDAO, this.producer, wave
-    );
+  private Replicator createReplicator(Connection readConn, Connection writeConn, int wave) {
+    switch (this.idempotenceStrategy) {
+      case INSERT:
+        return new InsertIdempotenceBasedReplicator(
+            new BufferedReplicator(this.producer, wave),
+            readConn, writeConn,
+            this.recordDAO, this.parameterDAO, this.maxRecordDelayToCommit
+        );
+      default:
+        throw new IllegalArgumentException("Not strategy implemented for: " + this.idempotenceStrategy);
+    }
   }
 
   private boolean shouldRun(LocalDateTime lastTimeProcessed) {
@@ -132,11 +137,4 @@ public class KafkaReplicator {
   }
 
 
-  private LocalDateTime findLastUpdate(Connection connection) {
-    return this.parameterDAO
-        .findAsDateTime(
-            connection, LAST_PROCESSED_TIMESTAMP, LocalDateTime.parse("2000-01-01T00:00:00")
-        )
-        .minusMinutes(this.maxRecordDelayToCommit.toMinutes());
-  }
 }

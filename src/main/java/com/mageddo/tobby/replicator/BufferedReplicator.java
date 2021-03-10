@@ -1,60 +1,37 @@
 package com.mageddo.tobby.replicator;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.ProducedRecord;
-import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.StopWatch;
 
 import org.apache.kafka.clients.producer.Producer;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static com.mageddo.tobby.Parameter.LAST_PROCESSED_TIMESTAMP;
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 
 @Slf4j
 public class BufferedReplicator implements Replicator {
 
-  private LocalDateTime lastRecordCreatedAt;
-  private final Connection connection;
-  private final RecordDAO recordDAO;
-  private final ParameterDAO parameterDAO;
   private final Producer<byte[], byte[]> producer;
   private final List<ProducedRecord> buffer;
   private final int bufferSize;
   private final int wave;
+  private final StopWatch stopWatch;
 
-  public BufferedReplicator(
-      Connection connection, RecordDAO recordDAO, ParameterDAO parameterDAO,
-      Producer<byte[], byte[]> producer, int wave
-  ) {
-    this.connection = connection;
-    this.recordDAO = recordDAO;
-    this.parameterDAO = parameterDAO;
+  public BufferedReplicator(Producer<byte[], byte[]> producer, int wave) {
     this.producer = producer;
     this.wave = wave;
     this.bufferSize = 50_000;
     this.buffer = new ArrayList<>(this.bufferSize);
+    this.stopWatch = new StopWatch();
   }
 
   @Override
   public void send(ProducedRecord record) {
-    //    final boolean autoCommit = connection.getAutoCommit();
-//    connection.setAutoCommit(false);
-//    connection.setAutoCommit(true);
-//    connection.setAutoCommit(autoCommit);
-    // FIXME criar um lote via codigo e commitar toda vez que esse lote atingir o limite,
-    // fazer os updates e inserts em outra conexao para nao dar commit na que esta fazendo o select,
-    // senao ela aborta o streaming
-    this.recordDAO.acquireInserting(this.connection, record.getId());
     this.buffer.add(record);
     if (this.buffer.size() < this.bufferSize) {
       if (log.isTraceEnabled()) {
@@ -62,30 +39,13 @@ public class BufferedReplicator implements Replicator {
       }
       return;
     }
-    this.send();
+    this.flush();
   }
 
   @Override
   public void flush() {
-    this.send();
-  }
-
-  public void send() {
-    try {
-      this.connection.commit();
-      this.doSend();
-      this.buffer.clear();
-    } catch (SQLException e) {
-      try {
-        this.connection.rollback();
-        throw new UncheckedSQLException(e);
-      } catch (SQLException e2) {
-        throw new UncheckedSQLException(e2);
-      }
-    }
-  }
-
-  private void doSend() {
+    long elapsedTimeSinceLastFlush = this.getTimeSinceLastFlush();
+    this.stopWatch.reset();
     if (log.isDebugEnabled()) {
       log.debug("status=sending, wave={}, records={}", this.wave, this.buffer.size());
     }
@@ -109,9 +69,6 @@ public class BufferedReplicator implements Replicator {
           future
               .getFuture()
               .get();
-          this.lastRecordCreatedAt = future
-              .getProducedRecord()
-              .getCreatedAt();
         }
         final long produceTime = recordStopWatch.getSplitTime();
         recordStopWatch.split();
@@ -124,14 +81,15 @@ public class BufferedReplicator implements Replicator {
 
         if (this.bufferSize > 1000) {
           log.info(
-              "wave={}, quantity={}, status=kafkaSendFlushed, acquireTime={}, produceTime={}, recordsTime={}",
+              "wave={}, quantity={}, status=kafkaSendFlushed, timeSinceLastFlush={}, produceTime={}, recordsTime={}",
               this.wave,
               this.buffer.size(),
-              StopWatch.display(-1),
+              StopWatch.display(elapsedTimeSinceLastFlush),
               StopWatch.display(produceTime),
               recordStopWatch.getTime()
           );
         }
+        this.buffer.clear();
         break;
       } catch (InterruptedException | ExecutionException e) {
         log.warn("wave={}, status=failed-to-post-to-kafka, msg={}", this.wave, e.getMessage(), e);
@@ -139,18 +97,18 @@ public class BufferedReplicator implements Replicator {
     }
   }
 
-  public void updateLastSent() {
-    this.updateLastUpdate(this.connection, this.lastRecordCreatedAt);
+  private long getTimeSinceLastFlush() {
+    if (!this.stopWatch.isStarted()) {
+      return 0;
+    }
+    final long time = this.stopWatch.getTime();
+    this.stopWatch.reset();
+    return time;
   }
 
-  private void updateLastUpdate(Connection connection, LocalDateTime createdAt) {
-    if (createdAt == null) {
-      if (log.isDebugEnabled()) {
-        log.debug("status=no-date-to-update");
-      }
-      return;
-    }
-    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt);
+  @Override
+  public void iterate() {
+    throw new UnsupportedOperationException();
   }
 
   public int size() {

@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.replicator.IdempotenceStrategy;
 import com.mageddo.tobby.replicator.KafkaReplicator;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -33,7 +34,8 @@ public class KafkaReplicatorFactory {
     return new KafkaReplicator(
         producer, this.dataSource,
         this.recordDAO, this.parameterDAO,
-        idleTimeout, maxRecordDelayToCommit
+        idleTimeout, maxRecordDelayToCommit,
+        IdempotenceStrategy.INSERT
     );
   }
 }

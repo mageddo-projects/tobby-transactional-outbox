@@ -9,11 +9,14 @@ public class StopWatch {
   private Long splitAt;
 
   public StopWatch start() {
+    if (this.startedAt != null) {
+      throw new IllegalStateException("Already started");
+    }
     this.startedAt = System.nanoTime();
     return this;
   }
 
-  public StopWatch split(){
+  public StopWatch split() {
     this.splitAt = System.nanoTime();
     return this;
   }
@@ -26,7 +29,7 @@ public class StopWatch {
     return this.calc(this.startedAt);
   }
 
-  public long getSplitTime(){
+  public long getSplitTime() {
     return this.calc(ObjectUtils.firstNonNull(this.splitAt, this.startedAt));
   }
 
@@ -53,4 +56,11 @@ public class StopWatch {
         .toMillis();
   }
 
+  public boolean isStarted() {
+    return this.startedAt != null;
+  }
+
+  public void reset() {
+    this.startedAt = System.nanoTime();
+  }
 }
