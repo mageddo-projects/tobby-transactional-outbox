@@ -3,6 +3,18 @@ Tobby - A transactional outbox implementation
 
 ![Tobby](https://i.imgur.com/SOomiFq.png)
 
+## Requirements
+* Java 8+
+* Kafka 0.11+
+* A relational database with JDBC driver, the following were tested
+   * Postgres
+   * MySQL
+   * Oracle
+   * SQL Server
+   * HSQLDB
+   * H2
+
+
 ## Performance Tests
 
 Tests made on Postgres 10 using a producer with 50 java threads producing messages while the replicator was
@@ -13,6 +25,8 @@ the producer to the database, also the replicator read the records and committed
 In other words, you will be able to process around  500 thousand messages per minute or 30 million messages per hour
 using Tobby having the Transactional Outbox guarantee,
 these numbers should increase considerably at a decent production environment hardware.
+
+You can reproduce this test right now by execute the main classes at [this package][1].
 
 ### Specs used at the test
 Below the computer used to perform the tests, all the required software ran at the same machine, 
@@ -74,3 +88,5 @@ Write speed test
 10240+0 records out
 83886080 bytes (84 MB, 80 MiB) copied, 0.523091 s, 160 MB/s
 ```
+
+[1]: https://github.com/mageddo-projects/tobby-transactional-outbox/tree/f1ad98e/src/test/java/apps
