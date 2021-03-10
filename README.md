@@ -19,7 +19,7 @@ Tobby - A transactional outbox implementation
 
 Tests made on Postgres 10 using a producer with 50 java threads producing messages while the replicator was
 replicating at the same time
-using **DELETE** idempotency strategy (which is the faster one) achieved a result of **8,300 /s** 
+using **DELETE** idempotency strategy (which is the faster one) achieved a result of **8,300/s** 
 (eight thousand messages per second) messages committed by
 the producer to the database, also the replicator read the records and committed to the Kafka broker.
 
