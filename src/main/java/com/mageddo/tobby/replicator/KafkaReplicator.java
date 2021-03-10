@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.sql.DataSource;
@@ -122,7 +121,6 @@ public class KafkaReplicator {
         writeConn, this.recordDAO, this.parameterDAO, this.producer, wave
     );
   }
-
 
   private boolean shouldRun(LocalDateTime lastTimeProcessed) {
     return this.idleTimeout == Duration.ZERO

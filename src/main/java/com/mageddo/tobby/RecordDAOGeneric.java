@@ -83,9 +83,9 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setTimestamp(3, Timestamp.valueOf(from));
       stm.setTimestamp(4, toTimestamp );
       try (ResultSet rs = stm.executeQuery()) {
-        if(log.isDebugEnabled()){
-          log.debug("status=queryExecuted, time={}, from={}, to={}", stopWatch.getDisplayTime(), from, to);
-        }
+//        if(log.isDebugEnabled()){
+          log.info("status=queryExecuted, time={}, from={}, to={}", stopWatch.getDisplayTime(), from, to);
+//        }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
         }
