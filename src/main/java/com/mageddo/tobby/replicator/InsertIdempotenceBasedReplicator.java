@@ -1,15 +1,14 @@
 package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.UncheckedSQLException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,9 +25,8 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   private final Duration maxRecordDelayToCommit;
   private LocalDateTime lastRecordCreatedAt;
 
-  public InsertIdempotenceBasedReplicator(BufferedReplicator bufferedReplicator, Connection readConn,
-      Connection writeConn,
-      RecordDAO recordDAO, ParameterDAO parameterDAO, Duration maxRecordDelayToCommit) {
+  public InsertIdempotenceBasedReplicator(Connection readConn, Connection writeConn, RecordDAO recordDAO, ParameterDAO parameterDAO, BufferedReplicator bufferedReplicator,
+      Duration maxRecordDelayToCommit) {
     this.bufferedReplicator = bufferedReplicator;
     this.readConn = readConn;
     this.writeConn = writeConn;
@@ -49,18 +47,10 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
 
   @Override
   public void flush() {
-    try {
+    ConnectionUtils.useTransaction(this.writeConn, () -> {
       this.bufferedReplicator.flush();
       this.updateLastSent();
-      this.writeConn.commit();
-    } catch (SQLException e) {
-      try {
-        this.writeConn.rollback();
-        throw new UncheckedSQLException(e);
-      } catch (SQLException e2) {
-        throw new UncheckedSQLException(e2);
-      }
-    }
+    });
   }
 
   @Override

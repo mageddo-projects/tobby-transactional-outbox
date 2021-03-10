@@ -27,7 +27,9 @@ public interface RecordDAO {
    * @param consumer   callback to be called for each record
    * @param from       time from which table will be scanned
    */
-  void iterateNotProcessedRecordsUsingInsertIdempotence(Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from);
+  void iterateNotProcessedRecordsUsingInsertIdempotence(
+      Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
+  );
 
   /**
    * Try acquire record to make sure only this worker will replicate it to kafka,

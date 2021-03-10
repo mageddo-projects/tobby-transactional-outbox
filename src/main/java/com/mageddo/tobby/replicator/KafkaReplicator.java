@@ -73,9 +73,7 @@ public class KafkaReplicator {
   }
 
   public void replicate() {
-//    final long millis = System.currentTimeMillis();
     log.info("status=replication-started");
-//    final AtomicReference<LocalDateTime> lastTimeProcessed = new AtomicReference<>(LocalDateTime.now());
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
       final int processed = this.processWave(wave);
@@ -105,26 +103,8 @@ public class KafkaReplicator {
         Connection readConn = this.dataSource.getConnection();
         Connection writeConn = this.dataSource.getConnection()
     ) {
-//      final StopWatch stopWatch = StopWatch.createStarted();
       final StreamingIterator replicator = this.createReplicator(readConn, writeConn, wave);
       return replicator.iterate();
-//      if (replicator.size() > 0) {
-//        log.info(
-//            "wave={}, status=wave-ended, count={}, time={}, avg={}",
-//            wave, StopWatch.display(replicator.size()), stopWatch.getDisplayTime(), stopWatch.getTime() /
-//            replicator.size()
-//        );
-//      } else {
-//        if (log.isDebugEnabled()) {
-//          log.debug(
-//              "wave={}, status=wave-ended, count={}, time={}",
-//              wave, replicator.size(), stopWatch.getDisplayTime()
-//          );
-//        }
-//      }
-//      if(millisPassed(lastTimeProcessed.get()) / 1000 % NOTHING_TO_PROCESS_INTERVAL_SECONDS == 0){
-//        log.info("status=nothing-to-process, idle={}", NOTHING_TO_PROCESS_INTERVAL_SECONDS);
-//      }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
@@ -134,9 +114,13 @@ public class KafkaReplicator {
     switch (this.idempotenceStrategy) {
       case INSERT:
         return new InsertIdempotenceBasedReplicator(
-            new BufferedReplicator(this.producer, wave),
-            readConn, writeConn,
-            this.recordDAO, this.parameterDAO, this.maxRecordDelayToCommit
+            readConn, writeConn, this.recordDAO, this.parameterDAO,
+            new BufferedReplicator(this.producer, wave), this.maxRecordDelayToCommit
+        );
+      case DELETE:
+        return new DeleteIdempotenceBasedReplicator(
+            readConn, writeConn, this.recordDAO,
+            new BufferedReplicator(this.producer, wave)
         );
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + this.idempotenceStrategy);
