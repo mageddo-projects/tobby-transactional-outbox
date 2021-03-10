@@ -21,7 +21,7 @@ import static com.mageddo.tobby.Parameter.LAST_PROCESSED_TIMESTAMP;
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 
 @Slf4j
-public class BufferedReplicator {
+public class BufferedReplicator implements Replicator {
 
   private LocalDateTime lastRecordCreatedAt;
   private final Connection connection;
@@ -45,7 +45,7 @@ public class BufferedReplicator {
     this.buffer = new ArrayList<>(this.bufferSize);
   }
 
-
+  @Override
   public void send(ProducedRecord record) {
     //    final boolean autoCommit = connection.getAutoCommit();
 //    connection.setAutoCommit(false);
@@ -54,7 +54,7 @@ public class BufferedReplicator {
     // FIXME criar um lote via codigo e commitar toda vez que esse lote atingir o limite,
     // fazer os updates e inserts em outra conexao para nao dar commit na que esta fazendo o select,
     // senao ela aborta o streaming
-    this.recordDAO.acquire(this.connection, record.getId());
+    this.recordDAO.acquireInserting(this.connection, record.getId());
     this.buffer.add(record);
     if (this.buffer.size() < this.bufferSize) {
       if (log.isTraceEnabled()) {
@@ -65,6 +65,7 @@ public class BufferedReplicator {
     this.send();
   }
 
+  @Override
   public void flush() {
     this.send();
   }

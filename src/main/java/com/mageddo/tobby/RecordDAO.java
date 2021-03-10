@@ -27,11 +27,17 @@ public interface RecordDAO {
    * @param consumer   callback to be called for each record
    * @param from       time from which table will be scanned
    */
-  void iterateNotProcessedRecords(Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from);
+  void iterateNotProcessedRecordsUsingInsertIdempotence(Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from);
 
   /**
    * Try acquire record to make sure only this worker will replicate it to kafka,
    * otherwise {@link DuplicatedRecordException} will be thrown.
    */
-  void acquire(Connection connection, UUID id);
+  void acquireInserting(Connection connection, UUID id);
+
+  void iterateNotProcessedRecordsUsingDeleteIdempotence(
+      Connection connection, Consumer<ProducedRecord> consumer
+  );
+
+  void acquireDeleting(Connection connection, UUID id);
 }

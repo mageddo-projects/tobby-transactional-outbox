@@ -89,7 +89,7 @@ public class KafkaReplicator {
     try (Connection readConn = this.dataSource.getConnection(); Connection writeConn = this.dataSource.getConnection()) {
       final StopWatch stopWatch = StopWatch.createStarted();
       final BufferedReplicator sender = this.createSender(writeConn, wave);
-      this.recordDAO.iterateNotProcessedRecords(readConn, (record) -> {
+      this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(readConn, (record) -> {
         sender.send(record);
         lastTimeProcessed.set(LocalDateTime.now());
       }, this.findLastUpdate(readConn));

@@ -70,7 +70,7 @@ class KafkaReplicatorTest {
     final var sent = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
     try(final var connection = this.dataSource.getConnection()){
-      this.tobby.recordDAO().acquire(connection, sent.getId());
+      this.tobby.recordDAO().acquireInserting(connection, sent.getId());
     }
 
     // act

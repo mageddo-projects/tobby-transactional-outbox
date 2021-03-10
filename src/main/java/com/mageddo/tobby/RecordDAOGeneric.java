@@ -14,6 +14,7 @@ import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
 import com.mageddo.tobby.internal.utils.StopWatch;
+import com.mageddo.tobby.internal.utils.Validator;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +47,7 @@ public class RecordDAOGeneric implements RecordDAO {
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     } finally {
-      if(log.isTraceEnabled()){
+      if (log.isTraceEnabled()) {
         log.trace("status=save, statementTime={}", stopWatch.getTime());
       }
     }
@@ -69,22 +70,34 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void iterateNotProcessedRecords(
+  public void iterateNotProcessedRecordsUsingInsertIdempotence(
       Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
+    final String sql = new StringBuilder()
+        .append("SELECT * FROM TTO_RECORD R \n")
+        .append("WHERE DAT_CREATED > ? \n")
+        .append("AND DAT_CREATED < ? \n")
+        .append("AND NOT EXISTS ( \n")
+        .append("  SELECT 1 FROM TTO_RECORD_PROCESSED \n")
+        .append("  WHERE IDT_TTO_RECORD = R.IDT_TTO_RECORD \n")
+        .append("  AND DAT_CREATED > ? \n")
+        .append("  AND DAT_CREATED < ? \n")
+        .append(") \n")
+        .append("ORDER BY DAT_CREATED ASC \n")
+        .toString();
     final StopWatch stopWatch = StopWatch.createStarted();
-    try (PreparedStatement stm = this.createStm(connection)) {
+    try (PreparedStatement stm = this.createStreamingStatement(connection, sql)) {
       // prevent scanning too many future partitions
       final LocalDateTime to = LocalDateTime.now()
           .plusDays(2);
       final Timestamp toTimestamp = Timestamp.valueOf(to);
       stm.setTimestamp(1, Timestamp.valueOf(from));
-      stm.setTimestamp(2, toTimestamp );
+      stm.setTimestamp(2, toTimestamp);
       stm.setTimestamp(3, Timestamp.valueOf(from));
-      stm.setTimestamp(4, toTimestamp );
+      stm.setTimestamp(4, toTimestamp);
       try (ResultSet rs = stm.executeQuery()) {
 //        if(log.isDebugEnabled()){
-          log.info("status=queryExecuted, time={}, from={}, to={}", stopWatch.getDisplayTime(), from, to);
+        log.info("status=queryExecuted, time={}, from={}, to={}", stopWatch.getDisplayTime(), from, to);
 //        }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -97,7 +110,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   // FIXME FAZER SAVEPOINT PORQUE TEM BANCOS QUE FAZEM ROLLBACK QUANDO TOMAM ERROR, e.g Postgres
   @Override
-  public void acquire(Connection connection, UUID id) {
+  public void acquireInserting(Connection connection, UUID id) {
     final String sql = "INSERT INTO TTO_RECORD_PROCESSED (IDT_TTO_RECORD) VALUES (?)";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
@@ -113,20 +126,37 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
-  private PreparedStatement createStm(Connection con) throws SQLException {
-    final StringBuilder sql = new StringBuilder()
-        .append("SELECT * FROM TTO_RECORD R \n")
-        .append("WHERE DAT_CREATED > ? \n")
-        .append("AND DAT_CREATED < ? \n")
-        .append("AND NOT EXISTS ( \n")
-        .append("  SELECT 1 FROM TTO_RECORD_PROCESSED \n")
-        .append("  WHERE IDT_TTO_RECORD = R.IDT_TTO_RECORD \n")
-        .append("  AND DAT_CREATED > ? \n")
-        .append("  AND DAT_CREATED < ? \n")
-        .append(") \n")
-        .append("ORDER BY DAT_CREATED ASC \n");
+  @Override
+  public void iterateNotProcessedRecordsUsingDeleteIdempotence(
+      Connection connection, Consumer<ProducedRecord> consumer
+  ) {
+    final StopWatch stopWatch = StopWatch.createStarted();
+    try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD")) {
+      try (ResultSet rs = stm.executeQuery()) {
+        log.info("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        while (rs.next()) {
+          consumer.accept(ProducedRecordConverter.map(rs));
+        }
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  @Override
+  public void acquireDeleting(Connection connection, UUID id) {
+    final String sql = "DELETE FROM RECORD_PROCESSED WHERE IDT_RECORD_PROCESSED = ? ";
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+      stm.setString(1, String.valueOf(id));
+      Validator.isTrue(stm.executeUpdate() == 1, "Couldn't delete record: %s", id);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  private PreparedStatement createStreamingStatement(Connection con, String sql) throws SQLException {
     final PreparedStatement stm = con.prepareStatement(
-        sql.toString(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
+        sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
     );
     stm.setFetchSize(BATCH_SIZE); // records to pull by time, in other words, the buffer size
 //    stm.setMaxRows(BATCH_SIZE * 5); // the maximum records this statement can retrieve at all, nao setar senao cai

@@ -71,7 +71,7 @@ abstract class RecordDAOTest {
     this.recordDAO.save(this.connection, strawberryWithHeaders());
 
     // act
-    this.recordDAO.iterateNotProcessedRecords(
+    this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
         this.connection,
         producedRecord -> {
           log.info("record={}", producedRecord);
@@ -90,9 +90,9 @@ abstract class RecordDAOTest {
     final var id = UUID.fromString("89bb4b51-d9e3-4e0d-a4b0-c9186d5dc02e");
 
     // act
-    this.recordDAO.acquire(this.connection, id);
+    this.recordDAO.acquireInserting(this.connection, id);
     assertThrows(DuplicatedRecordException.class, () -> {
-      this.recordDAO.acquire(this.connection, id);
+      this.recordDAO.acquireInserting(this.connection, id);
     });
 
     // assert
