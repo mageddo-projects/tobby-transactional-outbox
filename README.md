@@ -16,7 +16,7 @@ these numbers should increase considerably at a decent production environment ha
 
 ### Specs used at the test
 Below the computer used to perform the tests, all the required software ran at the same machine, 
-CPU and memory usage were pretty small (below 20%), then computer will less CPU and RAM with a better SSD should
+CPU and memory usage were pretty small (below 20%), so a computer with less CPU and RAM with a better SSD should
 show better results. 
 
 #### Processor
