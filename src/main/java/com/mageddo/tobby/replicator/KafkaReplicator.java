@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.mageddo.tobby.Parameter.LAST_PROCESSED_TIMESTAMP;
-import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 
 public class KafkaReplicator {
 
@@ -89,64 +87,25 @@ public class KafkaReplicator {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
-    try (Connection connection = this.dataSource.getConnection()) {
-      final boolean autoCommit = connection.getAutoCommit();
-      connection.setAutoCommit(false);
-      final int finalWave = wave;
+    try (Connection readConn = this.dataSource.getConnection(); Connection writeConn = this.dataSource.getConnection()) {
       final StopWatch stopWatch = StopWatch.createStarted();
-      final AtomicInteger counter = new AtomicInteger();
-      final AtomicReference<LocalDateTime> lastRecordCreatedAt = new AtomicReference<>();
-      this.recordDAO.iterateNotProcessedRecords(connection, (record) -> {
-        // FIXME criar um lote via codigo e commitar toda vez que esse lote atingir o limite,
-        // fazer os updates e inserts em outra conexao para nao dar commit na que esta fazendo o select,
-        // senao ela aborta o streaming
-        while (true) {
-          try {
-            final StopWatch recordStopWatch = StopWatch.createStarted();
-
-            this.recordDAO.acquire(connection, record.getId());
-            final long acquireTime = recordStopWatch.getSplitTime();
-            recordStopWatch.split();
-
-            this.producer
-                .send(toKafkaProducerRecord(record))
-                .get();
-            final long produceTime = recordStopWatch.getSplitTime();
-            recordStopWatch.split();
-
-            if (log.isTraceEnabled()) {
-              log.trace(
-                  "wave={}, status=recordProcessed, acquire={}, produce={}, record={}, id={}",
-                  finalWave,
-                  StopWatch.display(acquireTime),
-                  StopWatch.display(produceTime),
-                  recordStopWatch.getTime(),
-                  record.getId()
-              );
-            }
-            lastRecordCreatedAt.set(record.getCreatedAt());
-            counter.incrementAndGet();
-            break;
-          } catch (InterruptedException | ExecutionException e) {
-            log.warn("wave={}, status=failed-to-post-to-kafka, msg={}", finalWave, e.getMessage(), e);
-          } finally {
-            lastTimeProcessed.set(LocalDateTime.now());
-          }
-        }
-      }, this.findLastUpdate(connection));
-      this.updateLastUpdate(connection, lastRecordCreatedAt.get());
-      connection.setAutoCommit(true);
-      connection.setAutoCommit(autoCommit);
-      if (counter.get() > 0) {
+      final BufferedReplicator sender = this.createSender(writeConn, wave);
+      this.recordDAO.iterateNotProcessedRecords(readConn, (record) -> {
+        sender.send(record);
+        lastTimeProcessed.set(LocalDateTime.now());
+      }, this.findLastUpdate(readConn));
+      sender.flush();
+      sender.updateLastSent();
+      if (sender.size() > 0) {
         log.info(
             "wave={}, status=wave-ended, count={}, time={}, avg={}",
-            wave, StopWatch.display(counter.get()), stopWatch.getDisplayTime(), stopWatch.getTime() / counter.get()
+            wave, StopWatch.display(sender.size()), stopWatch.getDisplayTime(), stopWatch.getTime() / sender.size()
         );
       } else {
         if (log.isDebugEnabled()) {
           log.debug(
               "wave={}, status=wave-ended, count={}, time={}",
-              wave, counter.get(), stopWatch.getDisplayTime()
+              wave, sender.size(), stopWatch.getDisplayTime()
           );
         }
       }
@@ -156,6 +115,12 @@ public class KafkaReplicator {
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
+  }
+
+  private BufferedReplicator createSender(Connection writeConn, int wave) {
+    return new BufferedReplicator(
+        writeConn, this.recordDAO, this.parameterDAO, this.producer, wave
+    );
   }
 
 
@@ -168,15 +133,6 @@ public class KafkaReplicator {
     return ChronoUnit.MILLIS.between(lastTimeProcessed, LocalDateTime.now());
   }
 
-  private void updateLastUpdate(Connection connection, LocalDateTime createdAt) {
-    if (createdAt == null) {
-      if (log.isDebugEnabled()) {
-        log.debug("status=no-date-to-update");
-      }
-      return;
-    }
-    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt);
-  }
 
   private LocalDateTime findLastUpdate(Connection connection) {
     return this.parameterDAO
