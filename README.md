@@ -14,7 +14,7 @@ In other words, you will be able to process around  500 thousand messages per mi
 using Tobby while your have the Transactional Outbox guarantee,
 these numbers should increase considerably at a decent production environment hardware.
 
-### Specs
+### Specs used at the test
 Below the computer used to perform the tests, all the required software ran at the same machine, 
 CPU and memory usage were pretty small (below 20%), then computer will less CPU and RAM with a better SSD should
 show better results. 
