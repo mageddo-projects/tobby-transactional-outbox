@@ -3,11 +3,9 @@ package com.mageddo.tobby.producer.spring;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.factory.DAOFactory;
+import com.mageddo.tobby.Tobby;
+import com.mageddo.tobby.TobbyConfig;
 import com.mageddo.tobby.factory.SerializerCreator;
-import com.mageddo.db.DBUtils;
-import com.mageddo.tobby.producer.ProducerJdbc;
-import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -24,20 +22,31 @@ import org.springframework.kafka.core.KafkaTemplate;
 public class TobbyConfiguration {
 
   @Bean
+  public TobbyConfig tobbyConfig(DataSource dataSource) {
+    return TobbyConfig.build(dataSource);
+  }
+
+  @Bean
+  public Tobby tobby(TobbyConfig tobbyConfig) {
+    return Tobby.builder()
+        .tobbyConfig(tobbyConfig)
+        .build();
+  }
+
+  @Bean
   public ProducerSpring producerSpring(RecordDAO recordDAO, DataSource dataSource) {
     return new ProducerSpring(recordDAO, dataSource);
   }
 
   @Bean
-  public SimpleJdbcKafkaProducerAdapter<?, ?> simpleJdbcKafkaProducerAdapter(
-      RecordDAO recordDAO, DataSource dataSource,
+  public Producer<?, ?> simpleJdbcKafkaProducerAdapter(
+      Tobby tobby,
       @Value("${spring.kafka.producer.key-serializer:}") String keySerializer,
       @Value("${spring.kafka.producer.value-serializer:}") String valueSerializer
   ) {
-    return new SimpleJdbcKafkaProducerAdapter<>(
+    return tobby.kafkaProducer(
         SerializerCreator.create(keySerializer, StringSerializer.class.getName()),
-        SerializerCreator.create(valueSerializer, StringSerializer.class.getName()),
-        new ProducerJdbc(recordDAO, dataSource)
+        SerializerCreator.create(valueSerializer, StringSerializer.class.getName())
     );
   }
 
@@ -48,10 +57,8 @@ public class TobbyConfiguration {
   }
 
   @Bean
-  public RecordDAO recordDAO(DataSource dataSource) {
-    return DAOFactory.createRecordDao(DBUtils.discoverDB(dataSource));
+  public RecordDAO recordDAO(TobbyConfig tobbyConfig) {
+    return tobbyConfig.recordDAO();
   }
-
-
 
 }
