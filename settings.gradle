@@ -1,5 +1,5 @@
 rootProject.name = "tobby-transactional-outbox"
 
-include 'tobby-transactional-outbox-jdbi'
-include 'tobby-transactional-outbox-spring'
+include 'jdbi'
+include 'spring'
 include 'templates'

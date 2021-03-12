@@ -2,16 +2,16 @@ package com.mageddo.tobby.factory;
 
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordDAOGeneric;
-import com.mageddo.tobby.internal.utils.DB;
+import com.mageddo.db.DB;
 
 public class DAOFactory {
   private DAOFactory() {
   }
 
   public static RecordDAO createRecordDao(DB db){
-    switch (db){
+    switch (db.getName()){
       default:
-        return new RecordDAOGeneric();
+        return new RecordDAOGeneric(db);
 //      case ORACLE:
 //      case POSTGRES:
 //        throw new UnsupportedOperationException();

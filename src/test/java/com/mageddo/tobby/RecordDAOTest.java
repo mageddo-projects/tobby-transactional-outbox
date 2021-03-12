@@ -3,6 +3,7 @@ package com.mageddo.tobby;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.mageddo.tobby.converter.HeadersConverter.encodeBase64;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static templates.ProducerRecordTemplates.strawberryWithHeaders;
 
 @Slf4j
@@ -32,6 +34,7 @@ abstract class RecordDAOTest {
     this.recordDAO = tobby.recordDAO();
     this.connection = dataSource().getConnection();
   }
+
   @AfterEach
   void afterEach() throws SQLException {
     this.shutdown();
@@ -68,7 +71,7 @@ abstract class RecordDAOTest {
     this.recordDAO.save(this.connection, strawberryWithHeaders());
 
     // act
-    this.recordDAO.iterateNotProcessedRecords(
+    this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
         this.connection,
         producedRecord -> {
           log.info("record={}", producedRecord);
@@ -81,15 +84,29 @@ abstract class RecordDAOTest {
     assertEquals(3, counter.get());
   }
 
+  @Test
+  void mustThrowDuplicatedRecordExceptionWhenAcquiresTwice() {
+    // arrange
+    final var id = UUID.fromString("89bb4b51-d9e3-4e0d-a4b0-c9186d5dc02e");
+
+    // act
+    this.recordDAO.acquireInserting(this.connection, id);
+    assertThrows(DuplicatedRecordException.class, () -> {
+      this.recordDAO.acquireInserting(this.connection, id);
+    });
+
+    // assert
+  }
+
   void execute(String sql) {
     try (var stm = this.connection.prepareStatement(sql)) {
       stm.executeUpdate();
-    } catch (SQLException e){
+    } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
   }
 
-  void shutdown(){
+  void shutdown() {
 
   }
 }
