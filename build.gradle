@@ -1,6 +1,9 @@
 allprojects {
 
   apply plugin: "java-library"
+  apply plugin: "java-library"
+  apply plugin: "maven"
+  apply from: "${rootDir}/nexus.gradle"
 
   repositories {
     mavenLocal()
