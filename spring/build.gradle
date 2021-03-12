@@ -1,3 +1,6 @@
+apply plugin: "maven"
+apply from: "${rootDir}/nexus.gradle"
+
 dependencies {
   implementation(project(":"))
   implementation group: 'org.springframework', name: 'spring-context', version: '3.0.0.RELEASE'
