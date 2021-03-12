@@ -1,5 +1,7 @@
 package com.mageddo.tobby;
 
+import com.mageddo.tobby.replicator.ReplicatorFactory;
+
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,7 +17,7 @@ public interface RecordDAO {
 
   /**
    * Stores Record at the database table to be replicated
-   * by {@link com.mageddo.tobby.replicator.KafkaReplicator} later.
+   * by {@link ReplicatorFactory} later.
    */
   ProducedRecord save(Connection connection, ProducerRecord record);
 

@@ -14,15 +14,13 @@ import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.StopWatch;
 
 import org.apache.kafka.clients.producer.Producer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.tobby.internal.utils.StopWatch.display;
 
-public class KafkaReplicator {
-
-  public static final int NOTHING_TO_PROCESS_INTERVAL_SECONDS = 10;
-  private final Logger log = LoggerFactory.getLogger(getClass());
+@Slf4j
+public class ReplicatorFactory {
 
   /**
    * Producer used to send messages to kafka server.
@@ -59,7 +57,7 @@ public class KafkaReplicator {
 
   private final ParameterDAO parameterDAO;
 
-  public KafkaReplicator(
+  public ReplicatorFactory(
       Producer<byte[], byte[]> producer, DataSource dataSource,
       RecordDAO recordDAO, ParameterDAO parameterDAO,
       Duration idleTimeout,
@@ -75,14 +73,18 @@ public class KafkaReplicator {
   }
 
   public void replicate() {
+    LocalDateTime lastTimeProcessed = LocalDateTime.now();
     int totalProcessed = 0;
     log.info("status=replication-started");
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
       final int processed = this.processWave(wave);
+      if(processed != 0){
+        lastTimeProcessed = LocalDateTime.now();
+      }
       totalProcessed += processed;
       if (stopWatch.getDuration()
-          .toMillis() >= 1000) {
+          .toMillis() >= 1_000) {
         log.info(
             "wave={}, status=wave-ended, processed={}, time={}, avg={}, totalProcessed={}",
             display(wave), display(processed), stopWatch.getDisplayTime(),
@@ -101,6 +103,10 @@ public class KafkaReplicator {
               display(wave), display(totalProcessed)
           );
         }
+      }
+      if(!this.shouldRun(lastTimeProcessed)){
+        log.info("status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.idleTimeout);
+        return;
       }
     }
 //    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));

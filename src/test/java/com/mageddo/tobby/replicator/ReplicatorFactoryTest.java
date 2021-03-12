@@ -26,17 +26,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class KafkaReplicatorTest {
+class ReplicatorFactoryTest {
 
   @Mock
   Producer<byte[], byte[]> mockProducer;
-
-  KafkaReplicator replicator;
-
+  ReplicatorFactory replicator;
   com.mageddo.tobby.producer.Producer producer;
-
   TobbyConfig tobby;
-
   DataSource dataSource;
 
   @BeforeEach
@@ -65,12 +61,13 @@ class KafkaReplicatorTest {
   @Test
   void mustNotProcessAlreadyAcquiredRecords() throws SQLException {
     // arrange
-    doReturn(mock(Future.class)).when(this.mockProducer)
+    doReturn(mock(Future.class))
+        .when(this.mockProducer)
         .send(any());
     final var sent = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
     try(final var connection = this.dataSource.getConnection()){
-      this.tobby.recordDAO().acquireInserting(connection, sent.getId());
+      this.tobby.recordDAO().acquireDeleting(connection, sent.getId());
     }
 
     // act

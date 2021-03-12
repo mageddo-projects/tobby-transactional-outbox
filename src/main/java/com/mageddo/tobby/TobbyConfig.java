@@ -16,7 +16,7 @@ import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
-import com.mageddo.tobby.replicator.KafkaReplicator;
+import com.mageddo.tobby.replicator.ReplicatorFactory;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -77,11 +77,11 @@ public interface TobbyConfig {
     return new SimpleJdbcKafkaProducerAdapter<>(keySerializer, valueSerializer, this.producerJdbc());
   }
 
-  default KafkaReplicator replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
+  default ReplicatorFactory replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
     return this.replicator(producer, idleTimeout, DEFAULT_MAX_RECORD_DELAY_TO_COMMIT);
   }
 
-  default KafkaReplicator replicator(
+  default ReplicatorFactory replicator(
       Producer<byte[], byte[]> producer, Duration idleTimeout, Duration maxRecordDelayToCommit
   ) {
     return this.replicatorFactory()
