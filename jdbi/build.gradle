@@ -1,3 +1,6 @@
+apply plugin: "maven"
+apply from: "${rootDir}/nexus.gradle"
+
 dependencies {
   implementation(project(":"))
   implementation group: 'org.jdbi', name: 'jdbi3-core', version: '3.0.0'

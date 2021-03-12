@@ -1,9 +1,6 @@
 allprojects {
 
   apply plugin: "java-library"
-  apply plugin: "java-library"
-  apply plugin: "maven"
-  apply from: "${rootDir}/nexus.gradle"
 
   repositories {
     mavenLocal()
@@ -45,6 +42,10 @@ allprojects {
   }
 
 }
+
+apply plugin: "maven"
+apply from: "${rootDir}/nexus.gradle"
+
 
 dependencies {
   testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
