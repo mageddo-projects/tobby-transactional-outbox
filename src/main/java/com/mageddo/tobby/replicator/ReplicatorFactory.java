@@ -127,8 +127,24 @@ public class ReplicatorFactory {
         Connection readConn = this.dataSource.getConnection();
         Connection writeConn = this.dataSource.getConnection()
     ) {
-      final StreamingIterator replicator = this.createReplicator(readConn, writeConn, wave);
-      return replicator.iterate();
+      final boolean autoCommit = writeConn.getAutoCommit();
+      if(autoCommit){
+        if(log.isDebugEnabled()){
+          log.info("status=disabling-auto-commit-for-this-transaction, wave={}", wave);
+        }
+        writeConn.setAutoCommit(false);
+      }
+      try {
+        final StreamingIterator replicator = this.createReplicator(readConn, writeConn, wave);
+        return replicator.iterate();
+      } finally {
+        if(autoCommit){
+          if(log.isDebugEnabled()){
+            log.info("status=enabling-auto-commit-back, wave={}", wave);
+          }
+          writeConn.setAutoCommit(true);
+        }
+      }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
@@ -159,6 +175,5 @@ public class ReplicatorFactory {
   private long millisPassed(LocalDateTime lastTimeProcessed) {
     return ChronoUnit.MILLIS.between(lastTimeProcessed, LocalDateTime.now());
   }
-
 
 }
