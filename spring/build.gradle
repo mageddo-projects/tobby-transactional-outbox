@@ -2,7 +2,7 @@ apply plugin: "maven"
 apply from: "${rootDir}/nexus.gradle"
 
 dependencies {
-  implementation(project(":"))
+  api(project(":"))
   implementation group: 'org.springframework', name: 'spring-context', version: '3.0.0.RELEASE'
   implementation group: 'org.springframework', name: 'spring-jdbc', version: '3.0.0.RELEASE'
   implementation group: 'org.springframework.boot', name: 'spring-boot-autoconfigure', version: '1.2.0.RELEASE'
