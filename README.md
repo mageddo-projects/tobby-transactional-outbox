@@ -3,6 +3,41 @@ Tobby - A transactional outbox implementation
 
 ![Tobby](https://i.imgur.com/SOomiFq.png)
 
+## Getting Started
+
+### Vanilla
+
+### Spring
+
+##### Configure the deps
+```bash
+implementation 'com.mageddo.tobby-transactional-outbox:spring:1.1.0'
+```
+
+##### Configure the database tables
+You need 2 new tables, see migration [configuration directory][2] and choose one compatible with your DB
+
+##### Configure Spring
+
+```java
+@SpringBootApplication
+@EnableTobbyTransactionalOutbox
+public class App {
+  public static void main(String[] args){
+    SpringApplication.run(App.class, args);
+  }
+}
+```
+
+Not just inject the old and good `KafkaTemplate` and use it
+
+```
+@Autowired 
+KafkaTemplate kafkaTemplate;
+
+KafkaTemplate.send(...);
+```
+
 ## Requirements
 * Java 8+
 * Kafka 0.11+
@@ -13,7 +48,6 @@ Tobby - A transactional outbox implementation
    * SQL Server
    * HSQLDB
    * H2
-
 
 ## Performance Tests
 
@@ -91,3 +125,4 @@ Write speed test
 ```
 
 [1]: https://github.com/mageddo-projects/tobby-transactional-outbox/tree/f1ad98e/src/test/java/apps
+[2]: src/main/resources/com/mageddo/tobby/db
