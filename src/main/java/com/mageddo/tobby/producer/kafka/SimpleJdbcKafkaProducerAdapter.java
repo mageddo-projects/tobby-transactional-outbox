@@ -28,10 +28,10 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   private final JdbcKafkaProducer<K, V> jdbcKafkaProducer;
 
   public SimpleJdbcKafkaProducerAdapter(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer, ProducerJdbc producerJdbc
+      Serializer<K> keySerializer, Serializer<V> valueSerializer, com.mageddo.tobby.producer.Producer producer
   ) {
     this(new JdbcKafkaProducer<>(
-        producerJdbc, keySerializer, valueSerializer
+        producer, keySerializer, valueSerializer
     ));
   }
 

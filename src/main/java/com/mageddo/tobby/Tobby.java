@@ -20,8 +20,8 @@ public class Tobby {
   //
   // vanilla producers
   //
-  public ProducerJdbc producerJdbc(){
-    return this.tobbyConfig.producerJdbc();
+  public com.mageddo.tobby.producer.Producer producer(){
+    return this.tobbyConfig.producer();
   }
 
   //
@@ -51,6 +51,12 @@ public class Tobby {
       Producer<K, V> delegate, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
     return this.tobbyConfig.jdbcProducerAdapter(delegate, keySerializer, valueSerializer);
+  }
+
+  public <K, V> Producer<K, V> kafkaProducer(
+      com.mageddo.tobby.producer.Producer producer, Serializer<K> keySerializer, Serializer<V> valueSerializer
+  ) {
+    return this.tobbyConfig.jdbcProducerAdapter( keySerializer, valueSerializer, producer);
   }
 
   //

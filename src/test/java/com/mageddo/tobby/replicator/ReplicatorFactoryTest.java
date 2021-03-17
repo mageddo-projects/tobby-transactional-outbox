@@ -40,7 +40,7 @@ class ReplicatorFactoryTest {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.tobby = TobbyConfig.build(this.dataSource);
     this.replicator = spy(this.tobby.replicator(this.mockProducer, Duration.ofMillis(600)));
-    this.producer = this.tobby.producerJdbc();
+    this.producer = this.tobby.producer();
   }
 
   @Test
