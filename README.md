@@ -11,7 +11,7 @@ Tobby - A transactional outbox implementation
 
 ##### Configure the deps
 ```bash
-implementation 'com.mageddo.tobby-transactional-outbox:spring:1.1.5'
+implementation 'com.mageddo.tobby-transactional-outbox:spring:1.1.6'
 ```
 
 ##### Configure the database tables
@@ -101,7 +101,7 @@ Configured Voltage: 1.2 V
 ```
 product: WDC WDS240G2G0A-
 vendor: Western Digital
-bus info: scsi@4:1.1.5
+bus info: scsi@4:1.1.6
 serial: 182394807269
 size: 223GiB (240GB)
 capabilities: partitioned partitioned:dos
