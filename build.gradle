@@ -69,7 +69,7 @@ release {
   buildTasks = []
 }
 
-confirmReleaseVersion.doLast {
+updateVersion.doLast {
   def f = file("${project.projectDir}/README.md")
   def text = f.text
   f.withWriter { w ->
