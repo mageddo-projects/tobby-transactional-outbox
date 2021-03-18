@@ -58,8 +58,18 @@ apply plugin: "maven"
 apply plugin: "net.researchgate.release"
 apply from: "${rootDir}/nexus.gradle"
 
+
 release {
-  project.ext.set("release.useAutomaticVersion", true)
+
+
+
+//  project.ext.set("release.useAutomaticVersion", true)
+  def rg = ~/(\d+)([^\d]*$)/
+  def m = rg.matcher(String.valueOf(project.version))
+  project.ext.set(
+      "release.releaseVersion",
+      m.replaceAll("${(m[0][1] as int) + 1}${m[0][2]}")
+  )
   git {
     requireBranch = 'main'
   }
