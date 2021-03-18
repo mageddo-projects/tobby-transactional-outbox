@@ -33,6 +33,16 @@ class ProducerSpringTest {
   JdbcTemplate jdbcTemplate;
 
   @Test
+  void mustInjectSpringProducerAsDefault(){
+    // arrange
+
+    // act
+
+    // assert
+    assertEquals(ProducerSpring.class, this.producer.getClass());
+  }
+
+  @Test
   void mustProduceMessagesSavingToDatabase(){
     // arrange
     final ProducerRecord record = ProducerRecordTemplates.grape();

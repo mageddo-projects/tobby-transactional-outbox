@@ -4,7 +4,6 @@ import java.time.Duration;
 
 import javax.sql.DataSource;
 
-import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.replicator.ReplicatorFactory;
 
 import org.apache.kafka.clients.producer.Producer;
