@@ -75,6 +75,8 @@ confirmReleaseVersion.doLast {
   f.withWriter { w ->
     w << text.replaceAll("(:\\ )*\\d+\\.\\d+\\.\\d+", "\$1${version}")
   }
+  def versionFile = file('build.gradle')
+  versionFile.text = versionFile.text.replaceFirst(~/version=(\d++\.\d++\.\d++)/, 'version=\'$1\'')
 }
 
 dependencies {
