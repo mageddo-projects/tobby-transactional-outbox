@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Import;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(TobbyConfiguration.class)
+@Import(TobbySpringConfiguration.class)
 public @interface EnableTobbyTransactionalOutbox {
 }

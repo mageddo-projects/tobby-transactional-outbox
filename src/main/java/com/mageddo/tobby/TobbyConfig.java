@@ -1,10 +1,5 @@
 package com.mageddo.tobby;
 
-import java.time.Duration;
-
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-
 import com.mageddo.db.DB;
 import com.mageddo.db.DBUtils;
 import com.mageddo.db.SimpleDataSource;
@@ -18,24 +13,31 @@ import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
 import com.mageddo.tobby.replicator.ReplicatorFactory;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.common.serialization.Serializer;
-
+import dagger.Binds;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.Serializer;
+
+import javax.inject.Singleton;
+import javax.sql.DataSource;
+
+import java.time.Duration;
 
 import static com.mageddo.tobby.factory.KafkaReplicatorFactory.DEFAULT_MAX_RECORD_DELAY_TO_COMMIT;
 
 @Singleton
 @Component(
     modules = {
-        TobbyConfig.ConnectionBasedModule.class
+        TobbyConfig.ConnectionBasedModule.class,
+        TobbyConfig.BindsModule.class
     }
 )
 public interface TobbyConfig {
 
-  ProducerJdbc producerJdbc();
+  com.mageddo.tobby.producer.Producer producer();
 
   KafkaReplicatorFactory replicatorFactory();
 
@@ -47,8 +49,20 @@ public interface TobbyConfig {
     return new SimpleJdbcKafkaProducerAdapter<>(
         SerializerCreator.create(keySerializer, null),
         SerializerCreator.create(valueSerializer, null),
-        this.producerJdbc()
+        this.producer()
     );
+  }
+
+  default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
+      Serializer<K> keySerializer, Serializer<V> valueSerializer
+  ) {
+    return this.jdbcProducerAdapter(keySerializer, valueSerializer, this.producer());
+  }
+
+  default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
+      Serializer<K> keySerializer, Serializer<V> valueSerializer, com.mageddo.tobby.producer.Producer producer
+  ) {
+    return new SimpleJdbcKafkaProducerAdapter<>(keySerializer, valueSerializer, producer);
   }
 
   default <K, V> JdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
@@ -69,12 +83,6 @@ public interface TobbyConfig {
             SerializerCreator.create(valueSerializer, null)
         )
     );
-  }
-
-  default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer
-  ) {
-    return new SimpleJdbcKafkaProducerAdapter<>(keySerializer, valueSerializer, this.producerJdbc());
   }
 
   default ReplicatorFactory replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
@@ -135,6 +143,12 @@ public interface TobbyConfig {
     }
   }
 
+  @Module
+  public interface BindsModule {
+    @Binds
+    com.mageddo.tobby.producer.Producer producer(ProducerJdbc producerJdbc);
+  }
+
   static TobbyConfig build(String url, String username, String password) {
     return build(new SimpleDataSource(url, password, username));
   }
@@ -145,4 +159,5 @@ public interface TobbyConfig {
         .connectionBasedModule(new ConnectionBasedModule(dataSource))
         .build();
   }
+
 }

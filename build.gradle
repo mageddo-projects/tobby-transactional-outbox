@@ -1,3 +1,14 @@
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "net.researchgate:gradle-release:2.8.1"
+  }
+}
+
 allprojects {
 
   apply plugin: "java-library"
@@ -44,12 +55,31 @@ allprojects {
 }
 
 apply plugin: "maven"
+apply plugin: "net.researchgate.release"
 apply from: "${rootDir}/nexus.gradle"
 
+release {
+  project.ext.set("release.useAutomaticVersion", true)
+  git {
+    requireBranch = 'main'
+  }
+  failOnCommitNeeded = false
+  failOnPublishNeeded = false
+  failOnUnversionedFiles = false
+  buildTasks = []
+}
+
+confirmReleaseVersion.doLast {
+  def f = file("${project.projectDir}/README.md")
+  def text = f.text
+  f.withWriter { w ->
+    w << text.replaceAll("(:\\ )*\\d+\\.\\d+\\.\\d+", "\$1${version}")
+  }
+}
 
 dependencies {
-  testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
 
+  testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
   testImplementation("io.zonky.test:embedded-postgres:1.2.9")
   testRuntimeOnly enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:10.4.0")
 
@@ -57,6 +87,4 @@ dependencies {
   testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
   testImplementation group: 'com.h2database', name: 'h2', version: '1.4.200'
   testImplementation group: 'com.zaxxer', name: 'HikariCP', version: '4.0.3'
-
-
 }
