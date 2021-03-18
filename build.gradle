@@ -61,9 +61,7 @@ apply from: "${rootDir}/nexus.gradle"
 
 release {
 
-
-
-//  project.ext.set("release.useAutomaticVersion", true)
+  project.ext.set("release.useAutomaticVersion", true)
   def rg = ~/(\d+)([^\d]*$)/
   def m = rg.matcher(String.valueOf(project.version))
   project.ext.set(
