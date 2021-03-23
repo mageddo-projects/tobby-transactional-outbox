@@ -1,12 +1,16 @@
 package com.mageddo.tobby.producer.spring;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.Producer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,15 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import templates.ProducerRecordTemplates;
 
-import java.sql.Connection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -36,17 +36,14 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(SpringExtension.class)
 class ProducerSpringTest {
 
-  @Autowired
-  Producer producer;
-
   @SpyBean
-  ProducerSpring producerSpy;
+  Producer producer;
 
   @Autowired
   JdbcTemplate jdbcTemplate;
 
-  @Captor
-  ArgumentCaptor<Connection> connectionsCaptor;
+  @Autowired
+  TransactionalService transactionalService;
 
   @Test
   void mustInjectSpringProducerAsDefault() {
@@ -84,7 +81,15 @@ class ProducerSpringTest {
   @Test
   void mustCloseConnectionAutomaticallyWhenMethodWhichCalledWereNotTransactional() {
     // arrange
-    final var wantedInvocations = 2;
+    final var capturedConnections = new ArrayList<Connection>();
+    doAnswer(invocation -> {
+      final var r = invocation.callRealMethod();
+      capturedConnections.add((Connection) r);
+      return r;
+    })
+        .when((ProducerSpring) this.producer)
+        .getConnection();
+    final var wantedInvocations = 3;
     final var record = ProducerRecordTemplates.grape();
 
     // act
@@ -94,13 +99,54 @@ class ProducerSpringTest {
     this.producer.send(record);
     this.producer.send(record);
 
-    verify(this.producerSpy, times(wantedInvocations)).getConnection();
+    verify((ProducerSpring) this.producer, times(wantedInvocations)).getConnection();
 
-    final var capturedConns = this.connectionsCaptor.getAllValues();
-    assertEquals(
-        wantedInvocations, capturedConns.size()
-    );
-    assertEquals(1, new HashSet<>(capturedConns).size());
+    assertEquals(wantedInvocations, capturedConnections.size());
+    assertEquals(wantedInvocations, new HashSet<>(capturedConnections).size());
+
+  }
+
+
+  @Test
+  void mustReuseSameConnectionWhenSendIsRanInsideATransactionalMethod() {
+    // arrange
+    final var capturedConnections = new ArrayList<Connection>();
+    doAnswer(invocation -> {
+      final var r = invocation.callRealMethod();
+      capturedConnections.add((Connection) r);
+      return r;
+    })
+        .when((ProducerSpring) this.producer)
+        .getConnection();
+    final var wantedInvocations = 3;
+    final var record = ProducerRecordTemplates.grape();
+
+    // act
+    this.transactionalService.send(record, wantedInvocations);
+
+    // assert
+    verify((ProducerSpring) this.producer, times(wantedInvocations)).getConnection();
+
+    assertEquals(wantedInvocations, capturedConnections.size());
+    assertEquals(1, new HashSet<>(capturedConnections).size());
+
+  }
+
+  @Service
+  public static class TransactionalService {
+
+    private final Producer producer;
+
+    TransactionalService(Producer producer) {
+      this.producer = producer;
+    }
+
+    @Transactional
+    public void send(ProducerRecord record, int wantedInvocations) {
+      for (int i = 0; i < wantedInvocations; i++) {
+        this.producer.send(record);
+      }
+    }
 
   }
 
