@@ -41,7 +41,7 @@ public class KafkaReplicatorFactory {
     return new ReplicatorFactory(
         producer, this.dataSource,
         this.recordDAO, this.parameterDAO,
-        idleTimeout, maxRecordDelayToCommit,
+        recordProcessedDAO, idleTimeout, maxRecordDelayToCommit,
         strategy
     );
   }

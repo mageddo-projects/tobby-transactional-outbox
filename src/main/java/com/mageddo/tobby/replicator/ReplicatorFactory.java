@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.StopWatch;
 
@@ -57,12 +58,15 @@ public class ReplicatorFactory {
 
   private final ParameterDAO parameterDAO;
 
+  private final RecordProcessedDAO recordProcessedDAO;
+
   public ReplicatorFactory(
       Producer<byte[], byte[]> producer, DataSource dataSource,
       RecordDAO recordDAO, ParameterDAO parameterDAO,
-      Duration idleTimeout,
+      RecordProcessedDAO recordProcessedDAO, Duration idleTimeout,
       Duration maxRecordDelayToCommit,
-      IdempotenceStrategy idempotenceStrategy) {
+      IdempotenceStrategy idempotenceStrategy
+  ) {
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.producer = producer;
@@ -70,6 +74,7 @@ public class ReplicatorFactory {
     this.idleTimeout = idleTimeout;
     this.maxRecordDelayToCommit = maxRecordDelayToCommit;
     this.idempotenceStrategy = idempotenceStrategy;
+    this.recordProcessedDAO = recordProcessedDAO;
   }
 
   public void replicate() {
@@ -160,6 +165,11 @@ public class ReplicatorFactory {
       case DELETE:
         return new DeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
+            new BufferedReplicator(this.producer, wave)
+        );
+      case DELETE_WITH_HISTORY:
+        return new DeleteWithHistoryIdempotenceBasedReplicator(
+            readConn, writeConn, this.recordDAO, this.recordProcessedDAO,
             new BufferedReplicator(this.producer, wave)
         );
       default:

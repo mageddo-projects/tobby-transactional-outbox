@@ -127,9 +127,7 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void iterateNotProcessedRecordsUsingDeleteIdempotence(
-      Connection connection, Consumer<ProducedRecord> consumer
-  ) {
+  public void iterateOverRecords(Connection connection, Consumer<ProducedRecord> consumer) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD")) {
       try (ResultSet rs = stm.executeQuery()) {

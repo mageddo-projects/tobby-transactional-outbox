@@ -39,7 +39,7 @@ public interface RecordDAO {
    */
   void acquireInserting(Connection connection, UUID id);
 
-  void iterateNotProcessedRecordsUsingDeleteIdempotence(
+  void iterateOverRecords(
       Connection connection, Consumer<ProducedRecord> consumer
   );
 
