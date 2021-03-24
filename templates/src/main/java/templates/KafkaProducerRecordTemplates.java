@@ -15,4 +15,8 @@ public class KafkaProducerRecordTemplates {
         List.of(new RecordHeader("version", "1".getBytes()))
     );
   }
+
+  public static ProducerRecord<String, String> mango() {
+    return new ProducerRecord<>("fruit", "Mango");
+  }
 }

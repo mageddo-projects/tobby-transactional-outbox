@@ -1,10 +1,12 @@
 package com.mageddo.tobby.producer.kafka;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -59,10 +61,13 @@ public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     this.kafkaDelegate.close();
   }
 
-  @Override
   public void close(long timeout, TimeUnit unit) {
     this.jdbcDelegate.close(timeout, unit);
     this.kafkaDelegate.close(timeout, unit);
+  }
+
+  public void close(Duration timeout) {
+    this.close(timeout.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -80,6 +85,11 @@ public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
       Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId
   ) {
     this.jdbcDelegate.initTransactions();
+  }
+
+  public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata)
+      throws ProducerFencedException {
+    this.jdbcDelegate.sendOffsetsToTransaction(offsets, groupMetadata);
   }
 
   @Override

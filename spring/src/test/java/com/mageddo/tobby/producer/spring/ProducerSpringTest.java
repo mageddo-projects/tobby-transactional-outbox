@@ -1,5 +1,11 @@
 package com.mageddo.tobby.producer.spring;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.Producer;
 
@@ -16,18 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import templates.ProducerRecordTemplates;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 

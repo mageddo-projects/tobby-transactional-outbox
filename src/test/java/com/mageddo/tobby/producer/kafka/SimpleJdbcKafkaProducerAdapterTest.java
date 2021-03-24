@@ -1,5 +1,6 @@
 package com.mageddo.tobby.producer.kafka;
 
+import java.time.Duration;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,11 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import templates.KafkaProducerRecordTemplates;
 import templates.RecordMetadataTemplates;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
@@ -73,12 +75,13 @@ class SimpleJdbcKafkaProducerAdapterTest {
     // assert
     final RecordMetadata metadata = future.get();
     assertEquals("fruit-1@-1", metadata.toString());
-    assertEquals("fruit-1@-1", callbackMetadata.get().toString());
+    assertEquals("fruit-1@-1", callbackMetadata.get()
+        .toString());
 
   }
 
   @Test
-  void mustClose(){
+  void mustClose() {
 
     // arrange
 
@@ -86,13 +89,12 @@ class SimpleJdbcKafkaProducerAdapterTest {
     this.producer.close();
 
     // assert
-    assertTrue(this.producer.executorService.isShutdown());
-    assertTrue(this.producer.executorService.isTerminated());
+
 
   }
 
   @Test
-  void mustCloseWithTimeout(){
+  void mustCloseWithTimeout() {
 
     // arrange
 
@@ -100,8 +102,40 @@ class SimpleJdbcKafkaProducerAdapterTest {
     this.producer.close(3, TimeUnit.SECONDS);
 
     // assert
-    assertTrue(this.producer.executorService.isShutdown());
-    assertTrue(this.producer.executorService.isTerminated());
 
+
+  }
+
+  @Test
+  void mustCloseUsingDurationMethodSignature() {
+    // arrange
+
+    // act
+    this.producer.close(Duration.ofSeconds(2));
+
+    // assert
+
+  }
+
+  @Test
+  void mustSendAndExecuteCallbackSynchronouslyAndNotAbortWhenCallbackFails() throws Exception {
+    // arrange
+
+    doReturn(RecordMetadataTemplates.build())
+        .when(this.jdbcKafkaProducer)
+        .send(any());
+
+    final var record = KafkaProducerRecordTemplates.mango();
+
+    // act
+    final var metadata = this.producer
+        .send(record, (m, exception) -> {
+          throw new IllegalStateException("Oops");
+        })
+        .get();
+
+    // assert
+    assertNotNull(metadata);
+    assertEquals("fruit", metadata.topic());
   }
 }
