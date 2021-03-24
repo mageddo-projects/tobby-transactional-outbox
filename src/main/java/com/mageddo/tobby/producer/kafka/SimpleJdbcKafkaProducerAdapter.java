@@ -4,10 +4,10 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import com.mageddo.tobby.internal.utils.SyncFuture;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
@@ -21,9 +21,11 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.Serializer;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
-  final ExecutorService executorService;
   private final JdbcKafkaProducer<K, V> jdbcKafkaProducer;
 
   public SimpleJdbcKafkaProducerAdapter(
@@ -34,18 +36,9 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     ));
   }
 
-  public SimpleJdbcKafkaProducerAdapter(JdbcKafkaProducer<K, V> jdbcKafkaProducer) {
-    this(Executors.newFixedThreadPool(5, r -> {
-      Thread t = Executors.defaultThreadFactory().newThread(r);
-      t.setDaemon(true);
-      return t;
-    }), jdbcKafkaProducer);
-  }
-
   public SimpleJdbcKafkaProducerAdapter(
-      ExecutorService executorService, JdbcKafkaProducer<K, V> jdbcKafkaProducer
+      JdbcKafkaProducer<K, V> jdbcKafkaProducer
   ) {
-    this.executorService = executorService;
     this.jdbcKafkaProducer = jdbcKafkaProducer;
   }
 
@@ -91,10 +84,12 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   @Override
   public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
     final RecordMetadata metadata = this.save(record);
-    return this.executorService.submit(() -> {
+    try {
       callback.onCompletion(metadata, null);
-      return metadata;
-    });
+    } catch (Throwable e){
+      log.warn("status=callbackFailed, msg={}", e.getMessage(), e);
+    }
+    return this.buildPromise(metadata);
   }
 
   @Override
@@ -114,20 +109,15 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
   @Override
   public void close() {
-    this.executorService.shutdown();
+    // the silence is golden
   }
 
   public void close(long timeout, TimeUnit unit) {
-    try {
-      this.executorService.shutdown();
-      this.executorService.awaitTermination(timeout, unit);
-    } catch (InterruptedException e) {
-      this.executorService.shutdownNow();
-    }
+    // the silence is golden
   }
 
   public void close(Duration timeout) {
-    this.close(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    // the silence is golden
   }
 
   private void transactionUnsupportedError() {
@@ -137,7 +127,7 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   }
 
   private Future<RecordMetadata> buildPromise(RecordMetadata metadata) {
-    return this.executorService.submit(() -> metadata);
+    return new SyncFuture<>(metadata);
   }
 
   private RecordMetadata save(ProducerRecord<K, V> record) {
