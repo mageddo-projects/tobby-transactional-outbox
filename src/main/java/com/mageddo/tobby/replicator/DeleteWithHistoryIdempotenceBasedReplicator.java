@@ -6,25 +6,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.RecordProcessedDAO;
 
-public class DeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
+public class DeleteWithHistoryIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
   private final RecordDAO recordDAO;
+  private final RecordProcessedDAO recordProcessedDAO;
   private final Connection writeConn;
   private final Connection readConn;
   private final BufferedReplicator replicator;
 
-  public DeleteIdempotenceBasedReplicator(Connection readConn, Connection writeConn, RecordDAO recordDAO,
-      BufferedReplicator replicator) {
+  public DeleteWithHistoryIdempotenceBasedReplicator(
+      Connection readConn, Connection writeConn, RecordDAO recordDAO,
+      RecordProcessedDAO recordProcessedDAO, BufferedReplicator replicator) {
     this.recordDAO = recordDAO;
     this.writeConn = writeConn;
     this.readConn = readConn;
+    this.recordProcessedDAO = recordProcessedDAO;
     this.replicator = replicator;
   }
 
   @Override
   public boolean send(ProducedRecord record) {
     this.recordDAO.acquireDeleting(this.writeConn, record.getId());
+    this.recordProcessedDAO.save(this.writeConn, record);
     if (this.replicator.send(record)) {
       this.flush();
     }

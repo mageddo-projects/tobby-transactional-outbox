@@ -26,11 +26,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class ReplicatorFactoryTest {
+class ReplicatorsTest {
 
   @Mock
   Producer<byte[], byte[]> mockProducer;
-  ReplicatorFactory replicator;
   com.mageddo.tobby.producer.Producer producer;
   TobbyConfig tobby;
   DataSource dataSource;
@@ -39,7 +38,6 @@ class ReplicatorFactoryTest {
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.tobby = TobbyConfig.build(this.dataSource);
-    this.replicator = spy(this.tobby.replicator(this.mockProducer, Duration.ofMillis(600)));
     this.producer = this.tobby.producer();
   }
 
@@ -52,7 +50,7 @@ class ReplicatorFactoryTest {
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
-    this.replicator.replicate();
+    this.buildDefaultReplicator().replicate();
 
     // assert
     verify(this.mockProducer, times(2)).send(any());
@@ -66,16 +64,25 @@ class ReplicatorFactoryTest {
         .send(any());
     final var sent = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
-    try(final var connection = this.dataSource.getConnection()){
-      this.tobby.recordDAO().acquireDeleting(connection, sent.getId());
+    try (final var connection = this.dataSource.getConnection()) {
+      this.tobby.recordDAO()
+          .acquireDeleting(connection, sent.getId());
     }
 
     // act
-    this.replicator.replicate();
+    this.buildDefaultReplicator().replicate();
 
     // assert
     verify(this.mockProducer, times(1)).send(any());
   }
 
+  private Replicators buildDefaultReplicator() {
+    return this.tobby.replicator(ReplicatorConfig
+        .builder()
+        .producer(this.mockProducer)
+        .idleTimeout(Duration.ofMillis(600))
+        .build()
+    );
+  }
 
 }

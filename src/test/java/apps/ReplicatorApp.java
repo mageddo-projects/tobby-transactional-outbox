@@ -5,6 +5,8 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.Tobby;
+import com.mageddo.tobby.replicator.IdempotenceStrategy;
+import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -26,7 +28,12 @@ public class ReplicatorApp {
         new ByteArraySerializer()
     );
     final var tobby = Tobby.build(dataSource(3));
-    final var replicator = tobby.replicator(kafkaProducer);
+    final var replicator = tobby.replicator(ReplicatorConfig
+        .builder()
+        .producer(kafkaProducer)
+        .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
+        .build()
+    );
     replicator.replicate();
   }
 
