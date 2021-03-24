@@ -1,6 +1,11 @@
 package apps;
 
+import java.util.Map;
+
+import javax.sql.DataSource;
+
 import com.mageddo.tobby.Tobby;
+import com.mageddo.tobby.replicator.IdempotenceStrategy;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -9,10 +14,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import testing.DBMigration;
-
-import javax.sql.DataSource;
-
-import java.util.Map;
 
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
@@ -30,6 +31,7 @@ public class ReplicatorApp {
     final var replicator = tobby.replicator(ReplicatorConfig
         .builder()
         .producer(kafkaProducer)
+        .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
         .build()
     );
     replicator.replicate();

@@ -22,8 +22,9 @@ public class ProducerApp {
         StringSerializer.class, ByteArraySerializer.class
     );
 
-    final var executorService = Executors.newFixedThreadPool(50);
-    for (int i = 0; i < 50; i++) {
+    final var threads = 15;
+    final var executorService = Executors.newFixedThreadPool(threads);
+    for (int i = 0; i < threads; i++) {
       executorService.submit(() -> {
         try {
           final var stopWatch = new StopWatch();
