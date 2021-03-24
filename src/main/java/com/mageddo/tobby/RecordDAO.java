@@ -1,6 +1,6 @@
 package com.mageddo.tobby;
 
-import com.mageddo.tobby.replicator.ReplicatorFactory;
+import com.mageddo.tobby.replicator.Replicators;
 
 import java.sql.Connection;
 import java.time.LocalDateTime;
@@ -17,7 +17,7 @@ public interface RecordDAO {
 
   /**
    * Stores Record at the database table to be replicated
-   * by {@link ReplicatorFactory} later.
+   * by {@link Replicators} later.
    */
   ProducedRecord save(Connection connection, ProducerRecord record);
 

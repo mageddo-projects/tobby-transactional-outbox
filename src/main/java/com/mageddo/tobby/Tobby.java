@@ -4,7 +4,8 @@ import java.time.Duration;
 
 import javax.sql.DataSource;
 
-import com.mageddo.tobby.replicator.ReplicatorFactory;
+import com.mageddo.tobby.replicator.ReplicatorConfig;
+import com.mageddo.tobby.replicator.Replicators;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -62,18 +63,8 @@ public class Tobby {
   // replicators
   //
 
-  public ReplicatorFactory replicator(Producer<byte[], byte[]> producer) {
-    return this.replicator(producer, Duration.ZERO);
-  }
-
-  public ReplicatorFactory replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
-    return this.tobbyConfig.replicator(producer, idleTimeout);
-  }
-
-  public ReplicatorFactory replicator(
-      Producer<byte[], byte[]> producer, Duration idleTimeout, Duration maxRecordDelayToCommit
-  ) {
-    return this.tobbyConfig.replicator(producer, idleTimeout, maxRecordDelayToCommit);
+  public Replicators replicator(ReplicatorConfig  config) {
+    return this.tobbyConfig.replicator(config);
   }
 
   public static Tobby build(DataSource dataSource) {

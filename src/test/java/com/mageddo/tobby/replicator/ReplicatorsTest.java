@@ -26,11 +26,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class ReplicatorFactoryTest {
+class ReplicatorsTest {
 
   @Mock
   Producer<byte[], byte[]> mockProducer;
-  ReplicatorFactory replicator;
+  Replicators replicator;
   com.mageddo.tobby.producer.Producer producer;
   TobbyConfig tobby;
   DataSource dataSource;
@@ -39,7 +39,12 @@ class ReplicatorFactoryTest {
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.tobby = TobbyConfig.build(this.dataSource);
-    this.replicator = spy(this.tobby.replicator(this.mockProducer, Duration.ofMillis(600)));
+    this.replicator = spy(this.tobby.replicator(ReplicatorConfig
+        .builder()
+        .producer(this.mockProducer)
+        .idleTimeout(Duration.ofMillis(600))
+        .build()
+    ));
     this.producer = this.tobby.producer();
   }
 
@@ -66,8 +71,9 @@ class ReplicatorFactoryTest {
         .send(any());
     final var sent = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
-    try(final var connection = this.dataSource.getConnection()){
-      this.tobby.recordDAO().acquireDeleting(connection, sent.getId());
+    try (final var connection = this.dataSource.getConnection()) {
+      this.tobby.recordDAO()
+          .acquireDeleting(connection, sent.getId());
     }
 
     // act

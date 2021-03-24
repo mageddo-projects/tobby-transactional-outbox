@@ -1,32 +1,30 @@
 package com.mageddo.tobby;
 
+import javax.inject.Singleton;
+import javax.sql.DataSource;
+
 import com.mageddo.db.DB;
 import com.mageddo.db.DBUtils;
 import com.mageddo.db.SimpleDataSource;
 import com.mageddo.db.SqlErrorCodes;
 import com.mageddo.tobby.factory.DAOFactory;
-import com.mageddo.tobby.factory.KafkaReplicatorFactory;
+import com.mageddo.tobby.factory.ReplicatorProvider;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.ProducerJdbc;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
-import com.mageddo.tobby.replicator.ReplicatorFactory;
+import com.mageddo.tobby.replicator.IteratorFactory;
+import com.mageddo.tobby.replicator.ReplicatorConfig;
+import com.mageddo.tobby.replicator.Replicators;
+
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.Serializer;
 
 import dagger.Binds;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.common.serialization.Serializer;
-
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-
-import java.time.Duration;
-
-import static com.mageddo.tobby.factory.KafkaReplicatorFactory.DEFAULT_MAX_RECORD_DELAY_TO_COMMIT;
 
 @Singleton
 @Component(
@@ -39,7 +37,7 @@ public interface TobbyConfig {
 
   com.mageddo.tobby.producer.Producer producer();
 
-  KafkaReplicatorFactory replicatorFactory();
+  ReplicatorProvider replicatorProvider();
 
   RecordDAO recordDAO();
 
@@ -85,15 +83,8 @@ public interface TobbyConfig {
     );
   }
 
-  default ReplicatorFactory replicator(Producer<byte[], byte[]> producer, Duration idleTimeout) {
-    return this.replicator(producer, idleTimeout, DEFAULT_MAX_RECORD_DELAY_TO_COMMIT);
-  }
-
-  default ReplicatorFactory replicator(
-      Producer<byte[], byte[]> producer, Duration idleTimeout, Duration maxRecordDelayToCommit
-  ) {
-    return this.replicatorFactory()
-        .create(producer, idleTimeout, maxRecordDelayToCommit);
+  default Replicators replicator(ReplicatorConfig config) {
+    return this.replicatorProvider().create(config);
   }
 
   @Module
@@ -127,26 +118,25 @@ public interface TobbyConfig {
 
     @Provides
     @Singleton
+    public ReplicatorProvider replicatorProvider(IteratorFactory iteratorFactory){
+      return new ReplicatorProvider(this.dataSource, iteratorFactory);
+    }
+
+    @Provides
+    @Singleton
     ProducerJdbc producerJdbc(RecordDAO recordDAO) {
       return new ProducerJdbc(recordDAO, this.dataSource);
     }
 
-    @Singleton
-    @Provides
-    KafkaReplicatorFactory kafkaReplicatorFactory(RecordDAO recordDAO, ParameterDAO parameterDAO) {
-      return KafkaReplicatorFactory
-          .builder()
-          .dataSource(this.dataSource)
-          .parameterDAO(parameterDAO)
-          .recordDAO(recordDAO)
-          .build();
-    }
   }
 
   @Module
   public interface BindsModule {
     @Binds
-    com.mageddo.tobby.producer.Producer producer(ProducerJdbc producerJdbc);
+    com.mageddo.tobby.producer.Producer producer(ProducerJdbc impl);
+
+    @Binds
+    RecordProcessedDAO recordProcessedDAO(RecordProcessedDAOGeneric impl);
   }
 
   static TobbyConfig build(String url, String username, String password) {
