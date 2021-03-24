@@ -39,7 +39,11 @@ public interface TobbyConfig {
 
   ReplicatorProvider replicatorProvider();
 
+  IteratorFactory iteratorFactory();
+
   RecordDAO recordDAO();
+
+  RecordProcessedDAO recordProcessedDAO();
 
   default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
       Class<? extends Serializer<K>> keySerializer, Class<? extends Serializer<V>> valueSerializer

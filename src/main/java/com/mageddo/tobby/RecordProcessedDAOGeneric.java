@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class RecordProcessedDAOGeneric implements RecordProcessedDAO {
   public void save(Connection con, ProducedRecord record) {
     final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
-        .append("INSERT INTO TTO_RECORD_RECORD ( \n")
+        .append("INSERT INTO TTO_RECORD_PROCESSED ( \n")
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, \n")
         .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
@@ -44,5 +45,21 @@ public class RecordProcessedDAOGeneric implements RecordProcessedDAO {
       }
     }
 
+  }
+
+  @Override
+  public ProducedRecord find(Connection connection, UUID id) {
+    final String sql = "SELECT * FROM TTO_RECORD_PROCESSED WHERE IDT_TTO_RECORD = ?";
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+      stm.setString(1, id.toString());
+      try (ResultSet rs = stm.executeQuery()) {
+        if (rs.next()) {
+          return ProducedRecordConverter.map(rs);
+        }
+        return null;
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
   }
 }

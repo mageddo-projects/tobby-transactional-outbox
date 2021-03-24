@@ -30,7 +30,6 @@ class ReplicatorsTest {
 
   @Mock
   Producer<byte[], byte[]> mockProducer;
-  Replicators replicator;
   com.mageddo.tobby.producer.Producer producer;
   TobbyConfig tobby;
   DataSource dataSource;
@@ -39,12 +38,6 @@ class ReplicatorsTest {
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.tobby = TobbyConfig.build(this.dataSource);
-    this.replicator = spy(this.tobby.replicator(ReplicatorConfig
-        .builder()
-        .producer(this.mockProducer)
-        .idleTimeout(Duration.ofMillis(600))
-        .build()
-    ));
     this.producer = this.tobby.producer();
   }
 
@@ -57,7 +50,7 @@ class ReplicatorsTest {
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
-    this.replicator.replicate();
+    this.buildDefaultReplicator().replicate();
 
     // assert
     verify(this.mockProducer, times(2)).send(any());
@@ -77,11 +70,19 @@ class ReplicatorsTest {
     }
 
     // act
-    this.replicator.replicate();
+    this.buildDefaultReplicator().replicate();
 
     // assert
     verify(this.mockProducer, times(1)).send(any());
   }
 
+  private Replicators buildDefaultReplicator() {
+    return this.tobby.replicator(ReplicatorConfig
+        .builder()
+        .producer(this.mockProducer)
+        .idleTimeout(Duration.ofMillis(600))
+        .build()
+    );
+  }
 
 }

@@ -1,22 +1,20 @@
 package com.mageddo.tobby.replicator;
 
-import com.mageddo.tobby.ParameterDAO;
-import com.mageddo.tobby.RecordDAO;
+import java.time.Duration;
 
-import com.mageddo.tobby.RecordProcessedDAO;
+import javax.sql.DataSource;
+
+import org.apache.kafka.clients.producer.Producer;
 
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
-import org.apache.kafka.clients.producer.Producer;
-
-import javax.sql.DataSource;
-
-import java.time.Duration;
-
+/**
+ * Configs for messages replication.
+ */
 @Value
-@Builder(toBuilder = true)
+@Builder(toBuilder = true, builderClassName = "ReplicatorConfigBuilder")
 public class ReplicatorConfig {
 
   public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(15);
@@ -38,6 +36,7 @@ public class ReplicatorConfig {
   private final Duration idleTimeout = Duration.ZERO;
 
   @NonNull
+  @Builder.Default
   private final IdempotenceStrategy idempotenceStrategy = IdempotenceStrategy.DELETE;
 
   /**
@@ -60,5 +59,7 @@ public class ReplicatorConfig {
 //  private final ParameterDAO parameterDAO;
 //
 //  private final RecordProcessedDAO recordProcessedDAO;
+
+  public static class ReplicatorConfigBuilder {}
 
 }
