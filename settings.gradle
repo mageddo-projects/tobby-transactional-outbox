@@ -3,3 +3,4 @@ rootProject.name = "tobby-transactional-outbox"
 include 'jdbi'
 include 'spring'
 include 'templates'
+include 'adapter'

@@ -1,5 +1,6 @@
 package com.mageddo.tobby.producer.kafka;
 
+import java.time.Duration;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -103,5 +104,17 @@ class SimpleJdbcKafkaProducerAdapterTest {
     assertTrue(this.producer.executorService.isShutdown());
     assertTrue(this.producer.executorService.isTerminated());
 
+  }
+
+  @Test
+  void mustCloseUsingDurationMethodSignature(){
+    // arrange
+
+    // act
+    this.producer.close(Duration.ofSeconds(2));
+
+    // assert
+    assertTrue(this.producer.executorService.isShutdown());
+    assertTrue(this.producer.executorService.isTerminated());
   }
 }

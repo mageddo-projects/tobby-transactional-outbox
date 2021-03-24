@@ -1,5 +1,6 @@
 package com.mageddo.tobby.producer.kafka;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -7,8 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import com.mageddo.tobby.producer.ProducerJdbc;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
@@ -67,6 +66,12 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     this.transactionUnsupportedError();
   }
 
+  public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets,
+      org.apache.kafka.clients.consumer.ConsumerGroupMetadata groupMetadata)
+      throws ProducerFencedException {
+    this.transactionUnsupportedError();
+  }
+
   @Override
   public void commitTransaction() throws ProducerFencedException {
     this.transactionUnsupportedError();
@@ -112,7 +117,6 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     this.executorService.shutdown();
   }
 
-  @Override
   public void close(long timeout, TimeUnit unit) {
     try {
       this.executorService.shutdown();
@@ -120,6 +124,10 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     } catch (InterruptedException e) {
       this.executorService.shutdownNow();
     }
+  }
+
+  public void close(Duration timeout) {
+    this.close(timeout.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   private void transactionUnsupportedError() {

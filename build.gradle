@@ -26,18 +26,18 @@ allprojects {
     implementation("com.google.dagger:dagger:2.33")
     annotationProcessor("com.google.dagger:dagger-compiler:2.33")
 
-    compileOnly 'org.projectlombok:lombok:1.18.16'
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
+    compileOnly("org.projectlombok:lombok:1.18.16")
+    annotationProcessor("org.projectlombok:lombok:1.18.16")
 
-    implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '0.11.0.3'
+    implementation ("org.apache.kafka:kafka-clients:0.11.0.3")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
     testImplementation("org.mockito:mockito-junit-jupiter:3.7.7")
     testImplementation(project(":templates"))
-    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    testImplementation("ch.qos.logback:logback-classic:1.2.3")
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.16'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
+    testCompileOnly "org.projectlombok:lombok:1.18.16"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.16"
   }
 
   test {
@@ -63,7 +63,7 @@ release {
 
   project.ext.set("release.useAutomaticVersion", true)
   git {
-    requireBranch = 'main'
+    requireBranch = "main"
   }
   failOnCommitNeeded = false
   failOnPublishNeeded = false
@@ -81,12 +81,14 @@ confirmReleaseVersion.doLast {
 
 dependencies {
 
-  testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
+  compileOnly(project(":adapter"))
+
+  testImplementation group: "org.flywaydb", name: "flyway-core", version: "7.6.0"
   testImplementation("io.zonky.test:embedded-postgres:1.2.9")
   testRuntimeOnly enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:10.4.0")
 
-  testImplementation group: 'org.postgresql', name: 'postgresql', version: '42.2.19'
-  testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
-  testImplementation group: 'com.h2database', name: 'h2', version: '1.4.200'
-  testImplementation group: 'com.zaxxer', name: 'HikariCP', version: '4.0.3'
+  testImplementation group: "org.postgresql", name: "postgresql", version: "42.2.19"
+  testImplementation group: "org.hsqldb", name: "hsqldb", version: "2.5.1"
+  testImplementation group: "com.h2database", name: "h2", version: "1.4.200"
+  testImplementation group: "com.zaxxer", name: "HikariCP", version: "4.0.3"
 }
