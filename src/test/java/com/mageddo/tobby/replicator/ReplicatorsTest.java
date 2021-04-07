@@ -35,10 +35,14 @@ import static org.mockito.Mockito.verify;
 class ReplicatorsTest {
 
   public static final Duration DEFAULT_IDLE_TIMEOUT = Duration.ofMillis(600);
+
   @Mock
   Producer<byte[], byte[]> mockProducer;
+
   com.mageddo.tobby.producer.Producer producer;
+
   TobbyConfig tobby;
+
   DataSource dataSource;
 
   @BeforeEach
