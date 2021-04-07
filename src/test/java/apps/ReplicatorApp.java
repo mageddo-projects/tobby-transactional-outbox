@@ -2,12 +2,15 @@ package apps;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.replicator.IdempotenceStrategy;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
+
+import com.mageddo.tobby.replicator.Replicators;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -27,7 +30,7 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(4));
+    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(6));
     final var replicator = tobby.replicator(ReplicatorConfig
         .builder()
         .producer(kafkaProducer)
@@ -39,18 +42,26 @@ public class ReplicatorApp {
     final var poolSize = 5;
     final var pool = Executors.newFixedThreadPool(poolSize);
     for (int i = 0; i < poolSize; i++) {
-      pool.submit(() -> {
-        try {
-          replicator.replicateLocking();
-          log.info("status=done");
-        } catch (Throwable e) {
-          log.error("status=fatal, msg={}", e.getMessage(), e);
-        }
-      });
+      submit(replicator, pool);
+    }
+    while (true){
+      submit(replicator, pool);
+      Thread.sleep(10000);
     }
 
-    pool.shutdown();
+//    pool.shutdown();
 
+  }
+
+  private static void submit(Replicators replicator, ExecutorService pool) {
+    pool.submit(() -> {
+      try {
+        replicator.replicateLocking();
+        log.info("status=done");
+      } catch (Throwable e) {
+        log.error("status=fatal, msg={}", e.getMessage(), e);
+      }
+    });
   }
 
 }
