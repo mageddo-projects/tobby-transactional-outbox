@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import lombok.SneakyThrows;
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
+import testing.PostgresExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,8 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-//@ExtendWith({PostgresExtension.class, MockitoExtension.class})
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({PostgresExtension.class, MockitoExtension.class})
 class ReplicatorsTest {
 
   public static final Duration DEFAULT_IDLE_TIMEOUT = Duration.ofMillis(600);
@@ -43,7 +43,7 @@ class ReplicatorsTest {
 
   @BeforeEach
   void beforeEach() {
-    this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
+    this.dataSource = DBMigration.migrateEmbeddedPostgres();
     this.tobby = TobbyConfig.build(this.dataSource);
     this.producer = this.tobby.producer();
   }
@@ -57,8 +57,7 @@ class ReplicatorsTest {
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
-    this.buildDefaultReplicator(Duration.ofMillis(600))
-        .replicate();
+    this.replicate();
 
     // assert
     verify(this.mockProducer, times(2)).send(any());
@@ -78,8 +77,7 @@ class ReplicatorsTest {
     }
 
     // act
-    this.buildDefaultReplicator(Duration.ofMillis(600))
-        .replicate();
+    this.replicate();
 
     // assert
     verify(this.mockProducer, times(1)).send(any());
@@ -153,7 +151,7 @@ class ReplicatorsTest {
     // act
     final var futures = new ArrayList<Future<Boolean>>();
     for (int i = 0; i < workers; i++) {
-      final var future = executorService.submit(() -> this.replicateLocking(Duration.ofSeconds(5)));
+      final var future = executorService.submit(() -> this.replicateLocking(Duration.ofSeconds(8)));
       futures.add(future);
     }
 
@@ -174,6 +172,11 @@ class ReplicatorsTest {
   @SneakyThrows
   boolean get(Future<Boolean> it) {
     return it.get();
+  }
+
+  void replicate() {
+    this.buildDefaultReplicator(DEFAULT_IDLE_TIMEOUT)
+        .replicate();
   }
 
   boolean replicateLocking() {

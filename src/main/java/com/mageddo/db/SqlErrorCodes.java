@@ -37,6 +37,9 @@ public class SqlErrorCodes {
   @NonNull
   private Set<String> databaseProductName;
 
+  @NonNull
+  private Set<String> queryTimeoutErrors;
+
   public static SqlErrorCodes build(DB db) {
     final Properties codes = loadSqlErrorsProperties();
     for (Object key : codes.keySet()) {
@@ -51,6 +54,7 @@ public class SqlErrorCodes {
                 .useSqlStateForTranslation(toBoolean(codes, prefix, "useSqlStateForTranslation"))
                 .duplicateKeyCodes(toIntegerSet(codes, prefix, "duplicateKeyCodes"))
                 .databaseProductName(toStringSet(codes, prefix, "databaseProductName"))
+                .queryTimeoutErrors(toStringSet(codes, prefix, "queryTimeoutErrors"))
                 .build()
         );
       }
@@ -71,6 +75,16 @@ public class SqlErrorCodes {
 
   public boolean isDuplicateKeyError(int errorCode) {
     return this.duplicateKeyCodes.contains(errorCode);
+  }
+
+  public boolean isQueryTimeoutError(SQLException e) {
+    final String msg = e.getMessage();
+    for (String err : this.queryTimeoutErrors) {
+      if (msg.contains(err)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private Integer parseIntOrNull(String text) {
@@ -139,6 +153,7 @@ public class SqlErrorCodes {
         .db(DB.of("Unknown"))
         .duplicateKeyCodes(Collections.emptySet())
         .databaseProductName(Collections.emptySet())
+        .queryTimeoutErrors(Collections.emptySet())
         .build();
   }
 

@@ -8,13 +8,17 @@ import java.time.Duration;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.mageddo.db.DB;
 import com.mageddo.db.QueryTimeoutException;
 
 @Singleton
 public class LockDAOGeneric implements LockDAO {
 
+  private final DB db;
+
   @Inject
-  public LockDAOGeneric() {
+  public LockDAOGeneric(DB db) {
+    this.db = db;
   }
 
   @Override
@@ -23,15 +27,16 @@ public class LockDAOGeneric implements LockDAO {
         .append("UPDATE TTO_PARAMETER SET \n")
         .append("  VAL_PARAMETER = CURRENT_TIMESTAMP \n")
         .append("WHERE IDT_TTO_PARAMETER = ? \n");
-    try (final PreparedStatement stm = conn.prepareStatement(sql.toString());) {
+    try (final PreparedStatement stm = conn.prepareStatement(sql.toString())) {
       stm.setString(1, Parameter.REPLICATOR_LOCK.name());
+//      final int affected = StmUtils.executeOrCancel(stm, timeout);
       stm.setQueryTimeout((int) (timeout.toMillis() / 1000));
       final int affected = stm.executeUpdate();
       if (affected != 1) {
         throw new IllegalStateException("Must update exactly one record while locking");
       }
     } catch (SQLException e) {
-      throw QueryTimeoutException.check(e);
+      throw QueryTimeoutException.check(this.db, e);
     }
   }
 }
