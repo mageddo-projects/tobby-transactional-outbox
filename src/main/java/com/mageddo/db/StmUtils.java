@@ -29,7 +29,7 @@ public class StmUtils {
     final AtomicBoolean semaphore = new AtomicBoolean();
     EXECUTOR.submit(() -> {
       final long now = System.currentTimeMillis();
-      while (!semaphore.get() && timeHasExpired(timeout, now)) {
+      while (!semaphore.get() && !timeHasExpired(timeout, now)) {
         if (!sleep()) {
           break;
         }
