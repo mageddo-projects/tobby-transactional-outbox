@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
 
-  public static final int BATCH_SIZE = 20_000;
+  public static final int BATCH_SIZE = 100;
 
   private final DB db;
 

@@ -42,7 +42,7 @@ public class Replicators {
     try (Connection conn = dataSource.getConnection()) {
       useTransaction(conn, () -> {
         this.locker.lock(conn);
-        this.replicate();
+        this.replicate(conn);
       });
       return true;
     } catch (QueryTimeoutException e) {
@@ -54,13 +54,17 @@ public class Replicators {
   }
 
   public void replicate() {
+    this.replicate(null);
+  }
+
+  void replicate(Connection conn) {
     LocalDateTime lastTimeProcessed = LocalDateTime.now();
     int totalProcessed = 0;
     log.info("status=replication-started");
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
 
-      final int processed = this.processWave(wave);
+      final int processed = this.processWave(wave, conn);
 
       if (processed != 0) {
         lastTimeProcessed = LocalDateTime.now();
@@ -80,7 +84,7 @@ public class Replicators {
               display(wave), display(processed), stopWatch.getDisplayTime(), display(totalProcessed)
           );
         }
-        if (wave % 10_000 == 0) {
+        if (wave % 100 == 0) {
           log.info(
               "wave={}, status=waveReporting, totalProcessed={}",
               display(wave), display(totalProcessed)
@@ -104,12 +108,12 @@ public class Replicators {
     return stopWatch.getTime() / processed;
   }
 
-  private int processWave(int wave) {
+  private int processWave(int wave, Connection readConnParam) {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
     try (
-        Connection readConn = this.getConnection();
+        Connection readConn = readConnParam != null ? readConnParam : this.getConnection();
         Connection writeConn = this.getConnection()
     ) {
       final boolean autoCommit = writeConn.getAutoCommit();
