@@ -17,7 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class StmUtils {
 
-  private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5);
+  private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5, r -> {
+    Thread t = Executors
+        .defaultThreadFactory()
+        .newThread(r);
+    t.setDaemon(true);
+    return t;
+  });
 
   public static int executeOrCancel(PreparedStatement stm, Duration timeout) throws SQLException {
     final AtomicBoolean semaphore = new AtomicBoolean();
