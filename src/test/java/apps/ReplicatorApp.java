@@ -1,7 +1,9 @@
 package apps;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.replicator.IdempotenceStrategy;
@@ -17,7 +19,7 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 
 @Slf4j
 public class ReplicatorApp {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     final var kafkaProducer = new KafkaProducer<>(
         Map.of(
             BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"
@@ -25,11 +27,12 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(10));
+    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(4));
     final var replicator = tobby.replicator(ReplicatorConfig
         .builder()
         .producer(kafkaProducer)
         .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
+        .idleTimeout(Duration.ofSeconds(10))
         .build()
     );
 
@@ -45,6 +48,8 @@ public class ReplicatorApp {
         }
       });
     }
+
+    pool.shutdown();
 
   }
 

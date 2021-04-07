@@ -29,19 +29,25 @@ public class StmUtils {
     final AtomicBoolean semaphore = new AtomicBoolean();
     EXECUTOR.submit(() -> {
       final long now = System.currentTimeMillis();
+      if (log.isTraceEnabled()) {
+        log.trace("status=stmWatcherStarted");
+      }
       while (!semaphore.get() && !timeHasExpired(timeout, now)) {
         if (!sleep()) {
           break;
         }
       }
+      if (log.isTraceEnabled()) {
+        log.trace("status=exitSleep");
+      }
       if (semaphore.compareAndSet(false, true)) {
         try {
           if (log.isTraceEnabled()) {
-            log.info("status=cancellingStatement");
+            log.trace("status=cancellingStatement");
           }
           stm.cancel();
           if (log.isTraceEnabled()) {
-            log.info("status=canceled");
+            log.trace("status=canceled");
           }
         } catch (SQLException e) {
           throw new UncheckedSQLException(e);
@@ -50,7 +56,7 @@ public class StmUtils {
     });
     final int affected = stm.executeUpdate();
     if (log.isTraceEnabled()) {
-      log.info("status=executed");
+      log.trace("status=executed");
     }
     semaphore.set(true);
     return affected;
