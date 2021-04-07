@@ -22,8 +22,9 @@ public class LockDAOGeneric implements LockDAO {
     final StringBuilder sql = new StringBuilder()
         .append("UPDATE TTO_PARAMETER SET \n")
         .append("  VAL_PARAMETER = CURRENT_TIMESTAMP \n")
-        .append("WHERE IDT_TTO_PARAMETER = 'REPLICATOR_LOCK' \n");
+        .append("WHERE IDT_TTO_PARAMETER = ? \n");
     try (final PreparedStatement stm = conn.prepareStatement(sql.toString());) {
+      stm.setString(1, Parameter.REPLICATOR_LOCK.name());
       stm.setQueryTimeout((int) (timeout.toMillis() / 1000));
       final int affected = stm.executeUpdate();
       if (affected != 1) {

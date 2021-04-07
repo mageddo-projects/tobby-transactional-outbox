@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.mageddo.db.ConnectionUtils.useTransaction;
 
+@Slf4j
 @Singleton
 public class Locker {
 
@@ -23,9 +26,12 @@ public class Locker {
 
   public void lock(Connection conn){
     useTransaction(conn, () -> {
-      this.parameterDAO.insertOrUpdate(conn, Parameter.LOCK, LocalDateTime.now());
+      this.parameterDAO.insertOrUpdate(conn, Parameter.REPLICATOR_LOCK, LocalDateTime.now());
     });
+
+    log.info("status=locking");
     this.lockDAO.lock(conn, Duration.ofSeconds(2));
+    log.info("status=lockAcquired");
   }
 
 }

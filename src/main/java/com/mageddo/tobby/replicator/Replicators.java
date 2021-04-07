@@ -15,6 +15,7 @@ import com.mageddo.tobby.internal.utils.StopWatch;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.mageddo.db.ConnectionUtils.useTransaction;
 import static com.mageddo.tobby.internal.utils.StopWatch.display;
 
 @Slf4j
@@ -30,13 +31,22 @@ public class Replicators {
     this.locker = locker;
   }
 
-  public void replicateLocking(){
+  /**
+   * Replicate records to Kafka making sure only one thread will execute at time by using RDMS resource locking
+   *
+   * @return true or false about acquiring the lock
+   */
+  public boolean replicateLocking() {
     final DataSource dataSource = this.config.getDataSource();
-    try(Connection conn = dataSource.getConnection()){
-      this.locker.lock(conn);
-      this.replicate();
+    try (Connection conn = dataSource.getConnection()) {
+      useTransaction(conn, () -> {
+        this.locker.lock(conn);
+        this.replicate();
+      });
+      return true;
     } catch (QueryTimeoutException e) {
       log.info("status=lostLocking");
+      return false;
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
@@ -133,7 +143,8 @@ public class Replicators {
 
   private boolean shouldRun(LocalDateTime lastTimeProcessed) {
     return this.config.getIdleTimeout() == Duration.ZERO
-        || millisPassed(lastTimeProcessed) < this.config.getIdleTimeout().toMillis();
+        || millisPassed(lastTimeProcessed) < this.config.getIdleTimeout()
+        .toMillis();
   }
 
   private long millisPassed(LocalDateTime lastTimeProcessed) {

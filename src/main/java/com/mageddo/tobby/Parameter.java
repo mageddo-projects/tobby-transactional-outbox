@@ -8,5 +8,5 @@ public enum Parameter {
    */
   LAST_PROCESSED_TIMESTAMP,
 
-  LOCK
+  REPLICATOR_LOCK
 }

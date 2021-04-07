@@ -2,6 +2,7 @@ package com.mageddo.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 
 import com.mageddo.tobby.UncheckedSQLException;
 
@@ -14,8 +15,16 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectionUtils {
   public static void useTransaction(Connection con, Runnable runnable) {
     try {
+      final boolean isAutoCommit = con.getAutoCommit();
+      if (isAutoCommit) {
+        con.setAutoCommit(false);
+      }
       runnable.run();
-      con.commit();
+      if (isAutoCommit) {
+        con.setAutoCommit(true);
+      } else {
+        con.commit();
+      }
     } catch (SQLException e) {
       try {
         con.rollback();
@@ -24,5 +33,19 @@ public class ConnectionUtils {
         throw new UncheckedSQLException(e2);
       }
     }
+  }
+
+  public static void savepoint(Connection con, Callback callback) throws SQLException {
+    final Savepoint sp = con.setSavepoint("SAVEPOINT_1");
+    try {
+      callback.run();
+    } catch (Exception e) {
+      con.rollback(sp);
+      throw e;
+    }
+  }
+
+  public interface Callback {
+    void run() throws SQLException;
   }
 }
