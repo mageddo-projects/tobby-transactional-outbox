@@ -85,7 +85,7 @@ public class Replicators {
               display(wave), display(processed), stopWatch.getDisplayTime(), display(totalProcessed)
           );
         }
-        if (wave % 100 == 0) {
+        if (wave % 10_000 == 0) {
           log.info(
               "wave={}, status=waveReporting, totalProcessed={}",
               display(wave), display(totalProcessed)
