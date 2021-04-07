@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import lombok.SneakyThrows;
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
-import testing.PostgresExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,9 +30,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@ExtendWith({PostgresExtension.class, MockitoExtension.class})
+//@ExtendWith({PostgresExtension.class, MockitoExtension.class})
+@ExtendWith(MockitoExtension.class)
 class ReplicatorsTest {
 
+  public static final Duration DEFAULT_IDLE_TIMEOUT = Duration.ofMillis(600);
   @Mock
   Producer<byte[], byte[]> mockProducer;
   com.mageddo.tobby.producer.Producer producer;
@@ -42,7 +43,7 @@ class ReplicatorsTest {
 
   @BeforeEach
   void beforeEach() {
-    this.dataSource = DBMigration.migrateEmbeddedPostgres();
+    this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.tobby = TobbyConfig.build(this.dataSource);
     this.producer = this.tobby.producer();
   }
@@ -56,7 +57,7 @@ class ReplicatorsTest {
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
-    this.buildDefaultReplicator()
+    this.buildDefaultReplicator(Duration.ofMillis(600))
         .replicate();
 
     // assert
@@ -77,7 +78,7 @@ class ReplicatorsTest {
     }
 
     // act
-    this.buildDefaultReplicator()
+    this.buildDefaultReplicator(Duration.ofMillis(600))
         .replicate();
 
     // assert
@@ -104,9 +105,40 @@ class ReplicatorsTest {
 
   }
 
+  @Test
+  void allThreadsMustToReplicateWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach(){
+    // arrange
+    final var workers = 3;
+    final var executorService = Executors.newFixedThreadPool(workers);
+    doReturn(mock(Future.class))
+        .when(this.mockProducer)
+        .send(any())
+    ;
+    this.producer.send(ProducerRecordTemplates.strawberry());
+    this.producer.send(ProducerRecordTemplates.coconut());
+
+    // act
+    final var futures = new ArrayList<Future<Boolean>>();
+    for (int i = 0; i < workers; i++) {
+      final var future = executorService.submit(() -> this.replicateLocking());
+      futures.add(future);
+    }
+
+    final var replicationResult = futures
+        .stream()
+        .map(this::get)
+        .sorted(Boolean::compare)
+        .collect(Collectors.toList());
+
+    // assert
+    assertEquals(workers, replicationResult.size());
+    assertTrue(replicationResult.contains(true));
+    assertEquals("[true, true, true]", replicationResult.toString());
+    verify(this.mockProducer, times(2)).send(any());
+  }
 
   @Test
-  void onlyOneThreadMustTryToReplicateWhenUsingLockingApproach() {
+  void onlyOneThreadMustReplicateWithSuccessWhenUsingLockingApproach(){
 
     // arrange
     final var workers = 3;
@@ -121,7 +153,7 @@ class ReplicatorsTest {
     // act
     final var futures = new ArrayList<Future<Boolean>>();
     for (int i = 0; i < workers; i++) {
-      final var future = executorService.submit(this::replicateLocking);
+      final var future = executorService.submit(() -> this.replicateLocking(Duration.ofSeconds(5)));
       futures.add(future);
     }
 
@@ -139,22 +171,32 @@ class ReplicatorsTest {
 
   }
 
-  private boolean replicateLocking() {
+  @SneakyThrows
+  boolean get(Future<Boolean> it) {
+    return it.get();
+  }
+
+  boolean replicateLocking() {
     return this
         .buildDefaultReplicator()
         .replicateLocking();
   }
 
-  @SneakyThrows
-  private boolean get(Future<Boolean> it) {
-    return it.get();
+  boolean replicateLocking(Duration idleTimeout) {
+    return this
+        .buildDefaultReplicator(idleTimeout)
+        .replicateLocking();
   }
 
-  private Replicators buildDefaultReplicator() {
+  Replicators buildDefaultReplicator() {
+    return this.buildDefaultReplicator(DEFAULT_IDLE_TIMEOUT);
+  }
+
+  Replicators buildDefaultReplicator(Duration idleTimeout) {
     return this.tobby.replicator(ReplicatorConfig
         .builder()
         .producer(this.mockProducer)
-        .idleTimeout(Duration.ofMillis(600))
+        .idleTimeout(idleTimeout)
         .build()
     );
   }
