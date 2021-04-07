@@ -37,6 +37,7 @@ public class Replicators {
    * @return true or false about acquiring the lock
    */
   public boolean replicateLocking() {
+    log.info("status=replicateLocking");
     final DataSource dataSource = this.config.getDataSource();
     try (Connection conn = dataSource.getConnection()) {
       useTransaction(conn, () -> {
@@ -58,7 +59,9 @@ public class Replicators {
     log.info("status=replication-started");
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
+
       final int processed = this.processWave(wave);
+
       if (processed != 0) {
         lastTimeProcessed = LocalDateTime.now();
       }

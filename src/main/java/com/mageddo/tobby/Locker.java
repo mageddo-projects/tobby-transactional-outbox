@@ -28,8 +28,6 @@ public class Locker {
     useTransaction(conn, () -> {
       this.parameterDAO.insertOrUpdate(conn, Parameter.REPLICATOR_LOCK, LocalDateTime.now());
     });
-
-    log.info("status=locking");
     this.lockDAO.lock(conn, Duration.ofSeconds(2));
     log.info("status=lockAcquired");
   }
