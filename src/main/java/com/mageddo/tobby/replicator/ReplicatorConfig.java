@@ -53,7 +53,7 @@ public class ReplicatorConfig {
   private final Duration maxRecordDelayToCommit = DEFAULT_MAX_RECORD_DELAY_TO_COMMIT;
 
   /**
-   * How many messages to store on buffer before call call KafkaProducer, it will increase
+   * How many messages to store on buffer call call KafkaProducer, it will increase
    * kafka produce speed because it will make use of kafka batch send, keep in mind that the higher the
    * buffer size, you are also holding messages to be sent to the Kafka broker, also increasing the chance
    * of Kafka send fails then Tobby will try send the entire the buffer again.
