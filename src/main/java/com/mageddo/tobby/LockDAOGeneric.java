@@ -10,6 +10,7 @@ import javax.inject.Singleton;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.QueryTimeoutException;
+import com.mageddo.db.StmUtils;
 
 @Singleton
 public class LockDAOGeneric implements LockDAO {

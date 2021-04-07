@@ -16,12 +16,12 @@ import testing.DBMigration;
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(60));
+    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(2));
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class
     );
 
-    final var threads = 15;
+    final var threads = 1;
     final var executorService = Executors.newFixedThreadPool(threads);
     for (int i = 0; i < threads; i++) {
       executorService.submit(() -> {
