@@ -1,10 +1,9 @@
-package com.mageddo.tobby;
+package com.mageddo.db;
 
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.mageddo.db.DB;
-import com.mageddo.db.SqlErrorCodes;
+import com.mageddo.tobby.UncheckedSQLException;
 
 public class DuplicatedRecordException extends RuntimeException {
   public DuplicatedRecordException(UUID id, SQLException e) {

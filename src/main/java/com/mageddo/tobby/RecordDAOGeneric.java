@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.mageddo.db.DB;
+import com.mageddo.db.DuplicatedRecordException;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;

@@ -1,5 +1,6 @@
 package com.mageddo.tobby;
 
+import com.mageddo.db.DuplicatedRecordException;
 import com.mageddo.tobby.replicator.Replicators;
 
 import java.sql.Connection;

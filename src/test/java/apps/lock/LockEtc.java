@@ -11,12 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 import lombok.extern.slf4j.Slf4j;
-
-import static apps.lock.LockV2Etc.dataSource;
 
 @Slf4j
 public class LockEtc {
@@ -31,7 +26,7 @@ public class LockEtc {
   });
 
   public static void main(String[] args) throws SQLException, IOException {
-    final var dataSource = dataSource(1);
+    final var dataSource = LockEtcV2.dataSource(1);
     lock(dataSource);
     log.info("program finished");
   }

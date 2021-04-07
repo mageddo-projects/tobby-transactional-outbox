@@ -7,7 +7,7 @@ public class UncheckedSQLException extends RuntimeException {
   private final SQLException delegate;
 
   public UncheckedSQLException(SQLException delegate) {
-    super(delegate);
+    super(delegate.getMessage(), delegate);
     this.delegate = delegate;
   }
 

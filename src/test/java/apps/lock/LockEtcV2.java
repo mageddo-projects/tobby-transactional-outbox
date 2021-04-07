@@ -1,15 +1,10 @@
 package apps.lock;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
@@ -19,7 +14,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class LockV2Etc {
+public class LockEtcV2 {
 
   public static final int SECONDS_TIMEOUT = 5;
 
@@ -34,6 +29,7 @@ public class LockV2Etc {
     try (final Connection con = dataSource.getConnection()) {
       acquireLock(con);
       con.commit();
+      acquireLock(con);
     }
   }
 
@@ -42,7 +38,7 @@ public class LockV2Etc {
         .append("UPDATE TTO_PARAMETER SET \n")
         .append("  VAL_PARAMETER = CURRENT_TIMESTAMP \n")
         .append("WHERE IDT_TTO_PARAMETER = 'REPLICATOR_LOCK' \n");
-    try (final PreparedStatement stm = con.prepareStatement(sql.toString());) {
+    try (final PreparedStatement stm = con.prepareStatement(sql.toString())) {
       stm.setQueryTimeout(SECONDS_TIMEOUT);
       return stm.executeUpdate() == 1;
     }
@@ -51,7 +47,7 @@ public class LockV2Etc {
   public static DataSource dataSource(int size) throws IOException {
 
     Properties props = new Properties();
-    props.load(LockV2Etc.class.getResourceAsStream("/db.properties"));
+    props.load(LockEtcV2.class.getResourceAsStream("/db.properties"));
 
     final HikariConfig config = new HikariConfig();
     config.setMinimumIdle(size);

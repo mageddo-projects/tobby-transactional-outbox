@@ -1,15 +1,19 @@
 package com.mageddo.tobby.replicator;
 
-import com.mageddo.tobby.UncheckedSQLException;
-import com.mageddo.tobby.internal.utils.StopWatch;
-
-import lombok.extern.slf4j.Slf4j;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+
+import javax.sql.DataSource;
+
+import com.mageddo.db.QueryTimeoutException;
+import com.mageddo.tobby.Locker;
+import com.mageddo.tobby.UncheckedSQLException;
+import com.mageddo.tobby.internal.utils.StopWatch;
+
+import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.tobby.internal.utils.StopWatch.display;
 
@@ -18,10 +22,24 @@ public class Replicators {
 
   private final ReplicatorConfig config;
   private final IteratorFactory iteratorFactory;
+  private final Locker locker;
 
-  public Replicators(ReplicatorConfig config, IteratorFactory iteratorFactory) {
+  public Replicators(ReplicatorConfig config, IteratorFactory iteratorFactory, Locker locker) {
     this.config = config;
     this.iteratorFactory = iteratorFactory;
+    this.locker = locker;
+  }
+
+  public void replicateLocking(){
+    final DataSource dataSource = this.config.getDataSource();
+    try(Connection conn = dataSource.getConnection()){
+      this.locker.lock(conn);
+      this.replicate();
+    } catch (QueryTimeoutException e) {
+      log.info("status=lostLocking");
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
   }
 
   public void replicate() {

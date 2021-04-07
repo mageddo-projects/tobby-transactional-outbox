@@ -6,5 +6,7 @@ public enum Parameter {
   /**
    * Saved in {@link LocalDateTime#toString()} format
    */
-  LAST_PROCESSED_TIMESTAMP
+  LAST_PROCESSED_TIMESTAMP,
+
+  LOCK
 }
