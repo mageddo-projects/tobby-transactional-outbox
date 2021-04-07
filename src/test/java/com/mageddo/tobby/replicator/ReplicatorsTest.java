@@ -108,7 +108,7 @@ class ReplicatorsTest {
   }
 
   @Test
-  void allThreadsMustToReplicateWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach(){
+  void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach(){
     // arrange
     final var workers = 3;
     final var executorService = Executors.newFixedThreadPool(workers);
