@@ -10,10 +10,12 @@ import com.mageddo.tobby.replicator.ReplicatorConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
+import lombok.extern.slf4j.Slf4j;
 import testing.DBMigration;
 
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
+@Slf4j
 public class ReplicatorApp {
   public static void main(String[] args) {
     final var kafkaProducer = new KafkaProducer<>(
@@ -23,7 +25,7 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var tobby = Tobby.build(DBMigration.migratePostgres(10));
+    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(10));
     final var replicator = tobby.replicator(ReplicatorConfig
         .builder()
         .producer(kafkaProducer)
@@ -36,6 +38,7 @@ public class ReplicatorApp {
     for (int i = 0; i < poolSize; i++) {
       pool.submit(()  -> {
         replicator.replicateLocking();
+        log.info("status=done");
       });
     }
 

@@ -16,7 +16,7 @@ import testing.DBMigration;
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-    final var tobby = Tobby.build(DBMigration.migratePostgres(60));
+    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(60));
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class
     );
