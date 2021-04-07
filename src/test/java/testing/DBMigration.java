@@ -50,14 +50,14 @@ public class DBMigration {
     final var props = new Properties();
     props.load(DBMigration.class.getResourceAsStream(System.getProperty(
         "db.properties",
-        "/db-oracle.properties"
+        "/db.properties"
     )));
     final var dc = pgDataSource(size, props);
-//    migrate(
-//        dc.getJdbcUrl(),
-//        dc.getUsername(), dc.getPassword(),
-//        props.getProperty("locations")
-//    );
+    migrate(
+        dc.getJdbcUrl(),
+        dc.getUsername(), dc.getPassword(),
+        props.getProperty("locations")
+    );
     return dc;
   }
 
