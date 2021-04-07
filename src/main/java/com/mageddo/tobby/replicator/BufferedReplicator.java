@@ -79,7 +79,7 @@ public class BufferedReplicator implements Replicator {
           );
         }
 
-        if (this.buffer.size() > 1) {
+        if (this.buffer.size() > 1_000) {
           log.info(
               "wave={}, quantity={}, status=kafkaSendFlushed, timeSinceLastFlush={}, produceTime={}, recordsTime={}",
               this.wave,
