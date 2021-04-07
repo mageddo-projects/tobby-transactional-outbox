@@ -25,13 +25,13 @@ public interface RecordDAO {
   /**
    * Finds all not replicated ProducedRecords, streaming from database in batches
    * to increase performance.
-   *
-   * @param connection
+   *  @param connection
+   * @param fetchSize
    * @param consumer   callback to be called for each record
    * @param from       time from which table will be scanned
    */
   void iterateNotProcessedRecordsUsingInsertIdempotence(
-      Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
+      Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, LocalDateTime from
   );
 
   /**
@@ -41,7 +41,7 @@ public interface RecordDAO {
   void acquireInserting(Connection connection, UUID id);
 
   void iterateOverRecords(
-      Connection connection, Consumer<ProducedRecord> consumer
+      Connection connection, int fetchSize, Consumer<ProducedRecord> consumer
   );
 
   void acquireDeleting(Connection connection, UUID id);

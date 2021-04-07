@@ -73,8 +73,7 @@ abstract class RecordDAOTest {
 
     // act
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
-        this.connection,
-        producedRecord -> {
+        this.connection, 100, producedRecord -> {
           log.info("record={}", producedRecord);
           counter.incrementAndGet();
         },

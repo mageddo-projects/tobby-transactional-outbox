@@ -23,17 +23,21 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   private final RecordDAO recordDAO;
   private final ParameterDAO parameterDAO;
   private final Duration maxRecordDelayToCommit;
+  private final int fetchSize;
   private LocalDateTime lastRecordCreatedAt;
 
-  public InsertIdempotenceBasedReplicator(Connection readConn, Connection writeConn, RecordDAO recordDAO,
+  public InsertIdempotenceBasedReplicator(
+      Connection readConn, Connection writeConn, RecordDAO recordDAO,
       ParameterDAO parameterDAO, BufferedReplicator bufferedReplicator,
-      Duration maxRecordDelayToCommit) {
+      Duration maxRecordDelayToCommit, int fetchSize
+  ) {
     this.bufferedReplicator = bufferedReplicator;
     this.readConn = readConn;
     this.writeConn = writeConn;
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.maxRecordDelayToCommit = maxRecordDelayToCommit;
+    this.fetchSize = fetchSize;
   }
 
   @Override
@@ -58,8 +62,7 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   public int iterate() {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
-        this.readConn,
-        (record) -> {
+        this.readConn, this.fetchSize, (record) -> {
           counter.incrementAndGet();
           this.send(record);
         },

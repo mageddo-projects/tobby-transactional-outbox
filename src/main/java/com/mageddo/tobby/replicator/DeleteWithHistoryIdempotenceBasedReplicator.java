@@ -15,15 +15,17 @@ public class DeleteWithHistoryIdempotenceBasedReplicator implements Replicator, 
   private final Connection writeConn;
   private final Connection readConn;
   private final BufferedReplicator replicator;
+  private final int fetchSize;
 
   public DeleteWithHistoryIdempotenceBasedReplicator(
       Connection readConn, Connection writeConn, RecordDAO recordDAO,
-      RecordProcessedDAO recordProcessedDAO, BufferedReplicator replicator) {
+      RecordProcessedDAO recordProcessedDAO, BufferedReplicator replicator, int fetchSize) {
     this.recordDAO = recordDAO;
     this.writeConn = writeConn;
     this.readConn = readConn;
     this.recordProcessedDAO = recordProcessedDAO;
     this.replicator = replicator;
+    this.fetchSize = fetchSize;
   }
 
   @Override
@@ -45,8 +47,7 @@ public class DeleteWithHistoryIdempotenceBasedReplicator implements Replicator, 
   public int iterate() {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateOverRecords(
-        this.readConn,
-        (record) -> {
+        this.readConn, this.fetchSize, (record) -> {
           counter.incrementAndGet();
           this.send(record);
         }

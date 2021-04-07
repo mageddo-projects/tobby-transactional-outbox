@@ -32,17 +32,18 @@ public class IteratorFactory {
       case INSERT:
         return new InsertIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO, this.parameterDAO,
-            replicator, config.getMaxRecordDelayToCommit()
+            replicator, config.getMaxRecordDelayToCommit(),
+            config.getFetchSize()
         );
       case DELETE:
         return new DeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
-            replicator
+            replicator, config.getFetchSize()
         );
       case DELETE_WITH_HISTORY:
         return new DeleteWithHistoryIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO, this.recordProcessedDAO,
-            replicator
+            replicator, config.getFetchSize()
         );
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + config.getIdempotenceStrategy());

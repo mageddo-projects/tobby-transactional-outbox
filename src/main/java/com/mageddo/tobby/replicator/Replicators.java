@@ -57,14 +57,14 @@ public class Replicators {
     this.replicate(null);
   }
 
-  void replicate(Connection conn) {
+  void replicate(Connection readConn) {
     LocalDateTime lastTimeProcessed = LocalDateTime.now();
     int totalProcessed = 0;
     log.info("status=replication-started");
     for (int wave = 1; true; wave++) {
       final StopWatch stopWatch = StopWatch.createStarted();
 
-      final int processed = this.processWave(wave, conn);
+      final int processed = this.processWave(wave, readConn);
 
       if (processed != 0) {
         lastTimeProcessed = LocalDateTime.now();
@@ -124,9 +124,11 @@ public class Replicators {
         writeConn.setAutoCommit(false);
       }
       try {
+        final BufferedReplicator bufferedReplicator = new BufferedReplicator(
+            this.config.getProducer(), this.config.getBufferSize(), wave
+        );
         final StreamingIterator replicator = this.iteratorFactory.create(
-            new BufferedReplicator(config.getProducer(), wave),
-            readConn, writeConn, this.config
+            bufferedReplicator, readConn, writeConn, this.config
         );
         return replicator.iterate();
       } finally {
