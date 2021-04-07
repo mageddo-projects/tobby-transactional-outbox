@@ -50,13 +50,19 @@ public class ParameterDAOUniversal implements ParameterDAO {
 
   @Override
   public void insertOrUpdate(Connection connection, Parameter parameter, LocalDateTime value) {
-    if (this.update(connection, parameter, value) == 0) {
-      log.info("status=nothing-to-update, action=inserting, parameter={}", parameter.name());
-      try {
-        this.insert(connection, parameter, value);
-      } catch (DuplicatedRecordException e) {
-        log.info("status=already-insert, parameter={}", parameter.name());
-      }
+    try {
+      savepoint(connection, () -> {
+        if (this.update(connection, parameter, value) == 0) {
+          log.info("status=nothing-to-update, action=inserting, parameter={}", parameter.name());
+          try {
+            this.insert(connection, parameter, value);
+          } catch (DuplicatedRecordException e) {
+            log.info("status=already-insert, parameter={}", parameter.name());
+          }
+        }
+      });
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
     }
   }
 
@@ -66,7 +72,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
     try (final PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, parameter.name());
       stm.setString(2, value.toString());
-      savepoint(connection, stm::executeUpdate);
+      stm.executeUpdate();
       log.info("status=inserted, parameter={}, value={}", parameter.name(), value);
     } catch (SQLException e) {
       throw DuplicatedRecordException.check(this.db, parameter.name(), e);

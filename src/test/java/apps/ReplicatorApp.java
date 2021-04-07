@@ -36,9 +36,13 @@ public class ReplicatorApp {
     final var poolSize = 5;
     final var pool = Executors.newFixedThreadPool(poolSize);
     for (int i = 0; i < poolSize; i++) {
-      pool.submit(()  -> {
-        replicator.replicateLocking();
-        log.info("status=done");
+      pool.submit(() -> {
+        try {
+          replicator.replicateLocking();
+          log.info("status=done");
+        } catch (Throwable e) {
+          log.error("status=fatal, msg={}", e.getMessage(), e);
+        }
       });
     }
 

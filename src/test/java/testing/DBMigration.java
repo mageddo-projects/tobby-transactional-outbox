@@ -45,21 +45,23 @@ public class DBMigration {
     );
   }
 
+  @SneakyThrows
   public static DataSource migrateAndGetDataSource(int size) {
-    final var dc = pgDataSource(size);
-//    migrate(
-//        dc.getJdbcUrl(),
-//        dc.getUsername(), dc.getPassword(),
-//        "classpath:com/mageddo/tobby/db/migration-postgres"
-//    );
+    final var props = new Properties();
+    props.load(DBMigration.class.getResourceAsStream(System.getProperty(
+        "db.properties",
+        "/db-h2.properties"
+    )));
+    final var dc = pgDataSource(size, props);
+    migrate(
+        dc.getJdbcUrl(),
+        dc.getUsername(), dc.getPassword(),
+        props.getProperty("locations")
+    );
     return dc;
   }
 
-  @SneakyThrows
-  static HikariDataSource pgDataSource(int size) {
-    final var props = new Properties();
-    props.load(DBMigration.class.getResourceAsStream("/db.properties"));
-
+  static HikariDataSource pgDataSource(int size, Properties props) {
     final var config = new HikariConfig();
     config.setDriverClassName(props.getProperty("driverClassName"));
     config.setMinimumIdle(size);

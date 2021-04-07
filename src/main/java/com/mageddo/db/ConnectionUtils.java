@@ -27,7 +27,7 @@ public class ConnectionUtils {
       }
     } catch (SQLException e) {
       try {
-        con.rollback();
+        ConnectionUtils.quietRollback(con);
         throw new UncheckedSQLException(e);
       } catch (SQLException e2) {
         throw new UncheckedSQLException(e2);
@@ -42,6 +42,17 @@ public class ConnectionUtils {
     } catch (Exception e) {
       con.rollback(sp);
       throw e;
+    }
+  }
+
+  public static void quietRollback(Connection conn) throws SQLException {
+    boolean isClosed = true;
+    try {
+      isClosed = conn.isClosed();
+    } catch (SQLException e) {
+    }
+    if (!isClosed) {
+      conn.rollback();
     }
   }
 
