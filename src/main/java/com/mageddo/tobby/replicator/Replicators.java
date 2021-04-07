@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 
 import javax.sql.DataSource;
 
+import com.mageddo.db.ConnectionUtils;
 import com.mageddo.db.QueryTimeoutException;
 import com.mageddo.tobby.Locker;
 import com.mageddo.tobby.UncheckedSQLException;
@@ -112,10 +113,8 @@ public class Replicators {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
-    try (
-        Connection readConn = readConnParam != null ? readConnParam : this.getConnection();
-        Connection writeConn = this.getConnection()
-    ) {
+    final Connection readConn = this.chooseReadConnection(readConnParam);
+    try (Connection writeConn = this.getConnection()) {
       final boolean autoCommit = writeConn.getAutoCommit();
       if (autoCommit) {
         if (log.isDebugEnabled()) {
@@ -141,12 +140,28 @@ public class Replicators {
       }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
+    } finally {
+      if (readConnParam == null) {
+        ConnectionUtils.quietClose(readConn);
+      }
     }
   }
 
-  private Connection getConnection() throws SQLException {
-    return this.config.getDataSource()
-        .getConnection();
+  private Connection chooseReadConnection(Connection readConnParam) {
+    if (readConnParam != null) {
+      return readConnParam;
+    }
+    return this.getConnection();
+  }
+
+  private Connection getConnection() {
+    try {
+      return this.config
+          .getDataSource()
+          .getConnection();
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
   }
 
 

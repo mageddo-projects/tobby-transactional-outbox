@@ -56,6 +56,14 @@ public class ConnectionUtils {
     }
   }
 
+  public static void quietClose(Connection conn) {
+    try {
+      conn.close();
+    } catch (SQLException e) {
+
+    }
+  }
+
   public interface Callback {
     void run() throws SQLException;
   }
