@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
+import com.mageddo.db.DuplicatedRecordException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,8 +73,7 @@ abstract class RecordDAOTest {
 
     // act
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
-        this.connection,
-        producedRecord -> {
+        this.connection, 100, producedRecord -> {
           log.info("record={}", producedRecord);
           counter.incrementAndGet();
         },

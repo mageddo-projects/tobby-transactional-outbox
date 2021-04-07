@@ -1,11 +1,17 @@
 package testing;
 
+import java.util.Properties;
+
 import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import org.flywaydb.core.Flyway;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DBMigration {
@@ -39,12 +45,32 @@ public class DBMigration {
     );
   }
 
-  public static DataSource migratePostgres() {
-    return migrate(
-        "jdbc:postgresql://localhost:5436/db?currentSchema=tobby2",
-        "root", "root",
-        "classpath:com/mageddo/tobby/db/migration-postgres"
+  @SneakyThrows
+  public static DataSource migrateAndGetDataSource(int size) {
+    final var props = new Properties();
+    props.load(DBMigration.class.getResourceAsStream(System.getProperty(
+        "db.properties",
+        "/db.properties"
+    )));
+    final var dc = pgDataSource(size, props);
+    migrate(
+        dc.getJdbcUrl(),
+        dc.getUsername(), dc.getPassword(),
+        props.getProperty("locations")
     );
+    return dc;
+  }
+
+  static HikariDataSource pgDataSource(int size, Properties props) {
+    final var config = new HikariConfig();
+    config.setDriverClassName(props.getProperty("driverClassName"));
+    config.setMinimumIdle(size);
+    config.setAutoCommit(false);
+    config.setMaximumPoolSize(size);
+    config.setJdbcUrl(props.getProperty("jdbcUrl"));
+    config.setUsername(props.getProperty("username"));
+    config.setPassword(props.getProperty("password"));
+    return new HikariDataSource(config);
   }
 
   public static Flyway setup(String url, String user, String password, String... locations) {

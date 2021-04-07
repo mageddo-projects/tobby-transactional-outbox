@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.mageddo.db.DB;
+import com.mageddo.db.DuplicatedRecordException;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
@@ -20,8 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
-
-  public static final int BATCH_SIZE = 20_000;
 
   private final DB db;
 
@@ -71,7 +70,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void iterateNotProcessedRecordsUsingInsertIdempotence(
-      Connection connection, Consumer<ProducedRecord> consumer, LocalDateTime from
+      Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
     final String sql = new StringBuilder()
         .append("SELECT * FROM TTO_RECORD R \n")
@@ -86,7 +85,7 @@ public class RecordDAOGeneric implements RecordDAO {
         .append("ORDER BY DAT_CREATED ASC \n")
         .toString();
     final StopWatch stopWatch = StopWatch.createStarted();
-    try (PreparedStatement stm = this.createStreamingStatement(connection, sql)) {
+    try (PreparedStatement stm = this.createStreamingStatement(connection, sql, fetchSize)) {
       // prevent scanning too many future partitions
       final LocalDateTime to = LocalDateTime.now()
           .plusDays(2);
@@ -127,9 +126,9 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void iterateOverRecords(Connection connection, Consumer<ProducedRecord> consumer) {
+  public void iterateOverRecords(Connection connection, int fetchSize, Consumer<ProducedRecord> consumer) {
     final StopWatch stopWatch = StopWatch.createStarted();
-    try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD")) {
+    try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
         if(log.isTraceEnabled()){
           log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
@@ -154,11 +153,11 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
-  private PreparedStatement createStreamingStatement(Connection con, String sql) throws SQLException {
+  private PreparedStatement createStreamingStatement(Connection con, String sql, int fetchSize) throws SQLException {
     final PreparedStatement stm = con.prepareStatement(
         sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
     );
-    stm.setFetchSize(BATCH_SIZE); // records to pull by time, in other words, the buffer size
+    stm.setFetchSize(fetchSize); // records to pull by time, in other words, the buffer size
 //    stm.setMaxRows(BATCH_SIZE * 5); // the maximum records this statement can retrieve at all, nao setar senao cai
 //    a performance da query
     return stm;

@@ -22,10 +22,10 @@ public class BufferedReplicator implements Replicator {
   private final int wave;
   private final StopWatch stopWatch;
 
-  public BufferedReplicator(Producer<byte[], byte[]> producer, int wave) {
+  public BufferedReplicator(Producer<byte[], byte[]> producer, int bufferSize, int wave) {
     this.producer = producer;
     this.wave = wave;
-    this.maxBufferSize = 50_000;
+    this.maxBufferSize = bufferSize;
     this.buffer = new ArrayList<>(this.maxBufferSize);
     this.stopWatch = new StopWatch();
   }
@@ -79,7 +79,7 @@ public class BufferedReplicator implements Replicator {
           );
         }
 
-        if (this.buffer.size() > 1000) {
+        if (this.buffer.size() > 1_000) {
           log.info(
               "wave={}, quantity={}, status=kafkaSendFlushed, timeSinceLastFlush={}, produceTime={}, recordsTime={}",
               this.wave,

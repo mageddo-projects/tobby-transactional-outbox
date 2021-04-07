@@ -116,14 +116,8 @@ public interface TobbyConfig {
 
     @Provides
     @Singleton
-    public ParameterDAO parameterDAO() {
-      return new ParameterDAOUniversal();
-    }
-
-    @Provides
-    @Singleton
-    public ReplicatorProvider replicatorProvider(IteratorFactory iteratorFactory){
-      return new ReplicatorProvider(this.dataSource, iteratorFactory);
+    public ReplicatorProvider replicatorProvider(IteratorFactory iteratorFactory, Locker locker){
+      return new ReplicatorProvider(this.dataSource, iteratorFactory, locker);
     }
 
     @Provides
@@ -141,6 +135,12 @@ public interface TobbyConfig {
 
     @Binds
     RecordProcessedDAO recordProcessedDAO(RecordProcessedDAOGeneric impl);
+
+    @Binds
+    LockDAO lockDAO(LockDAOGeneric impl);
+
+    @Binds
+    ParameterDAO parameterDAO(ParameterDAOUniversal impl);
   }
 
   static TobbyConfig build(String url, String username, String password) {

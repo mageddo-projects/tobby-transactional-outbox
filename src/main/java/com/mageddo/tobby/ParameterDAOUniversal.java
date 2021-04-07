@@ -6,12 +6,27 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import com.mageddo.db.DB;
+import com.mageddo.db.DuplicatedRecordException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.mageddo.db.ConnectionUtils.savepoint;
+
+@Singleton
 public class ParameterDAOUniversal implements ParameterDAO {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
+  private final DB db;
+
+  @Inject
+  public ParameterDAOUniversal(DB db) {
+    this.db = db;
+  }
 
   @Override
   public LocalDateTime findAsDateTime(
@@ -35,9 +50,19 @@ public class ParameterDAOUniversal implements ParameterDAO {
 
   @Override
   public void insertOrUpdate(Connection connection, Parameter parameter, LocalDateTime value) {
-    if (this.update(connection, parameter, value) == 0) {
-      log.info("status=nothing-to-update, action=inserting, parameter={}", parameter.name());
-      this.insert(connection, parameter, value);
+    try {
+      savepoint(connection, () -> {
+        if (this.update(connection, parameter, value) == 0) {
+          log.info("status=nothing-to-update, action=inserting, parameter={}", parameter.name());
+          try {
+            this.insert(connection, parameter, value);
+          } catch (DuplicatedRecordException e) {
+            log.info("status=already-insert, parameter={}", parameter.name());
+          }
+        }
+      });
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
     }
   }
 
@@ -50,7 +75,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
       stm.executeUpdate();
       log.info("status=inserted, parameter={}, value={}", parameter.name(), value);
     } catch (SQLException e) {
-      throw new UncheckedSQLException(e);
+      throw DuplicatedRecordException.check(this.db, parameter.name(), e);
     }
   }
 

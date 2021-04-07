@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.Locker;
 import com.mageddo.tobby.replicator.IteratorFactory;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.ReplicatorConfig.ReplicatorConfigBuilder;
@@ -13,15 +14,14 @@ import com.mageddo.tobby.replicator.Replicators;
 public class ReplicatorProvider {
 
   private final DataSource dataSource;
-//  private final RecordDAO recordDAO;
-//  private final ParameterDAO parameterDAO;
-//  private final RecordProcessedDAO recordProcessedDAO;
   private final IteratorFactory iteratorFactory;
+  private final Locker locker;
 
   @Inject
-  public ReplicatorProvider(DataSource dataSource, IteratorFactory iteratorFactory) {
+  public ReplicatorProvider(DataSource dataSource, IteratorFactory iteratorFactory, Locker locker) {
     this.dataSource = dataSource;
     this.iteratorFactory = iteratorFactory;
+    this.locker = locker;
   }
 
   public Replicators create(ReplicatorConfig config) {
@@ -29,15 +29,6 @@ public class ReplicatorProvider {
     if(config.getDataSource() == null){
       builder.dataSource(this.dataSource);
     }
-//    if(config.getRecordDAO() == null){
-//      builder.recordDAO(this.recordDAO);
-//    }
-//    if(config.getRecordProcessedDAO() == null){
-//      builder.recordProcessedDAO(this.recordProcessedDAO);
-//    }
-//    if(config.getParameterDAO() == null){
-//      builder.parameterDAO(this.parameterDAO);
-//    }
-    return new Replicators(builder.build(), this.iteratorFactory);
+    return new Replicators(builder.build(), this.iteratorFactory, this.locker);
   }
 }
