@@ -1,14 +1,11 @@
 package apps;
 
 import java.util.Map;
-
-import javax.sql.DataSource;
+import java.util.concurrent.Executors;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.replicator.IdempotenceStrategy;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -19,7 +16,6 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 
 public class ReplicatorApp {
   public static void main(String[] args) {
-    DBMigration.migratePostgres();
     final var kafkaProducer = new KafkaProducer<>(
         Map.of(
             BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"
@@ -27,25 +23,22 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var tobby = Tobby.build(dataSource(3));
+    final var tobby = Tobby.build(DBMigration.migratePostgres(10));
     final var replicator = tobby.replicator(ReplicatorConfig
         .builder()
         .producer(kafkaProducer)
         .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
         .build()
     );
-    replicator.replicate();
+
+    final var poolSize = 5;
+    final var pool = Executors.newFixedThreadPool(poolSize);
+    for (int i = 0; i < poolSize; i++) {
+      pool.submit(()  -> {
+        replicator.replicateLocking();
+      });
+    }
+
   }
 
-  public static DataSource dataSource(int size) {
-    final var config = new HikariConfig();
-    config.setDriverClassName("org.postgresql.Driver");
-    config.setMinimumIdle(size);
-    config.setAutoCommit(false);
-    config.setMaximumPoolSize(size);
-    config.setJdbcUrl("jdbc:postgresql://localhost:5436/db?currentSchema=tobby2");
-    config.setUsername("root");
-    config.setPassword("root");
-    return new HikariDataSource(config);
-  }
 }

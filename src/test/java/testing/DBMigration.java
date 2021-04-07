@@ -2,6 +2,9 @@ package testing;
 
 import javax.sql.DataSource;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import org.flywaydb.core.Flyway;
 
 import lombok.AccessLevel;
@@ -39,12 +42,26 @@ public class DBMigration {
     );
   }
 
-  public static DataSource migratePostgres() {
-    return migrate(
-        "jdbc:postgresql://localhost:5436/db?currentSchema=tobby2",
-        "root", "root",
-        "classpath:com/mageddo/tobby/db/migration-postgres"
-    );
+  public static DataSource migratePostgres(int size) {
+    final var dc = pgDataSource(size);
+//    migrate(
+//        dc.getJdbcUrl(),
+//        dc.getUsername(), dc.getPassword(),
+//        "classpath:com/mageddo/tobby/db/migration-postgres"
+//    );
+    return dc;
+  }
+
+  static HikariDataSource pgDataSource(int size) {
+    final var config = new HikariConfig();
+    config.setDriverClassName("org.postgresql.Driver");
+    config.setMinimumIdle(size);
+    config.setAutoCommit(false);
+    config.setMaximumPoolSize(size);
+    config.setJdbcUrl("jdbc:postgresql://localhost:5432/db?currentSchema=stg_mg");
+    config.setUsername("root");
+    config.setPassword("root");
+    return new HikariDataSource(config);
   }
 
   public static Flyway setup(String url, String user, String password, String... locations) {
