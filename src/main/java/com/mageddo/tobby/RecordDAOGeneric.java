@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -143,6 +144,18 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
+  public void acquireDeleting(Connection connection, List<UUID> recordIds) {
+    final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ?";
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+      for (final UUID recordId : recordIds) {
+        stm.setString(1, String.valueOf(recordId));
+        stm.addBatch();
+      }
+      Validator.isTrue(stm.executeBatch().length == recordIds.size(), "Couldn't delete record: %s", recordIds);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
   public void acquireDeleting(Connection connection, UUID id) {
     final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
