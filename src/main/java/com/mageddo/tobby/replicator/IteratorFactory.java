@@ -45,6 +45,11 @@ public class IteratorFactory {
             readConn, writeConn, this.recordDAO, this.recordProcessedDAO,
             replicator, config.getFetchSize()
         );
+      case BATCH_DELETE:
+        return new BatchDeleteIdempotenceBasedReplicator(
+            readConn, writeConn, this.recordDAO,
+            replicator, config.getFetchSize()
+        );
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + config.getIdempotenceStrategy());
     }
