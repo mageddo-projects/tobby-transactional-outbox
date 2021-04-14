@@ -20,7 +20,8 @@ public enum IdempotenceStrategy {
   DELETE_WITH_HISTORY,
 
   /**
-   * Works just like {@link #DELETE} but do the delete in batch considering {@link ReplicatorConfig#getBufferSize()}
+   * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batch
+   * considering ReplicatorConfig#getBufferSize()
    */
   BATCH_DELETE
 }
