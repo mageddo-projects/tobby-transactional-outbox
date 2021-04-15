@@ -4,6 +4,8 @@ import java.time.Duration;
 
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
+
 import org.apache.kafka.clients.producer.Producer;
 
 import lombok.Builder;
@@ -66,6 +68,11 @@ public class ReplicatorConfig {
    */
   @Builder.Default
   private final int fetchSize = 50_000;
+
+  @NonNull
+  @Builder.Default
+  private final BatchDeleteIdempotenceStrategyConfig deleteIdempotenceStrategyConfig =
+      BatchDeleteIdempotenceStrategyConfig.defaultConfig();
 
   private final DataSource dataSource;
 

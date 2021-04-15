@@ -1,12 +1,19 @@
-package com.mageddo.tobby.replicator;
+package com.mageddo.tobby.replicator.idempotencestrategy.batchdelete;
 
 import java.sql.Connection;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.replicator.BufferedReplicator;
+import com.mageddo.tobby.replicator.Replicator;
+import com.mageddo.tobby.replicator.StreamingIterator;
+
+import lombok.NonNull;
 
 public class BatchDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
@@ -15,16 +22,19 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
   private final Connection readConn;
   private final BufferedReplicator replicator;
   private final int fetchSize;
+  private final DeleteMode deleteMode;
 
   public BatchDeleteIdempotenceBasedReplicator(
       Connection readConn, Connection writeConn, RecordDAO recordDAO,
-      BufferedReplicator replicator, int fetchSize
+      BufferedReplicator replicator, int fetchSize,
+      BatchDeleteIdempotenceStrategyConfig config
   ) {
     this.recordDAO = recordDAO;
     this.writeConn = writeConn;
     this.readConn = readConn;
     this.replicator = replicator;
     this.fetchSize = fetchSize;
+    this.deleteMode = config.getDeleteMode();
   }
 
   @Override
@@ -38,13 +48,7 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
   @Override
   public void flush() {
     ConnectionUtils.useTransaction(this.writeConn, () -> {
-      this.recordDAO.acquireDeletingUsingBatch(
-          this.writeConn,
-          this.replicator.getBuffer()
-              .stream()
-              .map(ProducedRecord::getId)
-              .collect(Collectors.toList())
-      );
+      this.batchDelete();
       this.replicator.flush();
     });
   }
@@ -61,4 +65,23 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
     this.flush();
     return counter.get();
   }
+
+  private void batchDelete() {
+    final List<UUID> recordIds = this.replicator.getBuffer()
+        .stream()
+        .map(ProducedRecord::getId)
+        .collect(Collectors.toList());
+    switch (this.deleteMode) {
+      case BATCH_DELETE:
+        this.recordDAO.acquireDeletingUsingBatch(this.writeConn, recordIds);
+        break;
+      case BATCH_DELETE_USING_IN:
+        this.recordDAO.acquireDeletingUsingIn(this.writeConn, recordIds);
+        break;
+      case BATCH_DELETE_USING_THREADS:
+        this.recordDAO.acquireDeletingUsingThreads(this.writeConn, recordIds);
+        break;
+    }
+  }
+
 }
