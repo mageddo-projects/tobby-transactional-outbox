@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.RecordDAO;
@@ -27,21 +28,15 @@ public class ProducerJdbc implements Producer {
   @Override
   public ProducedRecord send(ProducerRecord record) {
     final StopWatch totalStopWatch = StopWatch.createStarted();
-    final StopWatch commitStopWatch = new StopWatch();
     try (Connection connection = this.dataSource.getConnection();) {
-      final boolean autoCommit = connection.getAutoCommit();
-      final ProducedRecord r = this.recordDAO.save(connection, record);
-      if (!autoCommit) {
-        commitStopWatch.start();
-        connection.commit();
-        commitStopWatch.stop();
-      }
-      return r;
+      return ConnectionUtils.useTransaction(connection, () -> {
+        return this.recordDAO.save(connection, record);
+      });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     } finally {
       if (log.isTraceEnabled()) {
-        log.trace("status=committed, commit={}, total={}", commitStopWatch.getTime(), totalStopWatch.getTime());
+        log.trace("status=committed, total={}", totalStopWatch.getTime());
       }
     }
   }

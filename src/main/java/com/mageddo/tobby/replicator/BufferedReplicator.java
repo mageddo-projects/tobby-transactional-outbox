@@ -46,6 +46,18 @@ public class BufferedReplicator implements Replicator {
   public void flush() {
     long elapsedTimeSinceLastFlush = this.getTimeSinceLastFlush();
     this.stopWatch.reset();
+
+    if(this.buffer.isEmpty()){
+      if (log.isTraceEnabled()) {
+        log.trace(
+            "status=noBuffer, wave={}, records={}, time={}",
+            this.wave, this.buffer.size(),
+            StopWatch.display(elapsedTimeSinceLastFlush)
+        );
+      }
+      return ;
+    }
+
     if (log.isDebugEnabled()) {
       log.debug("status=sending, wave={}, records={}", this.wave, this.buffer.size());
     }

@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceBasedReplicator;
 
 @Singleton
 public class IteratorFactory {
@@ -48,7 +49,8 @@ public class IteratorFactory {
       case BATCH_DELETE:
         return new BatchDeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
-            replicator, config.getFetchSize()
+            replicator, config.getFetchSize(),
+            config.getDeleteIdempotenceStrategyConfig()
         );
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + config.getIdempotenceStrategy());
