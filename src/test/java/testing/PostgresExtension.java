@@ -14,7 +14,6 @@ public class PostgresExtension implements BeforeAllCallback {
 
   private final List<Consumer<EmbeddedPostgres.Builder>> builderCustomizers = new CopyOnWriteArrayList<>();
 
-
   @Override
   public void beforeAll(ExtensionContext context) throws Exception {
 

@@ -132,8 +132,8 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
-        if(log.isTraceEnabled()){
-          log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        if(log.isDebugEnabled()){
+          log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
         }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -146,13 +146,27 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeleting(Connection connection, List<UUID> recordIds) {
+    if(recordIds.isEmpty()){
+      if(log.isTraceEnabled()){
+        log.trace("status=noRecordsToDelete");
+      }
+      return ;
+    }
+    final StopWatch stopWatch = StopWatch.createStarted();
     try (Statement stm = connection.createStatement()) {
       for (final UUID recordId : recordIds) {
         stm.addBatch(String.format("DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = '%s'", recordId));
       }
-      Validator.isTrue(stm.executeBatch().length == recordIds.size(), "Couldn't delete record: %s", recordIds);
+      final int affected = stm.executeBatch().length;
+      Validator.isTrue(
+          affected == recordIds.size(),
+          "Couldn't delete records, expected=%d, records=%s",  affected, recordIds
+      );
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
+    }
+    if(log.isDebugEnabled()){
+      log.debug("status=batchDeleted, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
     }
   }
   public void acquireDeleting(Connection connection, UUID id) {
