@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -152,20 +153,30 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
+    if(recordIds.isEmpty()){
+      if (log.isTraceEnabled()) {
+        log.trace("m=acquireDeletingUsingThreads, status=noRecordsToDelete");
+      }
+      return ;
+    }
     final StopWatch stopWatch = StopWatch.createStarted();
-    recordIds
+    final List<Future> promises = recordIds
         .stream()
         .map(id -> this.pool.submit(() -> this.acquireDeleting(connection, id)))
-        .forEach(future -> {
-          try {
-            future.get();
-          } catch (InterruptedException | ExecutionException e) {
-            throw new UncheckedSQLException(new SQLException(e));
-          }
-        });
+        .collect(Collectors.toList());
+
+    promises.forEach(future -> {
+      try {
+        future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new UncheckedSQLException(new SQLException(e));
+      }
+    });
 
     if (log.isDebugEnabled()) {
-      log.debug("status=acquireDeletingUsingThreads, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
+      log.debug("status=acquireDeletingUsingThreads, records={}, time={}", recordIds.size(),
+          stopWatch.getDisplayTime()
+      );
     }
   }
 
