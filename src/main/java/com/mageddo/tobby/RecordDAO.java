@@ -5,6 +5,7 @@ import com.mageddo.tobby.replicator.Replicators;
 
 import java.sql.Connection;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -43,6 +44,8 @@ public interface RecordDAO {
   void iterateOverRecords(
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer
   );
+
+  void acquireDeleting(Connection connection, List<UUID> recordIds);
 
   void acquireDeleting(Connection connection, UUID id);
 }

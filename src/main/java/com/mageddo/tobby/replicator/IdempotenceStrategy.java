@@ -17,5 +17,11 @@ public enum IdempotenceStrategy {
    * Search for record at TTO_RECORD, as {@link #DELETE}, try to delete records but after that also inserts the deleted
    * record at TTO_RECORD_PROCESSED table, this way history records are ensured.
    */
-  DELETE_WITH_HISTORY
+  DELETE_WITH_HISTORY,
+
+  /**
+   * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batch
+   * considering ReplicatorConfig#getBufferSize()
+   */
+  BATCH_DELETE
 }

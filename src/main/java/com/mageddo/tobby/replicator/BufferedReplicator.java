@@ -109,4 +109,8 @@ public class BufferedReplicator implements Replicator {
   public int size() {
     return this.buffer.size();
   }
+
+  public List<ProducedRecord> getBuffer() {
+    return this.buffer;
+  }
 }

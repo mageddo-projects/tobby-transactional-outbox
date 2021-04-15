@@ -16,7 +16,7 @@
     <appender-ref ref="CONSOLE"/>
   </root>
 
-  <logger name="com.mageddo.tobby" level="INFO"/>
+  <logger name="com.mageddo.tobby" level="DEBUG"/>
   <logger name="com.zaxxer.hikari.pool.ProxyConnection" level="ERROR"/>
 <!--  <logger name="com.mageddo.db.StmUtils" level="TRACE"/>-->
 <!--  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="TRACE"/>-->

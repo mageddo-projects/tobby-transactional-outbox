@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -130,8 +132,8 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
-        if(log.isTraceEnabled()){
-          log.trace("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        if(log.isDebugEnabled()){
+          log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
         }
         while (rs.next()) {
           consumer.accept(ProducedRecordConverter.map(rs));
@@ -143,6 +145,30 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
+  public void acquireDeleting(Connection connection, List<UUID> recordIds) {
+    if(recordIds.isEmpty()){
+      if(log.isTraceEnabled()){
+        log.trace("status=noRecordsToDelete");
+      }
+      return ;
+    }
+    final StopWatch stopWatch = StopWatch.createStarted();
+    try (Statement stm = connection.createStatement()) {
+      for (final UUID recordId : recordIds) {
+        stm.addBatch(String.format("DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = '%s'", recordId));
+      }
+      final int affected = stm.executeBatch().length;
+      Validator.isTrue(
+          affected == recordIds.size(),
+          "Couldn't delete records, expected=%d, records=%s",  affected, recordIds
+      );
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+    if(log.isDebugEnabled()){
+      log.debug("status=batchDeleted, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
+    }
+  }
   public void acquireDeleting(Connection connection, UUID id) {
     final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
