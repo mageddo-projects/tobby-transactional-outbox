@@ -152,6 +152,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     recordIds
         .stream()
         .map(id -> this.pool.submit(() -> this.acquireDeleting(connection, id)))
@@ -162,10 +163,15 @@ public class RecordDAOGeneric implements RecordDAO {
             throw new UncheckedSQLException(new SQLException(e));
           }
         });
+
+    if (log.isDebugEnabled()) {
+      log.debug("status=acquireDeletingUsingThreads, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
+    }
   }
 
   @Override
   public void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("status=noRecordsToDelete");
@@ -198,6 +204,10 @@ public class RecordDAOGeneric implements RecordDAO {
         );
       } catch (SQLException e) {
         throw new UncheckedSQLException(e);
+      }
+
+      if (log.isDebugEnabled()) {
+        log.debug("status=acquireDeleteUsingIn, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
       }
     }
 
