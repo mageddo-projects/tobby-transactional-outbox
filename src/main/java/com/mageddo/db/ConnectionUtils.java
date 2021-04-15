@@ -34,12 +34,11 @@ public class ConnectionUtils {
       }
       return r;
     } catch (SQLException e) {
-      try {
-        ConnectionUtils.quietRollback(con);
-        throw new UncheckedSQLException(e);
-      } catch (SQLException e2) {
-        throw new UncheckedSQLException(e2);
-      }
+      ConnectionUtils.quietRollback(con);
+      throw new UncheckedSQLException(e);
+    } catch (UncheckedSQLException e) {
+      ConnectionUtils.quietRollback(con);
+      throw e;
     }
   }
 
@@ -53,7 +52,7 @@ public class ConnectionUtils {
     }
   }
 
-  public static void quietRollback(Connection conn) throws SQLException {
+  public static void quietRollback(Connection conn) {
     try {
       if (!conn.getAutoCommit()) {
         conn.rollback();

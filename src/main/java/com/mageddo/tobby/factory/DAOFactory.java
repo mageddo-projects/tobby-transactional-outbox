@@ -4,6 +4,9 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordDAOGeneric;
 import com.mageddo.db.DB;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 public class DAOFactory {
   private DAOFactory() {
   }
@@ -11,7 +14,7 @@ public class DAOFactory {
   public static RecordDAO createRecordDao(DB db){
     switch (db.getName()){
       default:
-        return new RecordDAOGeneric(db, pool);
+        return new RecordDAOGeneric(db, buildPool());
 //      case ORACLE:
 //      case POSTGRES:
 //        throw new UnsupportedOperationException();
@@ -23,5 +26,15 @@ public class DAOFactory {
 //      case SQLSERVER:
 //        throw new UnsupportedOperationException();
     }
+  }
+
+  private static ScheduledExecutorService buildPool() {
+    return Executors.newScheduledThreadPool(10, r -> {
+      final Thread t = Executors
+          .defaultThreadFactory()
+          .newThread(r);
+      t.setDaemon(true);
+      return t;
+    });
   }
 }

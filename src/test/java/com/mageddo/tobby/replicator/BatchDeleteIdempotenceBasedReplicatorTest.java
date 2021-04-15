@@ -11,6 +11,10 @@ import java.util.concurrent.Future;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.TobbyConfig;
 
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
+
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +52,7 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
     this.connection = dataSource.getConnection();
     this.tobby = TobbyConfig.build(dataSource);
     this.jdbcProducer = tobby.producer();
-    this.replicator = this.buildStrategy();
+    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE);
   }
 
   @AfterEach
@@ -106,6 +110,36 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   }
 
+  @Test
+  void mustSendReplicateThenDeleteRecordsUsingDeleteUsingThreadsMode() {
+
+    // arrange
+    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE_USING_THREADS);
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any());
+
+    final int count = 1001;
+
+    final List<UUID> ids = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      final var record = ProducerRecordTemplates.coconut();
+      final var savedRecord = this.jdbcProducer.send(record);
+      assertNotNull(this.findRecord(savedRecord.getId()));
+      ids.add(savedRecord.getId());
+    }
+
+    // act
+    this.replicator.replicate();
+
+    // assert
+    for (UUID id : ids) {
+      assertNull(this.findRecord(id));
+      assertNull(this.findProcessedRecord(id));
+    }
+
+  }
+
   private ProducedRecord findProcessedRecord(UUID id) {
     return this.tobby.recordProcessedDAO()
         .find(this.connection, id);
@@ -116,12 +150,17 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
         .find(this.connection, id);
   }
 
-  private Replicators buildStrategy() {
+  private Replicators buildStrategy(DeleteMode deleteMode) {
     return this.tobby.replicator(ReplicatorConfig
         .builder()
         .producer(this.producer)
         .idleTimeout(Duration.ofMillis(600))
         .idempotenceStrategy(IdempotenceStrategy.BATCH_DELETE)
+        .deleteIdempotenceStrategyConfig(BatchDeleteIdempotenceStrategyConfig
+            .builder()
+            .deleteMode(deleteMode)
+            .build()
+        )
         .build()
     );
   }

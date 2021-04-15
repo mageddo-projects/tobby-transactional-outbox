@@ -232,7 +232,11 @@ public class RecordDAOGeneric implements RecordDAO {
     final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
-      Validator.isTrue(stm.executeUpdate() == 1, "Couldn't delete record: %s", id);
+      final int affected = stm.executeUpdate();
+      if (log.isTraceEnabled()) {
+        log.trace("m=acquireDeleting, status=deleted, id={}, affected={}", id, affected);
+      }
+      Validator.isTrue(affected == 1, "Couldn't delete record: %s", id);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
