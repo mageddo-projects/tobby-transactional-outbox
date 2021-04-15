@@ -14,17 +14,25 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConnectionUtils {
   public static void useTransaction(Connection con, Runnable runnable) {
+    useTransaction(con, () -> {
+      runnable.run();
+      return null;
+    });
+  }
+
+  public static <T>T useTransaction(Connection con, Callable<T> runnable) {
     try {
       final boolean isAutoCommit = con.getAutoCommit();
       if (isAutoCommit) {
         con.setAutoCommit(false);
       }
-      runnable.run();
+      final T r = runnable.call();
       if (isAutoCommit) {
         con.setAutoCommit(true);
       } else {
         con.commit();
       }
+      return r;
     } catch (SQLException e) {
       try {
         ConnectionUtils.quietRollback(con);
@@ -66,5 +74,9 @@ public class ConnectionUtils {
 
   public interface Callback {
     void run() throws SQLException;
+  }
+
+  public interface Callable<T> {
+    T call();
   }
 }

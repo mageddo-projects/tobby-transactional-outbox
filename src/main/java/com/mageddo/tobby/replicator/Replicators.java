@@ -115,14 +115,7 @@ public class Replicators {
     }
     final Connection readConn = this.chooseReadConnection(readConnParam);
     try (Connection writeConn = this.getConnection()) {
-      final boolean autoCommit = writeConn.getAutoCommit();
-      if (autoCommit) {
-        if (log.isDebugEnabled()) {
-          log.info("status=disabling-auto-commit-for-this-transaction, wave={}", wave);
-        }
-        writeConn.setAutoCommit(false);
-      }
-      try {
+      return useTransaction(writeConn, () -> {
         final BufferedReplicator bufferedReplicator = new BufferedReplicator(
             this.config.getProducer(), this.config.getBufferSize(), wave
         );
@@ -130,14 +123,7 @@ public class Replicators {
             bufferedReplicator, readConn, writeConn, this.config
         );
         return replicator.iterate();
-      } finally {
-        if (autoCommit) {
-          if (log.isDebugEnabled()) {
-            log.info("status=enabling-auto-commit-back, wave={}", wave);
-          }
-          writeConn.setAutoCommit(true);
-        }
-      }
+      });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     } finally {
