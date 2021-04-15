@@ -170,7 +170,6 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   }
 
-
   private ProducedRecord findProcessedRecord(UUID id) {
     return this.tobby.recordProcessedDAO()
         .find(this.connection, id);
