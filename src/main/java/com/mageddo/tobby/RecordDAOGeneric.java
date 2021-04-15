@@ -170,35 +170,37 @@ public class RecordDAOGeneric implements RecordDAO {
       if (log.isTraceEnabled()) {
         log.trace("status=noRecordsToDelete");
       }
+      return;
+    }
+    int skip = 0;
+    while (true) {
 
-      int skip = 0;
-      while (true) {
+      final List<String> params = this.subList(recordIds, skip);
+      final StringBuilder sql = new StringBuilder("DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD IN (")
+          .append(this.buildBinds(params))
+          .append(")");
+      if (params.isEmpty()) {
+        break;
+      }
 
-        final List<String> params = this.subList(recordIds, skip);
-        final StringBuilder sql = new StringBuilder("DELETE FROM TRASH WHERE IDT_TRASH IN (")
-            .append(this.buildBinds(params))
-            .append(")");
-        try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
+      try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
 
-          if (params.isEmpty()) {
-            break;
-          }
-          skip += params.size();
+        skip += params.size();
 
-          for (int i = 1; i <= params.size(); i++) {
-            stm.setString(i, params.get(i));
-          }
-          final int affected = stm.executeUpdate();
-          Validator.isTrue(
-              affected == params.size(),
-              "Didn't delete all records, expected=%d, actual=%d",
-              params.size(), affected
-          );
-        } catch (SQLException e) {
-          throw new UncheckedSQLException(e);
+        for (int i = 1; i <= params.size(); i++) {
+          stm.setString(i, params.get(i - 1));
         }
+        final int affected = stm.executeUpdate();
+        Validator.isTrue(
+            affected == params.size(),
+            "Didn't delete all records, expected=%d, actual=%d",
+            params.size(), affected
+        );
+      } catch (SQLException e) {
+        throw new UncheckedSQLException(e);
       }
     }
+
   }
 
   @Override

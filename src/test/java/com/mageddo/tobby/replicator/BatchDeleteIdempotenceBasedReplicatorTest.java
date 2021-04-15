@@ -140,6 +140,37 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   }
 
+  @Test
+  void mustSendReplicateThenDeleteRecordsUsingDeleteUsingInMode() {
+
+    // arrange
+    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE_USING_IN);
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any());
+
+    final int count = 1001;
+
+    final List<UUID> ids = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      final var record = ProducerRecordTemplates.coconut();
+      final var savedRecord = this.jdbcProducer.send(record);
+      assertNotNull(this.findRecord(savedRecord.getId()));
+      ids.add(savedRecord.getId());
+    }
+
+    // act
+    this.replicator.replicate();
+
+    // assert
+    for (UUID id : ids) {
+      assertNull(this.findRecord(id));
+      assertNull(this.findProcessedRecord(id));
+    }
+
+  }
+
+
   private ProducedRecord findProcessedRecord(UUID id) {
     return this.tobby.recordProcessedDAO()
         .find(this.connection, id);
