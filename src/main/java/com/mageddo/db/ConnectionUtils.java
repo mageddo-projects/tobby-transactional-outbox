@@ -36,7 +36,7 @@ public class ConnectionUtils {
     } catch (SQLException e) {
       ConnectionUtils.quietRollback(con);
       throw new UncheckedSQLException(e);
-    } catch (UncheckedSQLException e) {
+    } catch (Exception e) {
       ConnectionUtils.quietRollback(con);
       throw e;
     }
