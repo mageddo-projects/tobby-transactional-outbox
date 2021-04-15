@@ -20,7 +20,7 @@ public class ConnectionUtils {
     });
   }
 
-  public static <T>T useTransaction(Connection con, Callable<T> runnable) {
+  public static <T> T useTransaction(Connection con, Callable<T> runnable) {
     try {
       final boolean isAutoCommit = con.getAutoCommit();
       if (isAutoCommit) {
@@ -54,13 +54,11 @@ public class ConnectionUtils {
   }
 
   public static void quietRollback(Connection conn) throws SQLException {
-    boolean isClosed = true;
     try {
-      isClosed = conn.isClosed();
+      if (!conn.getAutoCommit()) {
+        conn.rollback();
+      }
     } catch (SQLException e) {
-    }
-    if (!isClosed) {
-      conn.rollback();
     }
   }
 
