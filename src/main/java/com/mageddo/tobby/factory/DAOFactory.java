@@ -11,7 +11,7 @@ public class DAOFactory {
   public static RecordDAO createRecordDao(DB db){
     switch (db.getName()){
       default:
-        return new RecordDAOGeneric(db);
+        return new RecordDAOGeneric(db, pool);
 //      case ORACLE:
 //      case POSTGRES:
 //        throw new UnsupportedOperationException();

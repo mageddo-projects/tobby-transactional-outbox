@@ -1,7 +1,6 @@
 package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -39,7 +38,7 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
   @Override
   public void flush() {
     ConnectionUtils.useTransaction(this.writeConn, () -> {
-      this.recordDAO.acquireDeleting(
+      this.recordDAO.acquireDeletingUsingBatch(
           this.writeConn,
           this.replicator.getBuffer()
               .stream()

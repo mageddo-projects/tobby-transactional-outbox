@@ -45,7 +45,11 @@ public interface RecordDAO {
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer
   );
 
-  void acquireDeleting(Connection connection, List<UUID> recordIds);
+  void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds);
+
+  void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds);
+
+  void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds);
 
   void acquireDeleting(Connection connection, UUID id);
 }

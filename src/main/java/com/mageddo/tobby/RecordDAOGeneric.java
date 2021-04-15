@@ -9,7 +9,11 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
@@ -25,9 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 public class RecordDAOGeneric implements RecordDAO {
 
   private final DB db;
+  private final ExecutorService pool;
 
-  public RecordDAOGeneric(DB db) {
+  public RecordDAOGeneric(DB db, ExecutorService pool) {
     this.db = db;
+    this.pool = pool;
   }
 
   @Override
@@ -132,7 +138,7 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
-        if(log.isDebugEnabled()){
+        if (log.isDebugEnabled()) {
           log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
         }
         while (rs.next()) {
@@ -145,12 +151,63 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void acquireDeleting(Connection connection, List<UUID> recordIds) {
-    if(recordIds.isEmpty()){
-      if(log.isTraceEnabled()){
+  public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
+    recordIds
+        .stream()
+        .map(id -> this.pool.submit(() -> this.acquireDeleting(connection, id)))
+        .forEach(future -> {
+          try {
+            future.get();
+          } catch (InterruptedException | ExecutionException e) {
+            throw new UncheckedSQLException(new SQLException(e));
+          }
+        });
+  }
+
+  @Override
+  public void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds) {
+    if (recordIds.isEmpty()) {
+      if (log.isTraceEnabled()) {
         log.trace("status=noRecordsToDelete");
       }
-      return ;
+
+      int skip = 0;
+      while (true) {
+
+        final List<String> params = this.subList(recordIds, skip);
+        final StringBuilder sql = new StringBuilder("DELETE FROM TRASH WHERE IDT_TRASH IN (")
+            .append(this.buildBinds(params))
+            .append(")");
+        try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
+
+          if (params.isEmpty()) {
+            break;
+          }
+          skip += params.size();
+
+          for (int i = 1; i <= params.size(); i++) {
+            stm.setString(i, params.get(i));
+          }
+          final int affected = stm.executeUpdate();
+          Validator.isTrue(
+              affected == params.size(),
+              "Didn't delete all records, expected=%d, actual=%d",
+              params.size(), affected
+          );
+        } catch (SQLException e) {
+          throw new UncheckedSQLException(e);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds) {
+    if (recordIds.isEmpty()) {
+      if (log.isTraceEnabled()) {
+        log.trace("status=noRecordsToDelete");
+      }
+      return;
     }
     final StopWatch stopWatch = StopWatch.createStarted();
     try (Statement stm = connection.createStatement()) {
@@ -160,15 +217,17 @@ public class RecordDAOGeneric implements RecordDAO {
       final int affected = stm.executeBatch().length;
       Validator.isTrue(
           affected == recordIds.size(),
-          "Couldn't delete records, expected=%d, records=%s",  affected, recordIds
+          "Couldn't delete records, expected=%d, records=%s", affected, recordIds
       );
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
-    if(log.isDebugEnabled()){
+    if (log.isDebugEnabled()) {
       log.debug("status=batchDeleted, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
     }
   }
+
+  @Override
   public void acquireDeleting(Connection connection, UUID id) {
     final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
@@ -189,7 +248,6 @@ public class RecordDAOGeneric implements RecordDAO {
     return stm;
   }
 
-
   private UUID fillStatement(ProducerRecord record, PreparedStatement stm) throws SQLException {
     final UUID id = UUID.randomUUID();
     stm.setString(1, id.toString());
@@ -201,4 +259,18 @@ public class RecordDAOGeneric implements RecordDAO {
     return id;
   }
 
+  private List<String> subList(List<UUID> recordIds, int skip) {
+    return recordIds
+        .stream()
+        .skip(skip)
+        .limit(999)
+        .map(UUID::toString)
+        .collect(Collectors.toList());
+  }
+
+  private String buildBinds(List<String> params) {
+    return params.stream()
+        .map(it -> "?")
+        .collect(Collectors.joining(", "));
+  }
 }
