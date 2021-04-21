@@ -83,7 +83,7 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
       }
       return;
     }
-    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt);
+    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt.toString());
   }
 
   private LocalDateTime findLastUpdate(Connection connection) {

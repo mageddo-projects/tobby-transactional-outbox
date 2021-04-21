@@ -11,6 +11,11 @@ public class UncheckedSQLException extends RuntimeException {
     this.delegate = delegate;
   }
 
+  public UncheckedSQLException(String msg, SQLException delegate) {
+    super(msg, delegate);
+    this.delegate = delegate;
+  }
+
   public SQLException getDelegate() {
     return delegate;
   }
