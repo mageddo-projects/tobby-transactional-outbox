@@ -8,9 +8,13 @@ public interface ParameterDAO {
   LocalDateTime findAsDateTime(Connection connection, Parameter parameter,
       LocalDateTime defaultValue);
 
-  void insertOrUpdate(Connection connection, Parameter parameter, LocalDateTime value);
+  String find(Connection connection, Parameter parameter, String defaultValue);
 
-  void insert(Connection connection, Parameter parameter, LocalDateTime value);
+  void insertOrUpdate(Connection connection, Parameter parameter, String value);
 
-  int update(Connection connection, Parameter parameter, LocalDateTime value);
+  void insert(Connection connection, Parameter parameter, String value);
+
+  int update(Connection connection, Parameter parameter, String value);
+
+  boolean insertIfAbsent(Connection conn, Parameter parameter, String value);
 }

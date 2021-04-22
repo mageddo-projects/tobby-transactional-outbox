@@ -30,9 +30,9 @@ public class LockDAOGeneric implements LockDAO {
         .append("WHERE IDT_TTO_PARAMETER = ? \n");
     try (final PreparedStatement stm = conn.prepareStatement(sql.toString())) {
       stm.setString(1, Parameter.REPLICATOR_LOCK.name());
-//      final int affected = StmUtils.executeOrCancel(stm, timeout);
-      stm.setQueryTimeout((int) (timeout.toMillis() / 1000));
-      final int affected = stm.executeUpdate();
+      final int affected = StmUtils.executeOrCancel(stm, timeout);
+//      stm.setQueryTimeout((int) (timeout.toMillis() / 1000));
+//      final int affected = stm.executeUpdate();
       if (affected != 1) {
         throw new IllegalStateException("Must update exactly one record while locking");
       }
