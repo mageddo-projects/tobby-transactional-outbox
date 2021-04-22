@@ -167,8 +167,8 @@ class ReplicatorsTest {
         .collect(Collectors.toList());
 
     // assert
-    assertEquals(workers, replicationResult.size());
-    assertTrue(replicationResult.contains(true));
+    assertEquals(workers, replicationResult.size(), String.format("result was: %s", replicationResult));
+    assertTrue(replicationResult.contains(true), String.format("result was: %s", replicationResult));
     assertEquals("[false, false, true]", replicationResult.toString());
     verify(this.mockProducer, times(2)).send(any());
 
