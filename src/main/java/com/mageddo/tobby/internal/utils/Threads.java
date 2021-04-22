@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Threads {
+
   public static ExecutorService newPool(int size) {
     return Executors.newFixedThreadPool(size, r -> {
       Thread t = Executors
@@ -24,6 +25,9 @@ public class Threads {
     });
   }
 
+  /**
+   * Submit all callables at the thread pool and wait all the futures to return.
+   */
   public static <V> List<V> executeAndGet(ExecutorService executorService, List<Callable<V>> callables) {
     final List<Future<V>> futures = new ArrayList<>();
     for (Callable<V> callable : callables) {
@@ -32,6 +36,9 @@ public class Threads {
     return get(futures);
   }
 
+  /**
+   * Wait all the futures to return.
+   */
   public static <V> List<V> get(List<Future<V>> futures) {
     final List<V> results = new ArrayList<>();
     for (Future<V> future : futures) {
@@ -46,6 +53,11 @@ public class Threads {
     return results;
   }
 
+  /**
+   * Sleep for some duration.
+   *
+   * @throws UncheckedInterruptedException when thread is interrupted.
+   */
   public static void sleep(Duration duration) {
     try {
       Thread.sleep(duration.toMillis());

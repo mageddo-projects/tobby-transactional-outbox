@@ -147,7 +147,11 @@ class ReplicatorsTest {
     // act
     final var futures = new ArrayList<Future<Boolean>>();
     for (int i = 0; i < workers; i++) {
-      final var future = executorService.submit(() -> this.replicateLocking());
+      final var future =
+          executorService.submit(() -> {
+            return this.buildDefaultReplicator(Duration.ofMillis(150))
+                .replicateLocking();
+          });
       futures.add(future);
     }
 
