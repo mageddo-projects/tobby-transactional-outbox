@@ -11,6 +11,9 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceBasedReplicator;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchParallelDeleteIdempotenceBasedReplicator;
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
+
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_DELETE_DELETE_MODE;
 
 @Singleton
 public class IteratorFactory {
@@ -55,7 +58,7 @@ public class IteratorFactory {
         return new BatchDeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
             replicatorSuplier.get(), config.getFetchSize(),
-            config.getDeleteIdempotenceStrategyConfig()
+            DeleteMode.valueOf(config.get(REPLICATORS_BATCH_DELETE_DELETE_MODE))
         );
       case BATCH_PARALLEL_DELETE:
         return this.batchParallelDeleteIdempotenceBasedReplicator;

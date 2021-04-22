@@ -1,10 +1,13 @@
 package com.mageddo.tobby.replicator;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
-import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.Producer;
 
@@ -20,6 +23,7 @@ import lombok.Value;
 public class ReplicatorConfig {
 
   public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(15);
+  public static final String REPLICATORS_BATCH_DELETE_DELETE_MODE = "replicators.batch-delete.delete-mode";
 
   /**
    * Producer used to send messages to kafka server.
@@ -73,16 +77,37 @@ public class ReplicatorConfig {
   private final int fetchSize = 50_000;
 
   @NonNull
-  @Builder.Default
-  private final BatchDeleteIdempotenceStrategyConfig deleteIdempotenceStrategyConfig =
-      BatchDeleteIdempotenceStrategyConfig.defaultConfig();
+  private Map<String, String> props;
 
-//  private final RecordDAO recordDAO;
-//
-//  private final ParameterDAO parameterDAO;
-//
-//  private final RecordProcessedDAO recordProcessedDAO;
+  public int getInt(String key) {
+    return Integer.parseInt(this.props.get(key));
+  }
 
-  public static class ReplicatorConfigBuilder {}
+  public String get(String key) {
+    return this.props.get(key);
+  }
+
+  public Map<String, String> getProps() {
+    return Collections.unmodifiableMap(this.props);
+  }
+
+  public static class ReplicatorConfigBuilder {
+
+    public ReplicatorConfigBuilder() {
+      this.props = buildDefaultProps();
+    }
+
+    public ReplicatorConfigBuilder put(String key, String value) {
+      this.props.put(key, value);
+      return this;
+    }
+
+
+    private static Map<String, String> buildDefaultProps() {
+      final Map<String, String> props = new HashMap<>();
+      props.put(REPLICATORS_BATCH_DELETE_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_THREADS.name());
+      return props;
+    }
+  }
 
 }

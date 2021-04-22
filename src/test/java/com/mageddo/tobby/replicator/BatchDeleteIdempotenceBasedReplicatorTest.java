@@ -13,7 +13,6 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.TobbyConfig;
-import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -27,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
 
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_DELETE_DELETE_MODE;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -190,11 +190,7 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
         .producer(this.producer)
         .idleTimeout(Duration.ofMillis(600))
         .idempotenceStrategy(IdempotenceStrategy.BATCH_DELETE)
-        .deleteIdempotenceStrategyConfig(BatchDeleteIdempotenceStrategyConfig
-            .builder()
-            .deleteMode(deleteMode)
-            .build()
-        )
+        .put(REPLICATORS_BATCH_DELETE_DELETE_MODE, deleteMode.name())
         .build()
     );
   }

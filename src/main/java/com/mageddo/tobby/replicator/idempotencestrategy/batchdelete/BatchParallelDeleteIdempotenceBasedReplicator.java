@@ -103,18 +103,14 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Builder
   public static class Config {
     @NonNull
-    private int fetchSize;
-
-    @NonNull
     private DeleteMode deleteMode;
 
-    @NonNull
+    private int fetchSize;
+
     private int bufferSize;
 
-    @NonNull
     private int threadBufferSize;
 
-    @NonNull
     private int threads;
 
     public static Config from(ReplicatorConfig config) {

@@ -25,14 +25,14 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
   public BatchDeleteIdempotenceBasedReplicator(
       Connection readConn, Connection writeConn, RecordDAO recordDAO,
       BufferedReplicator replicator, int fetchSize,
-      BatchDeleteIdempotenceStrategyConfig config
+      DeleteMode deleteMode
   ) {
     this.recordDAO = recordDAO;
     this.writeConn = writeConn;
     this.readConn = readConn;
     this.replicator = replicator;
     this.fetchSize = fetchSize;
-    this.deleteMode = config.getDeleteMode();
+    this.deleteMode = deleteMode;
   }
 
   @Override
