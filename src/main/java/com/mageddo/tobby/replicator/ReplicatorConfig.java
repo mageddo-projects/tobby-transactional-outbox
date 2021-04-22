@@ -30,6 +30,8 @@ public class ReplicatorConfig {
       "replicators.batch-parallel-delete.threads";
   public static final String REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE =
       "replicators.batch-parallel-delete.buffer-size";
+  public static final String REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE =
+      "replicators.batch-parallel-delete.thread-buffer-size";
 
   /**
    * Producer used to send messages to kafka server.
@@ -125,6 +127,7 @@ public class ReplicatorConfig {
       props.put(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE, String.valueOf(20_000));
       props.put(REPLICATORS_BATCH_PARALLEL_THREADS, "10");
       props.put(REPLICATORS_BATCH_PARALLEL_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_IN.name());
+      props.put(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, String.valueOf(1_000));
       return props;
     }
   }

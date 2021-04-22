@@ -1,7 +1,6 @@
 package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
-import java.util.function.Supplier;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,7 +32,7 @@ public class IteratorFactory {
   }
 
   public StreamingIterator create(
-      Supplier<BufferedReplicator> replicatorSuplier,
+      BufferedReplicator replicator,
       Connection readConn, Connection writeConn,
       ReplicatorConfig config
   ) {
@@ -41,23 +40,23 @@ public class IteratorFactory {
       case INSERT:
         return new InsertIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO, this.parameterDAO,
-            replicatorSuplier.get(), config.getMaxRecordDelayToCommit(),
+            replicator, config.getMaxRecordDelayToCommit(),
             config.getFetchSize()
         );
       case DELETE:
         return new DeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
-            replicatorSuplier.get(), config.getFetchSize()
+            replicator, config.getFetchSize()
         );
       case DELETE_WITH_HISTORY:
         return new DeleteWithHistoryIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO, this.recordProcessedDAO,
-            replicatorSuplier.get(), config.getFetchSize()
+            replicator, config.getFetchSize()
         );
       case BATCH_DELETE:
         return new BatchDeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
-            replicatorSuplier.get(), config.getFetchSize(),
+            replicator, config.getFetchSize(),
             DeleteMode.valueOf(config.get(REPLICATORS_BATCH_DELETE_DELETE_MODE))
         );
       case BATCH_PARALLEL_DELETE:

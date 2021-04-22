@@ -7,6 +7,7 @@ public class UncheckedExecutionException extends RuntimeException {
   private final ExecutionException executionException;
 
   public UncheckedExecutionException(ExecutionException executionException) {
+    super(executionException);
     this.executionException = executionException;
   }
 

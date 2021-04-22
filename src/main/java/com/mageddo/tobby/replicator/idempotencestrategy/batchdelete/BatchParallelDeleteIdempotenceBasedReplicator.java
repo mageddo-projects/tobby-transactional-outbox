@@ -28,6 +28,7 @@ import lombok.Value;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_DELETE_MODE;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREADS;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE;
 
 @Singleton
 public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
@@ -56,7 +57,11 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Override
   public boolean send(ProducedRecord record) {
     this.buffer.add(record);
-    return this.buffer.size() >= this.config.getBufferSize();
+    final boolean exhausted = this.buffer.size() >= this.config.getBufferSize();
+    if (exhausted) {
+      this.flush();
+    }
+    return exhausted;
   }
 
   @Override
@@ -78,8 +83,9 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
           return null;
         }
       });
-      Threads.executeAndGet(this.pool, batchThread.getCallables());
     }
+    Threads.executeAndGet(this.pool, batchThread.getCallables());
+    this.buffer.clear();
   }
 
   @Override
@@ -125,6 +131,7 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
           .bufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE))
           .deleteMode(DeleteMode.valueOf(config.get(REPLICATORS_BATCH_PARALLEL_DELETE_MODE)))
           .threads(config.getInt(REPLICATORS_BATCH_PARALLEL_THREADS))
+          .threadBufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE))
           .build();
     }
   }
