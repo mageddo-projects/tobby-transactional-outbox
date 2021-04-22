@@ -92,14 +92,17 @@ public class Replicators {
         }
       }
 
-      if (processed < 1_000 && stopWatch.getDuration()
-          .compareTo(Duration.ofSeconds(1)) <= 0
-      ) {
-        log.info("status=replicatorIsIdle, action=exit");
+      final ReplicatorContextVars contextVars = ReplicatorContextVars
+          .builder()
+          .waveDuration(stopWatch.getDuration())
+          .waveProcessed(processed)
+          .durationSinceLastTimeProcessed(Duration.ofMillis(millisPassed(lastTimeProcessed)))
+          .wave(wave)
+          .build();
+      if (this.shouldStop(contextVars)) {
+        log.info("status=replicatorIsConsideredIdle, action=exiting, contextVars={}", contextVars);
         return;
       }
-      log.info("wake");
-
       if (!this.shouldRun(lastTimeProcessed)) {
         log.info(
             "status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.config.getIdleTimeout()
@@ -108,6 +111,11 @@ public class Replicators {
       }
     }
 //    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
+  }
+
+  private boolean shouldStop(ReplicatorContextVars contextVars) {
+    return config.getJobStopPredicate()
+        .test(contextVars);
   }
 
   private long safeDivide(StopWatch stopWatch, int processed) {

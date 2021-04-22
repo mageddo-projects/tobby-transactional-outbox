@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.sql.DataSource;
 
@@ -87,6 +88,17 @@ public class ReplicatorConfig {
 
   @NonNull
   private Map<String, String> props;
+
+  /**
+   * Some condition to check if replicator job should stop or not, it will be tested after each wave.
+   *
+   * Default it's to never stop
+   *
+   * @see ReplicatorStopPredicates
+   */
+  @NonNull
+  @Builder.Default
+  private Predicate<ReplicatorContextVars> jobStopPredicate = (it) -> false;
 
   public int getInt(String key) {
     this.validateIsSet(key);
