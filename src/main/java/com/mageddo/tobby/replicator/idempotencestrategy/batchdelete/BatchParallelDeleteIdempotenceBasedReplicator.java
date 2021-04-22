@@ -110,17 +110,13 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Override
   public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
-    try(final Connection conn = this.dataSource.getConnection()){
-      this.recordDAO.iterateOverRecords(
-          conn, this.config.getFetchSize(), (record) -> {
-            counter.incrementAndGet();
-            this.send(record);
-          }
-      );
-      this.flush();
-    } catch (SQLException e) {
-      throw new UncheckedSQLException(e);
-    }
+    this.recordDAO.iterateOverRecords(
+        readConn, this.config.getFetchSize(), (record) -> {
+          counter.incrementAndGet();
+          this.send(record);
+        }
+    );
+    this.flush();
     return counter.get();
   }
 
