@@ -13,8 +13,6 @@ import com.mageddo.tobby.replicator.BufferedReplicator;
 import com.mageddo.tobby.replicator.Replicator;
 import com.mageddo.tobby.replicator.StreamingIterator;
 
-import lombok.NonNull;
-
 public class BatchDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
   private final RecordDAO recordDAO;
@@ -54,7 +52,7 @@ public class BatchDeleteIdempotenceBasedReplicator implements Replicator, Stream
   }
 
   @Override
-  public int iterate() {
+  public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateOverRecords(
         this.readConn, this.fetchSize, (record) -> {

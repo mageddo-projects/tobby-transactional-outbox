@@ -1,6 +1,13 @@
 package com.mageddo.tobby.replicator;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.UUID;
+import java.util.concurrent.Future;
+
 import com.mageddo.tobby.ProducedRecord;
+import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.TobbyConfig;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -13,12 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.util.UUID;
-import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -87,7 +88,7 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
   }
 
   private Replicators buildDefaultDeleteWithHistoryReplicator() {
-    return this.tobby.replicator(ReplicatorConfig
+    return Tobby.replicator(ReplicatorConfig
         .builder()
         .producer(this.producer)
         .idleTimeout(Duration.ofMillis(600))

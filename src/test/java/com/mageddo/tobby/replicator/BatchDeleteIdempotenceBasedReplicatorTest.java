@@ -8,11 +8,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import javax.sql.DataSource;
+
 import com.mageddo.tobby.ProducedRecord;
+import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.TobbyConfig;
-
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
-
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -46,11 +47,13 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   private Connection connection;
 
+  private DataSource dataSource;
+
   @BeforeEach
   void beforeEach() throws SQLException {
-    final var dataSource = DBMigration.migrateEmbeddedHSQLDB();
-    this.connection = dataSource.getConnection();
-    this.tobby = TobbyConfig.build(dataSource);
+    this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
+    this.connection = this.dataSource.getConnection();
+    this.tobby = TobbyConfig.build(this.dataSource);
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE);
   }
@@ -181,8 +184,9 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
   }
 
   private Replicators buildStrategy(DeleteMode deleteMode) {
-    return this.tobby.replicator(ReplicatorConfig
+    return Tobby.replicator(ReplicatorConfig
         .builder()
+        .dataSource(this.dataSource)
         .producer(this.producer)
         .idleTimeout(Duration.ofMillis(600))
         .idempotenceStrategy(IdempotenceStrategy.BATCH_DELETE)

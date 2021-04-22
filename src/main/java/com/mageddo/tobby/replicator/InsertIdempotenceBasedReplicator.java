@@ -59,7 +59,7 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   }
 
   @Override
-  public int iterate() {
+  public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
         this.readConn, this.fetchSize, (record) -> {

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.TobbyConfig;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -200,7 +201,7 @@ class ReplicatorsTest {
   }
 
   Replicators buildDefaultReplicator(Duration idleTimeout) {
-    return this.tobby.replicator(ReplicatorConfig
+    return Tobby.replicator(ReplicatorConfig
         .builder()
         .producer(this.mockProducer)
         .idleTimeout(idleTimeout)

@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -55,6 +56,10 @@ public class Replicators {
   }
 
   public void replicate() {
+    this.replicate(null);
+  }
+
+  public void replicate(int threads) {
     this.replicate(null);
   }
 
@@ -116,13 +121,15 @@ public class Replicators {
     final Connection readConn = this.chooseReadConnection(readConnParam);
     try (Connection writeConn = this.getConnection()) {
       return useTransaction(writeConn, () -> {
-        final BufferedReplicator bufferedReplicator = new BufferedReplicator(
-            this.config.getProducer(), this.config.getBufferSize(), wave
-        );
+        final Supplier<BufferedReplicator> bufferedReplicatorSupplier = () -> {
+          return new BufferedReplicator(
+              this.config.getProducer(), this.config.getBufferSize(), wave
+          );
+        };
         final StreamingIterator replicator = this.iteratorFactory.create(
-            bufferedReplicator, readConn, writeConn, this.config
+            bufferedReplicatorSupplier, readConn, writeConn, this.config
         );
-        return replicator.iterate();
+        return replicator.iterate(readConn);
       });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);

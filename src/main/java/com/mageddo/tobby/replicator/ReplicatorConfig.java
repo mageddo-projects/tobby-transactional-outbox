@@ -27,6 +27,9 @@ public class ReplicatorConfig {
   @NonNull
   private final Producer<byte[], byte[]> producer;
 
+  @NonNull
+  private final DataSource dataSource;
+
   /**
    * How long stay waiting new records to be inserted at the database to be replicated,
    * if no record comes, stops the program.
@@ -73,8 +76,6 @@ public class ReplicatorConfig {
   @Builder.Default
   private final BatchDeleteIdempotenceStrategyConfig deleteIdempotenceStrategyConfig =
       BatchDeleteIdempotenceStrategyConfig.defaultConfig();
-
-  private final DataSource dataSource;
 
 //  private final RecordDAO recordDAO;
 //

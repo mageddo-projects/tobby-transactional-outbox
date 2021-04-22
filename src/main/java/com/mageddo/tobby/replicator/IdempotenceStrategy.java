@@ -23,5 +23,10 @@ public enum IdempotenceStrategy {
    * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batch
    * considering ReplicatorConfig#getBufferSize()
    */
-  BATCH_DELETE
+  BATCH_DELETE,
+
+  /**
+   * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batches across multiple threads
+   */
+  BATCH_PARALLEL_DELETE
 }

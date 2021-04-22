@@ -30,6 +30,9 @@ public class BufferedReplicator implements Replicator {
     this.stopWatch = new StopWatch();
   }
 
+  /**
+   * @return true if buffer is full or false if it's not full yet
+   */
   @Override
   public boolean send(ProducedRecord record) {
     this.buffer.add(record);
