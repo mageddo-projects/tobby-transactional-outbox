@@ -19,6 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 
+/**
+ * Sends messages to kafka in batch, won't terminate until all messages be successfully sent.
+ */
 @Slf4j
 @Singleton
 public class BatchSender {
