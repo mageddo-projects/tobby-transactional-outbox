@@ -1,7 +1,6 @@
 package com.mageddo.tobby.replicator.idempotencestrategy.batchdelete;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -15,7 +14,6 @@ import javax.sql.DataSource;
 import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
-import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.BatchThread;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Threads;
@@ -132,15 +130,31 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Builder
   public static class Config {
 
+    /**
+     * Which strategy use to delete records at the database table.
+     * @see RecordDeleter
+     */
     @NonNull
     private DeleteMode deleteMode;
 
+    /**
+     * ResultSet buffer size when doing SELECT on TTO_RECORD
+     */
     private int fetchSize;
 
+    /**
+     * How many records to store on memory before delete at the database and flush to kafka.
+     */
     private int bufferSize;
 
+    /**
+     * How many records to send to one thread slicing from {@link #bufferSize}
+     */
     private int threadBufferSize;
 
+    /**
+     * How many threads this replicator can use to execute {@link #flush()} in parallel.
+     */
     private int threads;
 
     public static Config from(ReplicatorConfig config) {
