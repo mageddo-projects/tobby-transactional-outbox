@@ -1,4 +1,4 @@
-package com.mageddo.tobby;
+package com.mageddo.tobby.dagger;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import com.mageddo.db.DB;
 import com.mageddo.db.DBUtils;
 import com.mageddo.db.SqlErrorCodes;
+import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.factory.DAOFactory;
 import com.mageddo.tobby.producer.ProducerJdbc;
 
@@ -13,7 +14,7 @@ import dagger.Module;
 import dagger.Provides;
 
 @Module
-public class DaosProducersModule {
+class DaosProducersModule {
 
   private final DataSource dataSource;
 

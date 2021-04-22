@@ -2,6 +2,8 @@ package com.mageddo.tobby;
 
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyReplicatorConfig;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
 

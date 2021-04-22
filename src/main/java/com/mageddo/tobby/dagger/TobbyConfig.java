@@ -1,9 +1,11 @@
-package com.mageddo.tobby;
+package com.mageddo.tobby.dagger;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
 import com.mageddo.db.SimpleDataSource;
+import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;

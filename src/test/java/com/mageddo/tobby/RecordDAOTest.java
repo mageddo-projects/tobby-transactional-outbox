@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.dagger.TobbyConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

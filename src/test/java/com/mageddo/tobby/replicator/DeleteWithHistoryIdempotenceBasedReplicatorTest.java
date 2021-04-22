@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;

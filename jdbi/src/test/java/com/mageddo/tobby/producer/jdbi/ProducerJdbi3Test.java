@@ -2,7 +2,7 @@ package com.mageddo.tobby.producer.jdbi;
 
 import java.util.Map;
 
-import com.mageddo.tobby.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyConfig;
 import com.radcortez.flyway.test.annotation.DataSource;
 import com.radcortez.flyway.test.annotation.FlywayTest;
 

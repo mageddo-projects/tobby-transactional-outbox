@@ -4,7 +4,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyConfig;
 import com.mageddo.tobby.factory.SerializerCreator;
 
 import org.apache.kafka.clients.producer.Producer;
