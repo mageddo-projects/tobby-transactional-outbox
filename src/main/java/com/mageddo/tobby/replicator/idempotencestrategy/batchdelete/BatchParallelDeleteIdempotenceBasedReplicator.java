@@ -25,6 +25,10 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_DELETE_MODE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREADS;
+
 @Singleton
 public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
@@ -102,6 +106,7 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Value
   @Builder
   public static class Config {
+
     @NonNull
     private DeleteMode deleteMode;
 
@@ -114,7 +119,13 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
     private int threads;
 
     public static Config from(ReplicatorConfig config) {
-      throw new UnsupportedOperationException();
+      return Config
+          .builder()
+          .fetchSize(config.getFetchSize())
+          .bufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE))
+          .deleteMode(DeleteMode.valueOf(config.get(REPLICATORS_BATCH_PARALLEL_DELETE_MODE)))
+          .threads(config.getInt(REPLICATORS_BATCH_PARALLEL_THREADS))
+          .build();
     }
   }
 }

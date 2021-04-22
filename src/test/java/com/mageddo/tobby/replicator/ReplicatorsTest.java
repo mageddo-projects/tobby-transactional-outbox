@@ -203,6 +203,7 @@ class ReplicatorsTest {
   Replicators buildDefaultReplicator(Duration idleTimeout) {
     return Tobby.replicator(ReplicatorConfig
         .builder()
+        .dataSource(this.dataSource)
         .producer(this.mockProducer)
         .idleTimeout(idleTimeout)
         .build()

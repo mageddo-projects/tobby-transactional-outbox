@@ -25,6 +25,12 @@ public class ReplicatorConfig {
   public static final Duration DEFAULT_MAX_RECORD_DELAY_TO_COMMIT = Duration.ofMinutes(15);
   public static final String REPLICATORS_BATCH_DELETE_DELETE_MODE = "replicators.batch-delete.delete-mode";
 
+  public static final String REPLICATORS_BATCH_PARALLEL_DELETE_MODE = "replicators.batch-parallel-delete.delete-mode";
+  public static final String REPLICATORS_BATCH_PARALLEL_THREADS =
+      "replicators.batch-parallel-delete.threads";
+  public static final String REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE =
+      "replicators.batch-parallel-delete.buffer-size";
+
   /**
    * Producer used to send messages to kafka server.
    */
@@ -66,6 +72,7 @@ public class ReplicatorConfig {
    * kafka produce speed because it will make use of kafka batch send, keep in mind that the higher the
    * buffer size, you are also holding messages to be sent to the Kafka broker, also increasing the chance
    * of Kafka send fails then Tobby will try send the entire the buffer again.
+   * // todo must be moved to BufferedReplicatorConfigs
    */
   @Builder.Default
   private final int bufferSize = 20_000;
@@ -80,15 +87,23 @@ public class ReplicatorConfig {
   private Map<String, String> props;
 
   public int getInt(String key) {
+    this.validateIsSet(key);
     return Integer.parseInt(this.props.get(key));
   }
 
   public String get(String key) {
+    this.validateIsSet(key);
     return this.props.get(key);
   }
 
   public Map<String, String> getProps() {
     return Collections.unmodifiableMap(this.props);
+  }
+
+  private void validateIsSet(String key) {
+    if (!this.props.containsKey(key) || this.props.get(key) == null) {
+      throw new IllegalStateException(String.format("Prop not set %s", key));
+    }
   }
 
   public static class ReplicatorConfigBuilder {
@@ -105,7 +120,11 @@ public class ReplicatorConfig {
 
     private static Map<String, String> buildDefaultProps() {
       final Map<String, String> props = new HashMap<>();
-      props.put(REPLICATORS_BATCH_DELETE_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_THREADS.name());
+      props.put(REPLICATORS_BATCH_DELETE_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_IN.name());
+
+      props.put(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE, String.valueOf(20_000));
+      props.put(REPLICATORS_BATCH_PARALLEL_THREADS, "10");
+      props.put(REPLICATORS_BATCH_PARALLEL_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_IN.name());
       return props;
     }
   }
