@@ -54,6 +54,30 @@ class ReplicatorsTest {
   }
 
   @Test
+  void mustStopWhenZeroRecordsWereProcessedOnWave() {
+    // arrange
+    doReturn(mock(Future.class)).when(this.mockProducer)
+        .send(any());
+    this.producer.send(ProducerRecordTemplates.strawberry());
+    this.producer.send(ProducerRecordTemplates.coconut());
+
+    // act
+    Tobby
+        .replicator(ReplicatorConfig
+            .builder()
+            .dataSource(this.dataSource)
+            .producer(this.mockProducer)
+            .stopPredicate(it -> it.getWaveProcessed() == 0)
+            .build()
+        )
+        .replicate();
+
+    // assert
+    verify(this.mockProducer, times(2)).send(any());
+  }
+
+
+  @Test
   void mustReplicateDataToKafka() {
     // arrange
     doReturn(mock(Future.class)).when(this.mockProducer)
@@ -109,7 +133,7 @@ class ReplicatorsTest {
   }
 
   @Test
-  void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach(){
+  void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach() {
     // arrange
     final var workers = 3;
     final var executorService = Executors.newFixedThreadPool(workers);
@@ -141,7 +165,7 @@ class ReplicatorsTest {
   }
 
   @Test
-  void onlyOneThreadMustReplicateWithSuccessWhenUsingLockingApproach(){
+  void onlyOneThreadMustReplicateWithSuccessWhenUsingLockingApproach() {
 
     // arrange
     final var workers = 3;

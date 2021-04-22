@@ -98,7 +98,7 @@ public class ReplicatorConfig {
    */
   @NonNull
   @Builder.Default
-  private Predicate<ReplicatorContextVars> jobStopPredicate = (it) -> false;
+  private Predicate<ReplicatorContextVars> stopPredicate = (it) -> false;
 
   public int getInt(String key) {
     this.validateIsSet(key);

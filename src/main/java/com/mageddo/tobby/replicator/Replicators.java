@@ -114,7 +114,7 @@ public class Replicators {
   }
 
   private boolean shouldStop(ReplicatorContextVars contextVars) {
-    return config.getJobStopPredicate()
+    return config.getStopPredicate()
         .test(contextVars);
   }
 
