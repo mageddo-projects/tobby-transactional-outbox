@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import com.mageddo.tobby.TobbyConfig;
+import com.mageddo.tobby.Tobby;
+import com.mageddo.tobby.dagger.TobbyConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -166,8 +167,8 @@ class ReplicatorsTest {
         .collect(Collectors.toList());
 
     // assert
-    assertEquals(workers, replicationResult.size());
-    assertTrue(replicationResult.contains(true));
+    assertEquals(workers, replicationResult.size(), String.format("result was: %s", replicationResult));
+    assertTrue(replicationResult.contains(true), String.format("result was: %s", replicationResult));
     assertEquals("[false, false, true]", replicationResult.toString());
     verify(this.mockProducer, times(2)).send(any());
 
@@ -200,8 +201,9 @@ class ReplicatorsTest {
   }
 
   Replicators buildDefaultReplicator(Duration idleTimeout) {
-    return this.tobby.replicator(ReplicatorConfig
+    return Tobby.replicator(ReplicatorConfig
         .builder()
+        .dataSource(this.dataSource)
         .producer(this.mockProducer)
         .idleTimeout(idleTimeout)
         .build()

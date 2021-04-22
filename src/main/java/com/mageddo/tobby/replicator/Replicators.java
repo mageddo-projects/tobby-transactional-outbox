@@ -132,7 +132,7 @@ public class Replicators {
         final StreamingIterator replicator = this.iteratorFactory.create(
             bufferedReplicator, readConn, writeConn, this.config
         );
-        return replicator.iterate();
+        return replicator.iterate(readConn);
       });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);

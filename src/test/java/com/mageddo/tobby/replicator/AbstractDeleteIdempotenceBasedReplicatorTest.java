@@ -2,23 +2,21 @@ package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
-import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
@@ -29,8 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-@ExtendWith(MockitoExtension.class)
-class DeleteWithHistoryIdempotenceBasedReplicatorTest {
+abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
 
   @Mock
   Producer<byte[], byte[]> producer;
@@ -39,18 +36,21 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
 
   TobbyConfig tobby;
 
-  private com.mageddo.tobby.producer.Producer jdbcProducer;
+  com.mageddo.tobby.producer.Producer jdbcProducer;
 
-  private Connection connection;
-  private DataSource dataSource;
+  Connection connection;
+
+  DataSource dataSource;
+
+  abstract Replicators buildStrategy();
 
   @BeforeEach
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
-    this.connection = dataSource.getConnection();
-    this.tobby = TobbyConfig.build(dataSource);
+    this.connection = this.dataSource.getConnection();
+    this.tobby = TobbyConfig.build(this.dataSource);
     this.jdbcProducer = tobby.producer();
-    this.replicator = this.buildDefaultDeleteWithHistoryReplicator();
+    this.replicator = this.buildStrategy();
   }
 
   @AfterEach
@@ -59,24 +59,52 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
   }
 
   @Test
-  void mustSendDeleteAndTrackRecordHistory() {
+  void mustSendReplicateThenDeleteRecord() {
 
     // arrange
-
-    doReturn(mock(Future.class)).when(this.producer)
+    doReturn(mock(Future.class))
+        .when(this.producer)
         .send(any());
 
     final var record = ProducerRecordTemplates.coconut();
     final var savedRecord = this.jdbcProducer.send(record);
     assertNotNull(this.findRecord(savedRecord.getId()));
 
-
     // act
     this.replicator.replicate();
 
     // assert
     assertNull(this.findRecord(savedRecord.getId()));
-    assertNotNull(this.findProcessedRecord(savedRecord.getId()));
+    assertNull(this.findProcessedRecord(savedRecord.getId()));
+
+  }
+
+  @Test
+  void mustSendReplicateThenDeleteRecords() {
+
+    // arrange
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any());
+
+    final int count = 1001;
+
+    final List<UUID> ids = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      final var record = ProducerRecordTemplates.coconut();
+      final var savedRecord = this.jdbcProducer.send(record);
+      assertNotNull(this.findRecord(savedRecord.getId()));
+      ids.add(savedRecord.getId());
+    }
+
+    // act
+    this.replicator.replicate();
+
+    // assert
+    for (UUID id : ids) {
+      assertNull(this.findRecord(id));
+      assertNull(this.findProcessedRecord(id));
+    }
 
   }
 
@@ -90,15 +118,5 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
         .find(this.connection, id);
   }
 
-  private Replicators buildDefaultDeleteWithHistoryReplicator() {
-    return Tobby.replicator(ReplicatorConfig
-        .builder()
-        .producer(this.producer)
-        .dataSource(this.dataSource)
-        .idleTimeout(Duration.ofMillis(600))
-        .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
-        .build()
-    );
-  }
 
 }
