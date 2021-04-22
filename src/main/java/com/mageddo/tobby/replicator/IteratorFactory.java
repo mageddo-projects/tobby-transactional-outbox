@@ -9,6 +9,10 @@ import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceBasedReplicator;
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchParallelDeleteIdempotenceBasedReplicator;
+import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
+
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_DELETE_DELETE_MODE;
 
 @Singleton
 public class IteratorFactory {
@@ -16,12 +20,15 @@ public class IteratorFactory {
   private final RecordDAO recordDAO;
   private final ParameterDAO parameterDAO;
   private final RecordProcessedDAO recordProcessedDAO;
+  private final BatchParallelDeleteIdempotenceBasedReplicator batchParallelDeleteIdempotenceBasedReplicator;
 
   @Inject
-  public IteratorFactory(RecordDAO recordDAO, ParameterDAO parameterDAO, RecordProcessedDAO recordProcessedDAO) {
+  public IteratorFactory(RecordDAO recordDAO, ParameterDAO parameterDAO, RecordProcessedDAO recordProcessedDAO,
+      BatchParallelDeleteIdempotenceBasedReplicator batchParallelDeleteIdempotenceBasedReplicator) {
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.recordProcessedDAO = recordProcessedDAO;
+    this.batchParallelDeleteIdempotenceBasedReplicator = batchParallelDeleteIdempotenceBasedReplicator;
   }
 
   public StreamingIterator create(
@@ -50,8 +57,10 @@ public class IteratorFactory {
         return new BatchDeleteIdempotenceBasedReplicator(
             readConn, writeConn, this.recordDAO,
             replicator, config.getFetchSize(),
-            config.getDeleteIdempotenceStrategyConfig()
+            DeleteMode.valueOf(config.get(REPLICATORS_BATCH_DELETE_DELETE_MODE))
         );
+      case BATCH_PARALLEL_DELETE:
+        return this.batchParallelDeleteIdempotenceBasedReplicator;
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + config.getIdempotenceStrategy());
     }

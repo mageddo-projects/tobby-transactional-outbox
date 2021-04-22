@@ -43,7 +43,7 @@ allprojects {
   test {
     useJUnitPlatform()
     testLogging {
-      events "passed", "skipped", "failed"
+      events "skipped", "failed"
     }
   }
 
@@ -95,3 +95,4 @@ dependencies {
   testImplementation group: 'com.oracle.database.jdbc', name: 'ojdbc10', version: '19.10.0.0'
 
 }
+

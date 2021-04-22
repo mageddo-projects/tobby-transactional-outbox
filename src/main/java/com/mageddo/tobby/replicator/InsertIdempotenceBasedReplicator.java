@@ -59,7 +59,7 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
   }
 
   @Override
-  public int iterate() {
+  public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateNotProcessedRecordsUsingInsertIdempotence(
         this.readConn, this.fetchSize, (record) -> {
@@ -83,7 +83,7 @@ public class InsertIdempotenceBasedReplicator implements Replicator, StreamingIt
       }
       return;
     }
-    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt);
+    this.parameterDAO.insertOrUpdate(connection, LAST_PROCESSED_TIMESTAMP, createdAt.toString());
   }
 
   private LocalDateTime findLastUpdate(Connection connection) {

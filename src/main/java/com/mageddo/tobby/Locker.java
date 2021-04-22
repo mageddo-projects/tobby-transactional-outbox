@@ -27,15 +27,19 @@ public class Locker {
   }
 
   public void lock(Connection conn) {
-    useTransaction(conn, () -> {
-      try {
-        this.parameterDAO.insert(conn, Parameter.REPLICATOR_LOCK, LocalDateTime.now());
-      } catch (DuplicatedRecordException e) {
-        log.debug("status=already-insert");
-      }
-    });
-    this.lockDAO.lock(conn, Duration.ofSeconds(2));
+    this.insertIfAbsent(conn);
+    this.lockDAO.lock(conn, Duration.ofMillis(500));
     log.info("status=lockAcquired");
+  }
+
+  private void insertIfAbsent(Connection conn) {
+    try {
+      useTransaction(conn, () -> {
+        this.parameterDAO.insertIfAbsent(conn, Parameter.REPLICATOR_LOCK, String.valueOf(LocalDateTime.now()));
+      });
+    } catch (DuplicatedRecordException e) {
+      log.info("status=already-insert");
+    }
   }
 
 }

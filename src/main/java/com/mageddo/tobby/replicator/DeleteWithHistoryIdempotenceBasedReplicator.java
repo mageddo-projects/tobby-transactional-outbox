@@ -44,7 +44,7 @@ public class DeleteWithHistoryIdempotenceBasedReplicator implements Replicator, 
   }
 
   @Override
-  public int iterate() {
+  public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
     this.recordDAO.iterateOverRecords(
         this.readConn, this.fetchSize, (record) -> {

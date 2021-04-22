@@ -16,12 +16,13 @@ import testing.DBMigration;
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(2));
+    final var threads = 80;
+    final var dc = DBMigration.migrateAndGetDataSource(80);
+    final var tobby = Tobby.build(dc);
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class
     );
 
-    final var threads = 1;
     final var executorService = Executors.newFixedThreadPool(threads);
     for (int i = 0; i < threads; i++) {
       executorService.submit(() -> {
@@ -30,14 +31,16 @@ public class ProducerApp {
           stopWatch.start();
           for (int j = 1; true; j++) {
             producer.send(KafkaProducerRecordTemplates.coconut());
-            if (j % 300 == 0) {
-              log.info("status=produced, count={}, thread={}, avg={}",
-                  Thread
-                      .currentThread()
-                      .getName(),
+            final var threshold = 50;
+            if (j % threshold == 0) {
+              log.info("status=produced, total={}, batchRecords={}, totalTime={}, avgTime={}",
                   String.format("%,d", j),
-                  String.format("%,d", stopWatch.getTime() / j)
+                  String.format("%,d", threshold),
+                  String.format("%,d", stopWatch.getTime()),
+                  String.format("%,d", stopWatch.getTime() / threshold)
               );
+              stopWatch.reset();
+              stopWatch.start();
             }
           }
         } catch (Exception e) {

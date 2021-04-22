@@ -66,7 +66,6 @@ public class Replicators {
       final StopWatch stopWatch = StopWatch.createStarted();
 
       final int processed = this.processWave(wave, readConn);
-
       if (processed != 0) {
         lastTimeProcessed = LocalDateTime.now();
       }
@@ -92,6 +91,18 @@ public class Replicators {
           );
         }
       }
+
+      final ReplicatorContextVars contextVars = ReplicatorContextVars
+          .builder()
+          .waveDuration(stopWatch.getDuration())
+          .waveProcessed(processed)
+          .durationSinceLastTimeProcessed(Duration.ofMillis(millisPassed(lastTimeProcessed)))
+          .wave(wave)
+          .build();
+      if (this.shouldStop(contextVars)) {
+        log.info("status=replicatorIsConsideredIdle, action=exiting, contextVars={}", contextVars);
+        return;
+      }
       if (!this.shouldRun(lastTimeProcessed)) {
         log.info(
             "status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.config.getIdleTimeout()
@@ -100,6 +111,11 @@ public class Replicators {
       }
     }
 //    log.info("status=replication-ended, duration={}", Duration.ofMillis(System.currentTimeMillis() - millis));
+  }
+
+  private boolean shouldStop(ReplicatorContextVars contextVars) {
+    return config.getStopPredicate()
+        .test(contextVars);
   }
 
   private long safeDivide(StopWatch stopWatch, int processed) {
@@ -122,7 +138,7 @@ public class Replicators {
         final StreamingIterator replicator = this.iteratorFactory.create(
             bufferedReplicator, readConn, writeConn, this.config
         );
-        return replicator.iterate();
+        return replicator.iterate(readConn);
       });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);

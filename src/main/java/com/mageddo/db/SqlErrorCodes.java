@@ -66,6 +66,10 @@ public class SqlErrorCodes {
     return data.getOrDefault(db, empty());
   }
 
+  public static boolean isQueryTimeoutError(DB db, SQLException e) {
+    return of(db).isQueryTimeoutError(e);
+  }
+
   public boolean isDuplicateKeyError(SQLException e) {
     if (this.useSqlStateForTranslation) {
       return this.isDuplicateKeyError(ObjectUtils.firstNonNull(parseIntOrNull(e.getSQLState()), e.getErrorCode()));

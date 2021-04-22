@@ -17,3 +17,6 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 db-*.properties
+
+*.orig
+*.log

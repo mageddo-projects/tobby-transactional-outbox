@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import javax.inject.Inject;
@@ -11,6 +12,9 @@ import javax.inject.Singleton;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.db.QueryTimeoutException;
+import com.mageddo.db.SqlErrorCodes;
+import com.mageddo.db.StmUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +36,11 @@ public class ParameterDAOUniversal implements ParameterDAO {
   public LocalDateTime findAsDateTime(
       Connection connection, Parameter parameter, LocalDateTime defaultValue
   ) {
+    return LocalDateTime.parse(this.find(connection, parameter, defaultValue.toString()));
+  }
+
+  @Override
+  public String find(Connection connection, Parameter parameter, String defaultValue) {
     try (
         final PreparedStatement stm = connection
             .prepareStatement("SELECT VAL_PARAMETER FROM TTO_PARAMETER WHERE IDT_TTO_PARAMETER = ?");
@@ -41,7 +50,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
         if (!rs.next()) {
           return defaultValue;
         }
-        return LocalDateTime.parse(rs.getString("VAL_PARAMETER"));
+        return rs.getString("VAL_PARAMETER");
       }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
@@ -49,7 +58,16 @@ public class ParameterDAOUniversal implements ParameterDAO {
   }
 
   @Override
-  public void insertOrUpdate(Connection connection, Parameter parameter, LocalDateTime value) {
+  public boolean insertIfAbsent(Connection conn, Parameter parameter, String value) {
+    if (this.find(conn, parameter, null) == null) {
+      this.insert(conn, parameter, value);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void insertOrUpdate(Connection connection, Parameter parameter, String value) {
     try {
       savepoint(connection, () -> {
         if (this.update(connection, parameter, value) == 0) {
@@ -67,20 +85,23 @@ public class ParameterDAOUniversal implements ParameterDAO {
   }
 
   @Override
-  public void insert(Connection connection, Parameter parameter, LocalDateTime value) {
+  public void insert(Connection connection, Parameter parameter, String value) {
     final String sql = "INSERT INTO TTO_PARAMETER (IDT_TTO_PARAMETER, VAL_PARAMETER) VALUES (?, ?)";
     try (final PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, parameter.name());
-      stm.setString(2, value.toString());
-      stm.executeUpdate();
+      stm.setString(2, value);
+      StmUtils.executeOrCancel(stm, Duration.ofMillis(500));
       log.info("status=inserted, parameter={}, value={}", parameter.name(), value);
     } catch (SQLException e) {
+      if (SqlErrorCodes.isQueryTimeoutError(this.db, e)) {
+        throw new QueryTimeoutException(sql, e);
+      }
       throw DuplicatedRecordException.check(this.db, parameter.name(), e);
     }
   }
 
   @Override
-  public int update(Connection connection, Parameter parameter, LocalDateTime value) {
+  public int update(Connection connection, Parameter parameter, String value) {
     final StringBuilder sql = new StringBuilder()
         .append("UPDATE TTO_PARAMETER SET \n")
         .append("  VAL_PARAMETER = ?, \n")
@@ -88,7 +109,7 @@ public class ParameterDAOUniversal implements ParameterDAO {
         .append("WHERE IDT_TTO_PARAMETER = ? \n");
 
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
-      stm.setString(1, value.toString());
+      stm.setString(1, value);
       stm.setString(2, parameter.name());
       return stm.executeUpdate();
     } catch (SQLException e) {
