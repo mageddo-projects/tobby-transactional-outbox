@@ -15,6 +15,7 @@ import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.internal.utils.BatchThread;
+import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Threads;
 import com.mageddo.tobby.replicator.BatchSender;
 import com.mageddo.tobby.replicator.Replicator;
@@ -24,12 +25,14 @@ import com.mageddo.tobby.replicator.StreamingIterator;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_DELETE_MODE;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREADS;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE;
 
+@Slf4j
 @Singleton
 public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
@@ -66,6 +69,13 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
 
   @Override
   public void flush() {
+    if (this.buffer.isEmpty()) {
+      if (log.isTraceEnabled()) {
+        log.trace("status=nothingToFlush");
+      }
+      return;
+    }
+    final StopWatch flushTimer = StopWatch.createStarted();
     int from = 0;
     final BatchThread<Void> batchThread = new BatchThread<>();
     while (true) {
@@ -77,14 +87,21 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
       batchThread.add(() -> {
         try (Connection connection = this.dataSource.getConnection()) {
           ConnectionUtils.useTransaction(connection, () -> {
+            final StopWatch stopWatch = StopWatch.createStarted();
             this.recordDeleter.delete(connection, records, this.config.getDeleteMode());
             this.batchSender.send(records);
+            if (log.isDebugEnabled()) {
+              log.debug("status=replicated, records={}, time={}", records.size(), stopWatch.getDisplayTime());
+            }
           });
           return null;
         }
       });
     }
     Threads.executeAndGet(this.pool, batchThread.getCallables());
+    if (log.isDebugEnabled()) {
+      log.debug("status=flushed, records={}, time={}", this.buffer.size(), flushTimer.getDisplayTime());
+    }
     this.buffer.clear();
   }
 
