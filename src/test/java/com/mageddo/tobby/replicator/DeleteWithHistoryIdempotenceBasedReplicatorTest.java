@@ -6,6 +6,8 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import javax.sql.DataSource;
+
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.TobbyConfig;
@@ -40,10 +42,11 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
   private com.mageddo.tobby.producer.Producer jdbcProducer;
 
   private Connection connection;
+  private DataSource dataSource;
 
   @BeforeEach
   void beforeEach() throws SQLException {
-    final var dataSource = DBMigration.migrateEmbeddedHSQLDB();
+    this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = dataSource.getConnection();
     this.tobby = TobbyConfig.build(dataSource);
     this.jdbcProducer = tobby.producer();
@@ -91,6 +94,7 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
     return Tobby.replicator(ReplicatorConfig
         .builder()
         .producer(this.producer)
+        .dataSource(this.dataSource)
         .idleTimeout(Duration.ofMillis(600))
         .idempotenceStrategy(IdempotenceStrategy.DELETE_WITH_HISTORY)
         .build()
