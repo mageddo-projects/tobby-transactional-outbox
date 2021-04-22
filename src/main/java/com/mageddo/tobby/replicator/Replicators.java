@@ -38,7 +38,7 @@ public class Replicators {
    * @return true or false about acquiring the lock
    */
   public boolean replicateLocking() {
-    log.info("status=tryingGetLock");
+    log.info("status=replicateLocking");
     final DataSource dataSource = this.config.getDataSource();
     try (Connection conn = dataSource.getConnection()) {
       useTransaction(conn, () -> {
@@ -47,7 +47,7 @@ public class Replicators {
       });
       return true;
     } catch (QueryTimeoutException e) {
-      log.info("status=lostLocking, msg={}", e.getMessage());
+      log.info("status=lostLocking");
       return false;
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
@@ -110,20 +110,10 @@ public class Replicators {
   }
 
   private int processWave(int wave, Connection readConnParam) {
-    try {
-      return this.processWave0(wave, readConnParam);
-    } catch (SQLException e) {
-      throw new UncheckedSQLException(e);
-    }
-  }
-
-  private int processWave0(int wave, Connection readConnParam) throws SQLException {
     if (log.isDebugEnabled()) {
       log.debug("wave={}, status=loading-wave", wave);
     }
     final Connection readConn = this.chooseReadConnection(readConnParam);
-    final boolean autoCommit = readConn.getAutoCommit();
-    readConn.setAutoCommit(true);
     try (Connection writeConn = this.getConnection()) {
       return useTransaction(writeConn, () -> {
         final BufferedReplicator bufferedReplicator = new BufferedReplicator(
@@ -132,22 +122,21 @@ public class Replicators {
         final StreamingIterator replicator = this.iteratorFactory.create(
             bufferedReplicator, readConn, writeConn, this.config
         );
-        return replicator.iterate(readConn);
+        return replicator.iterate();
       });
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     } finally {
-      readConn.setAutoCommit(autoCommit);
-//      if (readConnParam == null) {
+      if (readConnParam == null) {
         ConnectionUtils.quietClose(readConn);
-//      }
+      }
     }
   }
 
   private Connection chooseReadConnection(Connection readConnParam) {
-//    if (readConnParam != null) {
-//      return readConnParam;
-//    }
+    if (readConnParam != null) {
+      return readConnParam;
+    }
     return this.getConnection();
   }
 
