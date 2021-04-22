@@ -66,7 +66,6 @@ public class Replicators {
       final StopWatch stopWatch = StopWatch.createStarted();
 
       final int processed = this.processWave(wave, readConn);
-
       if (processed != 0) {
         lastTimeProcessed = LocalDateTime.now();
       }
@@ -92,6 +91,15 @@ public class Replicators {
           );
         }
       }
+
+      if (processed < 1_000 && stopWatch.getDuration()
+          .compareTo(Duration.ofSeconds(1)) <= 0
+      ) {
+        log.info("status=replicatorIsIdle, action=exit");
+        return;
+      }
+      log.info("wake");
+
       if (!this.shouldRun(lastTimeProcessed)) {
         log.info(
             "status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.config.getIdleTimeout()

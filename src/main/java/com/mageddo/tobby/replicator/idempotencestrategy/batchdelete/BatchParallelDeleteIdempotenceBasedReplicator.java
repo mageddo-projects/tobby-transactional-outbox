@@ -1,6 +1,7 @@
 package com.mageddo.tobby.replicator.idempotencestrategy.batchdelete;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +15,7 @@ import javax.sql.DataSource;
 import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.BatchThread;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Threads;
@@ -108,13 +110,17 @@ public class BatchParallelDeleteIdempotenceBasedReplicator implements Replicator
   @Override
   public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
-    this.recordDAO.iterateOverRecords(
-        readConn, this.config.getFetchSize(), (record) -> {
-          counter.incrementAndGet();
-          this.send(record);
-        }
-    );
-    this.flush();
+    try(final Connection conn = this.dataSource.getConnection()){
+      this.recordDAO.iterateOverRecords(
+          conn, this.config.getFetchSize(), (record) -> {
+            counter.incrementAndGet();
+            this.send(record);
+          }
+      );
+      this.flush();
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
     return counter.get();
   }
 

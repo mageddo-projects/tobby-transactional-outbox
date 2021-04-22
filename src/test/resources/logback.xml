@@ -12,8 +12,21 @@
     </encoder>
   </appender>
 
+  <property
+    name="logFile"
+    value="${java.io.tmpdir}/replicator-app.log"
+  />
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>${logFile}</file>
+    <encoder>
+      <pattern>${logPattern}</pattern>
+      <charset>utf8</charset>
+    </encoder>
+  </appender>
+
   <root level="INFO">
-    <appender-ref ref="CONSOLE"/>
+<!--    <appender-ref ref="CONSOLE"/>-->
+    <appender-ref ref="FILE"/>
   </root>
 
   <logger name="com.mageddo.tobby.replicator" level="DEBUG"/>

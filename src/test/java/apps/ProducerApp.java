@@ -33,8 +33,9 @@ public class ProducerApp {
             producer.send(KafkaProducerRecordTemplates.coconut());
             final var threshold = 50;
             if (j % threshold == 0) {
-              log.info("status=produced, count={}, time={}, avg={}",
+              log.info("status=produced, total={}, batchRecords={}, totalTime={}, avgTime={}",
                   String.format("%,d", j),
+                  String.format("%,d", threshold),
                   String.format("%,d", stopWatch.getTime()),
                   String.format("%,d", stopWatch.getTime() / threshold)
               );

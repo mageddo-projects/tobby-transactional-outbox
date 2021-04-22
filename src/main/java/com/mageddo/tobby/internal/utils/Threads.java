@@ -1,5 +1,6 @@
 package com.mageddo.tobby.internal.utils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -43,5 +44,13 @@ public class Threads {
       }
     }
     return results;
+  }
+
+  public static void sleep(Duration duration) {
+    try {
+      Thread.sleep(duration.toMillis());
+    } catch (InterruptedException e) {
+      throw new UncheckedInterruptedException(e);
+    }
   }
 }

@@ -1,15 +1,15 @@
 package apps;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.mageddo.tobby.Tobby;
+import com.mageddo.tobby.internal.utils.Threads;
 import com.mageddo.tobby.replicator.IdempotenceStrategy;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
-import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchDeleteIdempotenceStrategyConfig;
-import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -29,18 +29,16 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var tobby = Tobby.build(DBMigration.migrateAndGetDataSource(10));
-    final var replicator = tobby.replicator(ReplicatorConfig
+    final var dataSource = DBMigration.migrateAndGetDataSource(10);
+    final var replicator = Tobby.replicator(ReplicatorConfig
         .builder()
+        .dataSource(dataSource)
         .producer(kafkaProducer)
-        .idempotenceStrategy(IdempotenceStrategy.DELETE)
-        .deleteIdempotenceStrategyConfig(BatchDeleteIdempotenceStrategyConfig
-            .builder()
-            .deleteMode(DeleteMode.BATCH_DELETE_USING_IN)
-            .build())
+        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_DELETE)
         .fetchSize(1000)
         .bufferSize(5000)
 //        .idleTimeout(Duration.ofSeconds(10))
+        .put(ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, "1000")
         .build()
     );
 
@@ -51,7 +49,7 @@ public class ReplicatorApp {
     }
     while (true) {
       submit(replicator, pool);
-      Thread.sleep(10000);
+      Threads.sleep(Duration.ofSeconds(10));
     }
 
 //    pool.shutdown();
