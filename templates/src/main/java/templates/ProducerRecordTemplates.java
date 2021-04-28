@@ -17,6 +17,10 @@ public class ProducerRecordTemplates {
     return new ProducerRecord("fruit", "Strawberry".getBytes(), "Strawberry".getBytes());
   }
 
+  public static ProducerRecord banana() {
+    return new ProducerRecord("fruit", null, null);
+  }
+
   public static ProducerRecord strawberryWithHeaders() {
     return strawberry()
         .toBuilder()
