@@ -76,7 +76,6 @@ class ReplicatorsTest {
     verify(this.mockProducer, times(2)).send(any());
   }
 
-
   @Test
   void mustReplicateDataToKafka() {
     // arrange
@@ -200,6 +199,20 @@ class ReplicatorsTest {
     assertEquals("[false, false, true]", replicationResult.toString());
     verify(this.mockProducer, times(2)).send(any());
 
+  }
+
+  @Test
+  void mustReplicateDataToKafEvenWhenValueAndKeyAreNull() {
+    // arrange
+    doReturn(mock(Future.class)).when(this.mockProducer)
+        .send(any());
+    this.producer.send(ProducerRecordTemplates.banana());
+
+    // act
+    this.replicate();
+
+    // assert
+    verify(this.mockProducer, times(1)).send(any());
   }
 
   @SneakyThrows
