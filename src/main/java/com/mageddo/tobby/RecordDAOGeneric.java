@@ -11,13 +11,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
@@ -153,11 +153,11 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
-    if(recordIds.isEmpty()){
+    if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("m=acquireDeletingUsingThreads, status=noRecordsToDelete");
       }
-      return ;
+      return;
     }
     final StopWatch stopWatch = StopWatch.createStarted();
     final List<Future> promises = recordIds
@@ -260,6 +260,24 @@ public class RecordDAOGeneric implements RecordDAO {
         log.trace("m=acquireDeleting, status=deleted, id={}, affected={}", id, affected);
       }
       Validator.isTrue(affected == 1, "Couldn't delete record: %s", id);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  @Override
+  public void changeStatus(Connection connection, List<ProducedRecord> records, Status status) {
+    ProducedRecord
+        .toIds(records)
+        .forEach(id -> this.changeStatus(connection, id, status))
+    ;
+  }
+
+  private void changeStatus(Connection connection, UUID recordId, Status status) {
+    final String sql = "UPDATE TTO_RECORD SET IND_STATUS=:status WHERE IDT_TTO_RECORD = ?";
+    try(final PreparedStatement stm = connection.prepareStatement(sql)){
+      stm.setString(1, status.name());
+      stm.setString(2, String.valueOf(recordId));
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }

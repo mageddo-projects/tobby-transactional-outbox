@@ -52,4 +52,6 @@ public interface RecordDAO {
   void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds);
 
   void acquireDeleting(Connection connection, UUID id);
+
+  void changeStatus(Connection connection, List<ProducedRecord> records, ProducedRecord.Status status);
 }

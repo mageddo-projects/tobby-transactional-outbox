@@ -20,10 +20,7 @@ public class RecordDeleter {
   }
 
   public void delete(Connection con, List<ProducedRecord> records, DeleteMode deleteMode) {
-    final List<UUID> recordIds = records
-        .stream()
-        .map(ProducedRecord::getId)
-        .collect(Collectors.toList());
+    final List<UUID> recordIds = ProducedRecord.toIds(records);
     switch (deleteMode) {
       case BATCH_DELETE:
         this.recordDAO.acquireDeletingUsingBatch(con, recordIds);

@@ -1,0 +1,128 @@
+package com.mageddo.tobby.replicator.idempotencestrategy.batchdelete;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.sql.DataSource;
+
+import com.mageddo.db.ConnectionUtils;
+import com.mageddo.tobby.ProducedRecord;
+import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.internal.utils.BatchThread;
+import com.mageddo.tobby.internal.utils.StopWatch;
+import com.mageddo.tobby.internal.utils.Threads;
+import com.mageddo.tobby.replicator.BatchSender;
+import com.mageddo.tobby.replicator.Replicator;
+import com.mageddo.tobby.replicator.ReplicatorConfig;
+import com.mageddo.tobby.replicator.StreamingIterator;
+
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_DELETE_MODE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREADS;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE;
+
+@Slf4j
+@Singleton
+public class ParallelStatusChangeIdempotenceBasedReplicator implements Replicator, StreamingIterator {
+
+  private final List<ProducedRecord> buffer = new ArrayList<>();
+  private final RecordDAO recordDAO;
+  private final DataSource dataSource;
+  private final BatchSender batchSender;
+  private final ExecutorService pool;
+  private final Config config;
+
+  @Inject
+  public ParallelStatusChangeIdempotenceBasedReplicator(
+      RecordDAO recordDAO, DataSource dataSource, BatchSender batchSender, Config config
+  ) {
+    this.recordDAO = recordDAO;
+    this.dataSource = dataSource;
+    this.batchSender = batchSender;
+    this.config = config;
+    this.pool = Threads.newPool(config.getThreads());
+  }
+
+  @Override
+  public boolean send(ProducedRecord record) {
+    this.buffer.add(record);
+    final boolean exhausted = this.buffer.size() >= this.config.getBufferSize();
+    if (exhausted) {
+      this.flush();
+    }
+    return exhausted;
+  }
+
+  @Override
+  public void flush() {
+
+  }
+
+  @Override
+  public int iterate(Connection readConn) {
+    final AtomicInteger counter = new AtomicInteger();
+    this.recordDAO.iterateOverRecords(
+        readConn, this.config.getFetchSize(), (record) -> {
+          counter.incrementAndGet();
+          this.send(record);
+        }
+    );
+    this.flush();
+    return counter.get();
+  }
+
+
+  @Value
+  @Builder
+  public static class Config {
+
+    /**
+     * Which strategy use to delete records at the database table.
+     * @see RecordDeleter
+     */
+    @NonNull
+    private DeleteMode deleteMode;
+
+    /**
+     * ResultSet buffer size when doing SELECT on TTO_RECORD
+     */
+    private int fetchSize;
+
+    /**
+     * How many records to store on memory before delete at the database and flush to kafka.
+     */
+    private int bufferSize;
+
+    /**
+     * How many records to send to one thread slicing from {@link #bufferSize}
+     */
+    private int threadBufferSize;
+
+    /**
+     * How many threads this replicator can use to execute {@link #flush()} in parallel.
+     */
+    private int threads;
+
+    public static Config from(ReplicatorConfig config) {
+      return Config
+          .builder()
+          .fetchSize(config.getFetchSize())
+          .bufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE))
+          .deleteMode(DeleteMode.valueOf(config.get(REPLICATORS_BATCH_PARALLEL_DELETE_MODE)))
+          .threads(config.getInt(REPLICATORS_BATCH_PARALLEL_THREADS))
+          .threadBufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE))
+          .build();
+    }
+  }
+}

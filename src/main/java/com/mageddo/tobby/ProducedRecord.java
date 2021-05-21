@@ -1,7 +1,9 @@
 package com.mageddo.tobby;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import lombok.Builder;
 import lombok.Value;
@@ -22,4 +24,15 @@ public class ProducedRecord {
   private Headers headers;
   private LocalDateTime createdAt;
 
+  public static List<UUID> toIds(List<ProducedRecord> records) {
+    return records
+        .stream()
+        .map(ProducedRecord::getId)
+        .collect(Collectors.toList());
+  }
+
+  public enum Status {
+    OPEN,
+    DONE,
+  }
 }
