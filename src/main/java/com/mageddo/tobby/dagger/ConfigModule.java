@@ -7,10 +7,11 @@ import com.mageddo.tobby.internal.utils.StringUtils;
 import dagger.Module;
 import dagger.Provides;
 
+import static com.mageddo.tobby.Tobby.Config.TOBBY_RECORD_TABLE_NAME_PROP;
+
 @Module
 class ConfigModule {
 
-  public static final String TOBBY_RECORD_TABLE_NAME_PROP = "tobby.record-table.name";
   private final Tobby.Config config;
 
   ConfigModule(Tobby.Config config) {

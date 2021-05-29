@@ -88,9 +88,13 @@ public class Tobby {
   @Builder(toBuilder = true)
   public static class Config {
 
+    public static final String TOBBY_RECORD_TABLE_NAME_PROP = "tobby.record-table.name";
+
     /**
      * The table name which tobby will consider to create and replicate the records from.
      * Your table must be compliance with a specific DDL, see {@link RecordDAO}.
+     *
+     * This property also can be set by System Property {@value #TOBBY_RECORD_TABLE_NAME_PROP}
      */
     @NonNull
     @Builder.Default
