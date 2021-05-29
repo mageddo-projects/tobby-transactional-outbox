@@ -31,7 +31,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @EnableTobbyTransactionalOutbox
-@SpringBootApplication
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
 class ProducerSpringTest {
