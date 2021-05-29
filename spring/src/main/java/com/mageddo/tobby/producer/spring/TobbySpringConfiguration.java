@@ -26,11 +26,19 @@ import org.springframework.kafka.core.KafkaTemplate;
 public class TobbySpringConfiguration {
 
   @Bean
-  public TobbyConfig tobbyConfig(DataSource dataSource) {
-    return TobbyConfig.build(dataSource);
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-config", matchIfMissing = true)
+  public Tobby.Config tobbyConfig(){
+    return Tobby.Config.theDefault();
   }
 
   @Bean
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-context", matchIfMissing = true)
+  public TobbyConfig tobbyContext(DataSource dataSource, Tobby.Config config) {
+    return TobbyConfig.build(dataSource, config);
+  }
+
+  @Bean
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby", matchIfMissing = true)
   public Tobby tobby(TobbyConfig tobbyConfig) {
     return Tobby.builder()
         .tobbyConfig(tobbyConfig)

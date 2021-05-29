@@ -7,6 +7,9 @@ import com.mageddo.tobby.dagger.TobbyReplicatorConfig;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
 
+import lombok.Data;
+import lombok.NonNull;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
 
@@ -68,9 +71,35 @@ public class Tobby {
   }
 
   public static Tobby build(DataSource dataSource) {
+    return build(dataSource, null);
+  }
+
+  public static Tobby build(DataSource dataSource, Config config) {
     return Tobby
         .builder()
-        .tobbyConfig(TobbyConfig.build(dataSource))
+        .tobbyConfig(TobbyConfig.build(dataSource, config))
         .build();
+  }
+
+  /**
+   * General Tobby configurations, for specific replication configurations, see {@link ReplicatorConfig}.
+   */
+  @Data
+  @Builder(toBuilder = true)
+  public static class Config {
+
+    /**
+     * The table name which tobby will consider to create and replicate the records from.
+     * Your table must be compliance with a specific DDL, see {@link RecordDAO}.
+     */
+    @NonNull
+    @Builder.Default
+    private String recordTableName = "TTO_RECORD";
+
+    public static Config theDefault() {
+      return Config
+          .builder()
+          .build();
+    }
   }
 }

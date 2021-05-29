@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import com.mageddo.db.SimpleDataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
+import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.internal.utils.Validator;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
@@ -20,6 +21,7 @@ import dagger.Component;
 @Component(
     modules = {
         DaosProducersModule.class,
+        ConfigModule.class,
         DaosProducersBindsModule.class
     }
 )
@@ -74,13 +76,22 @@ public interface TobbyConfig {
   }
 
   static TobbyConfig build(String url, String username, String password) {
-    return build(new SimpleDataSource(url, password, username));
+    return build(url, username, password, null);
+  }
+
+  static TobbyConfig build(String url, String username, String password, Tobby.Config config) {
+    return build(new SimpleDataSource(url, password, username), config);
   }
 
   static TobbyConfig build(DataSource dataSource) {
+    return build(dataSource, null);
+  }
+
+  static TobbyConfig build(DataSource dataSource, Tobby.Config config) {
     Validator.isTrue(dataSource != null, "Data source can't be null", dataSource);
     return DaggerTobbyConfig.builder()
         .daosProducersModule(new DaosProducersModule(dataSource))
+        .configModule(new ConfigModule(config != null ? config : Tobby.Config.theDefault()))
         .build();
   }
 
