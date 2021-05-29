@@ -16,13 +16,13 @@ class ConfigModule {
 
   ConfigModule(Tobby.Config config) {
     this.config = config;
+    if (!this.recordTableAlreadySet()) {
+      System.setProperty(TOBBY_RECORD_TABLE_NAME_PROP, this.config.getRecordTableName());
+    }
   }
 
   @Provides
   public Tobby.Config config() {
-    if (!this.recordTableAlreadySet()) {
-      System.setProperty(TOBBY_RECORD_TABLE_NAME_PROP, this.config.getRecordTableName());
-    }
     return this.config;
   }
 

@@ -41,7 +41,8 @@ public class DBMigration {
     return cleanAndMigrate(
         "jdbc:postgresql://localhost:5429/postgres?currentSchema=postgres",
         "postgres", "postgres",
-        "classpath:com/mageddo/tobby/db/migration-postgres"
+        "classpath:com/mageddo/tobby/db/migration-postgres",
+        "classpath:com/mageddo/testing/tobby/db/migration-postgres"
     );
   }
 
