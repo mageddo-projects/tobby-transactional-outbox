@@ -21,7 +21,6 @@ class OriginalTableTest {
 
   @Test
   void mustCustomizeRecordTableName(){
-
     // arrange
     // act
     // assert

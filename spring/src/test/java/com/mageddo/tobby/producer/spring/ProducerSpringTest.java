@@ -31,7 +31,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @EnableTobbyTransactionalOutbox
-@SpringBootTest
+@SpringBootTest(classes = App.class)
 @ExtendWith(SpringExtension.class)
 class ProducerSpringTest {
 
@@ -129,23 +129,4 @@ class ProducerSpringTest {
     assertEquals(1, new HashSet<>(capturedConnections).size());
 
   }
-
-  @Service
-  public static class TransactionalService {
-
-    private final Producer producer;
-
-    TransactionalService(Producer producer) {
-      this.producer = producer;
-    }
-
-    @Transactional
-    public void send(ProducerRecord record, int wantedInvocations) {
-      for (int i = 0; i < wantedInvocations; i++) {
-        this.producer.send(record);
-      }
-    }
-
-  }
-
 }
