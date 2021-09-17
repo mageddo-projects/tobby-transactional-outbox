@@ -21,7 +21,7 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 
 @Slf4j
 public class ReplicatorApp {
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) {
     final var kafkaProducer = new KafkaProducer<>(
         Map.of(
             BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"
@@ -34,11 +34,10 @@ public class ReplicatorApp {
         .builder()
         .dataSource(dataSource)
         .producer(kafkaProducer)
-        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_DELETE)
-        .fetchSize(1000)
-        .bufferSize(5000)
+        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
+//        .fetchSize(1000)
+//        .bufferSize(5000)
 //        .idleTimeout(Duration.ofSeconds(10))
-        .put(ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, "1000")
         .build()
     );
 
