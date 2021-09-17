@@ -1,4 +1,6 @@
-package com.mageddo.tobby.producer.spring;
+package com.mageddo.tobby.producer;
+
+import com.mageddo.tobby.producer.spring.KafkaProducerProvider;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;

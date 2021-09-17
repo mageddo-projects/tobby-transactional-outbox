@@ -8,6 +8,9 @@ import java.util.UUID;
 
 import com.mageddo.tobby.ProducerRecord;
 
+import com.mageddo.tobby.producer.Config;
+import com.mageddo.tobby.producer.MockKafkaProducerProvider;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
