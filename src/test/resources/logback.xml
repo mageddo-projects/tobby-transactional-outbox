@@ -14,7 +14,7 @@
 
   <property
     name="logFile"
-    value="${java.io.tmpdir}/replicator-app.log"
+    value="${java.io.tmpdir}/tobby.log"
   />
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>${logFile}</file>
@@ -25,8 +25,8 @@
   </appender>
 
   <root level="INFO">
-    <appender-ref ref="CONSOLE"/>
-<!--    <appender-ref ref="FILE"/>-->
+<!--    <appender-ref ref="CONSOLE"/>-->
+    <appender-ref ref="FILE"/>
   </root>
 
   <logger name="com.mageddo.tobby" level="DEBUG"/>

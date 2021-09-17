@@ -6,9 +6,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
 
 public class KafkaProducerRecordTemplates {
+
   public static ProducerRecord<String, byte[]> coconut() {
     return new ProducerRecord<>(
-        "fruit",
+        "2021-fruit-v1",
         0,
         "greenFruits",
         "coconuts".getBytes(),

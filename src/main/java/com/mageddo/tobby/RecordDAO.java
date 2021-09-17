@@ -67,8 +67,8 @@ public interface RecordDAO {
 
   void acquireDeleting(Connection connection, UUID id);
 
-  void changeStatusToProcessed(Connection connection, List<UUID> ids);
+  void changeStatusToProcessed(Connection connection, List<UUID> ids, String changeAgent);
 
-  void changeStatusToProcessed(Connection connection, UUID id);
+  void changeStatusToProcessed(Connection connection, UUID id, String changeAgent);
 
 }

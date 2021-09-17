@@ -13,6 +13,7 @@ import javax.inject.Singleton;
 import javax.sql.DataSource;
 
 import com.mageddo.db.ConnectionUtils;
+import com.mageddo.tobby.ChangeAgents;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
@@ -82,7 +83,11 @@ public class UpdateIdempotenceBasedReplicator implements Replicator, StreamingIt
         try (Connection connection = this.dataSource.getConnection()) {
           ConnectionUtils.useTransaction(connection, () -> {
             final StopWatch stopWatch = StopWatch.createStarted();
-            this.recordDAO.changeStatusToProcessed(connection, ProducedRecordConverter.toIds(records));
+            this.recordDAO.changeStatusToProcessed(
+                connection,
+                ProducedRecordConverter.toIds(records),
+                ChangeAgents.REPLICATOR
+            );
             this.batchSender.send(records);
             if (log.isDebugEnabled()) {
               log.debug("status=replicated, records={}, time={}", records.size(), stopWatch.getDisplayTime());

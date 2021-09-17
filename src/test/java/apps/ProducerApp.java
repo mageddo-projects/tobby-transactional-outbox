@@ -1,6 +1,8 @@
 package apps;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mageddo.tobby.Tobby;
 
@@ -16,7 +18,8 @@ import testing.DBMigration;
 public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
-    final var threads = 80;
+    final var recordsSent = new AtomicInteger();
+    final var threads = 30;
     final var dc = DBMigration.migrateAndGetDataSource(80);
     final var tobby = Tobby.build(dc);
     final var producer = tobby.kafkaProducer(
@@ -29,11 +32,15 @@ public class ProducerApp {
         try {
           final var stopWatch = new StopWatch();
           stopWatch.start();
-          for (int j = 1; true; j++) {
+          for (int j = 1; recordsSent.get() < 50_000; j++) {
+
             producer.send(KafkaProducerRecordTemplates.coconut());
+            recordsSent.incrementAndGet();
+
             final var threshold = 50;
             if (j % threshold == 0) {
-              log.info("status=produced, total={}, batchRecords={}, totalTime={}, avgTime={}",
+              log.info("status=produced, recordsSent={}, total={}, batchRecords={}, totalTime={}, avgTime={}",
+                  String.format("%,d", recordsSent.get()),
                   String.format("%,d", j),
                   String.format("%,d", threshold),
                   String.format("%,d", stopWatch.getTime()),
@@ -48,7 +55,7 @@ public class ProducerApp {
         }
       });
     }
-    Thread.currentThread()
-        .join();
+    executorService.awaitTermination(10, TimeUnit.DAYS);
+    log.info("status=producer-finished, records={}", recordsSent.get());
   }
 }

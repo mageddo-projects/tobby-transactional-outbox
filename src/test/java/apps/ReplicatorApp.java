@@ -17,6 +17,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import lombok.extern.slf4j.Slf4j;
 import testing.DBMigration;
 
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 @Slf4j
@@ -30,16 +31,22 @@ public class ReplicatorApp {
         new ByteArraySerializer()
     );
     final var dataSource = DBMigration.migrateAndGetDataSource(10);
-    final var replicator = Tobby.replicator(ReplicatorConfig
-        .builder()
-        .dataSource(dataSource)
-        .producer(kafkaProducer)
-        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
-        .idleTimeout(Duration.ofSeconds(5))
+    final var replicator = Tobby
+        .replicator(
+            ReplicatorConfig
+                .builder()
+                .dataSource(dataSource)
+                .producer(kafkaProducer)
+                .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
+                .idleTimeout(Duration.ofMillis(1000))
+                .put(
+                    REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE,
+                    String.valueOf(Duration.ofMinutes(3))
+                )
 //        .fetchSize(1000)
 //        .bufferSize(5000)
-        .build()
-    );
+                .build()
+        );
 
     final var poolSize = 5;
     final var pool = Executors.newFixedThreadPool(poolSize);

@@ -8,8 +8,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -24,10 +22,13 @@ import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
+import com.mageddo.tobby.internal.utils.LocalDateTimes;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Validator;
 
 import lombok.extern.slf4j.Slf4j;
+
+import static com.mageddo.tobby.internal.utils.LocalDateTimes.minutesAgo;
 
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
@@ -160,11 +161,12 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(
         connection,
-        "SELECT * FROM TTO_RECORD WHERE IND_STATUS=? AND DAT_CREATED < ?",
+        "SELECT * FROM TTO_RECORD WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?",
         fetchSize
     )) {
       stm.setString(1, Status.WAIT.name());
-      stm.setTimestamp(2, this.parseTimeToWaitBeforeReplicate(timeToWaitBeforeReplicate));
+      stm.setTimestamp(2, this.timeToStartScan());
+      stm.setTimestamp(3, Timestamp.valueOf(minutesAgo((int) timeToWaitBeforeReplicate.toMinutes())));
       try (ResultSet rs = stm.executeQuery()) {
         if (log.isDebugEnabled()) {
           log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
@@ -178,10 +180,8 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
-  private Timestamp parseTimeToWaitBeforeReplicate(Duration timeToWaitBeforeReplicate) {
-    return Timestamp.valueOf(ZonedDateTime.now(ZoneId.of("UTC"))
-        .toLocalDateTime()
-        .minusMinutes(timeToWaitBeforeReplicate.toMinutes()));
+  private Timestamp timeToStartScan() {
+    return Timestamp.valueOf(LocalDateTimes.daysAgo(2));
   }
 
   @Override
@@ -299,19 +299,28 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void changeStatusToProcessed(Connection connection, List<UUID> ids) {
-    ids.forEach(id -> this.changeStatusToProcessed(connection, id));
+  public void changeStatusToProcessed(Connection connection, List<UUID> ids, String changeAgent) {
+    ids.forEach(id -> this.changeStatusToProcessed(connection, id, changeAgent));
   }
 
   @Override
-  public void changeStatusToProcessed(Connection connection, UUID id) {
+  public void changeStatusToProcessed(Connection connection, UUID id, String changeAgent) {
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
-    final String sql = "UPDATE TTO_RECORD SET IND_STATUS=? WHERE IDT_TTO_RECORD = ? ";
-    try (PreparedStatement stm = connection.prepareStatement(sql)) {
-      stm.setString(1, "OK");
-      stm.setString(2, String.valueOf(id));
+    final StringBuilder sql = new StringBuilder()
+        .append("UPDATE TTO_RECORD SET \n")
+        .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=? \n")
+        .append("WHERE IDT_TTO_RECORD = ? \n")
+        .append("AND DAT_CREATED BETWEEN ? AND ? \n");
+    try (PreparedStatement stm = connection.prepareStatement(sql.toString())) {
+      int i = 1;
+      stm.setString(i++, Status.OK.name());
+      stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.now()));
+      stm.setString(i++, changeAgent);
+      stm.setString(i++, String.valueOf(id));
+      stm.setTimestamp(i++, this.timeToStartScan());
+      stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.daysInTheFuture(1)));
       final int affected = stm.executeUpdate();
       if (log.isTraceEnabled()) {
         log.trace("m=changeStatusToProcessed, status=status-changed, id={}, affected={}", id, affected);

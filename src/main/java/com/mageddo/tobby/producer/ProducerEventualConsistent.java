@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.mageddo.tobby.ChangeAgents;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.RecordDAO;
@@ -68,7 +69,7 @@ public class ProducerEventualConsistent implements Producer {
   private void markRecordAsSent(ProducedRecord producedRecord) {
     try {
       useTransactionAndClose(this.dataSource.getConnection(), (conn) -> {
-        this.recordDAO.changeStatusToProcessed(conn, producedRecord.getId());
+        this.recordDAO.changeStatusToProcessed(conn, producedRecord.getId(), ChangeAgents.CALLBACK);
         return null;
       });
     } catch (SQLException e2) {
