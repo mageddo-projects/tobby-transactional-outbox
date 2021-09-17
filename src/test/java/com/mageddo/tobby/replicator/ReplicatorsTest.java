@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,14 +42,14 @@ class ReplicatorsTest {
 
   com.mageddo.tobby.producer.Producer producer;
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
 
   DataSource dataSource;
 
   @BeforeEach
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedPostgres();
-    this.tobby = TobbyConfig.build(this.dataSource);
+    this.tobby = TobbyFactory.build(this.dataSource);
     this.producer = this.tobby.producer();
   }
 

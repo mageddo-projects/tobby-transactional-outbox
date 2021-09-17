@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -46,7 +46,7 @@ class UpdateIdempotenceBasedReplicatorTest {
 
   Replicators replicator;
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
 
   com.mageddo.tobby.producer.Producer jdbcProducer;
 
@@ -58,7 +58,7 @@ class UpdateIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyConfig.build(this.dataSource);
+    this.tobby = TobbyFactory.build(this.dataSource);
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy();
   }

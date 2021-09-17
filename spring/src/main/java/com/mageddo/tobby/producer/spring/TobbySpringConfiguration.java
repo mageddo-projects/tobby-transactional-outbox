@@ -4,7 +4,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.producer.ProducerEventualConsistent;
 
@@ -27,14 +27,14 @@ import org.springframework.kafka.core.KafkaTemplate;
 public class TobbySpringConfiguration {
 
   @Bean
-  public TobbyConfig tobbyConfig(DataSource dataSource) {
-    return TobbyConfig.build(dataSource);
+  public TobbyFactory tobbyConfig(DataSource dataSource) {
+    return TobbyFactory.build(dataSource);
   }
 
   @Bean
-  public Tobby tobby(TobbyConfig tobbyConfig) {
+  public Tobby tobby(TobbyFactory tobbyFactory) {
     return Tobby.builder()
-        .tobbyConfig(tobbyConfig)
+        .tobbyFactory(tobbyFactory)
         .build();
   }
 
@@ -79,8 +79,8 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
-  public RecordDAO recordDAO(TobbyConfig tobbyConfig) {
-    return tobbyConfig.recordDAO();
+  public RecordDAO recordDAO(TobbyFactory tobbyFactory) {
+    return tobbyFactory.recordDAO();
   }
 
 }

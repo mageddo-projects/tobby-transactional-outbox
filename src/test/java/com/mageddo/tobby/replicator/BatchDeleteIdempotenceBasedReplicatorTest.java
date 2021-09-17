@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -41,7 +41,7 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   Replicators replicator;
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
 
   private com.mageddo.tobby.producer.Producer jdbcProducer;
 
@@ -53,7 +53,7 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyConfig.build(this.dataSource);
+    this.tobby = TobbyFactory.build(this.dataSource);
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE);
   }

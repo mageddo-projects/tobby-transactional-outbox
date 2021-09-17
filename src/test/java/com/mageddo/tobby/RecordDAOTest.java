@@ -10,7 +10,8 @@ import javax.sql.DataSource;
 
 import com.mageddo.db.DuplicatedRecordException;
 import com.mageddo.tobby.ProducedRecord.Status;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ abstract class RecordDAOTest {
 
   @BeforeEach
   void beforeEach() throws SQLException {
-    final var tobby = TobbyConfig.build(this.dataSource());
+    final var tobby = TobbyFactory.build(this.dataSource());
     this.recordDAO = tobby.recordDAO();
     this.connection = dataSource().getConnection();
   }

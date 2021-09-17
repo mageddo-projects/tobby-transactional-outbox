@@ -104,6 +104,7 @@ public class Replicators {
         return;
       }
       if (!this.shouldRun(lastTimeProcessed)) {
+        // idle for a "long" time, finishing the job
         log.info(
             "status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.config.getIdleTimeout()
         );

@@ -35,9 +35,9 @@ public class ReplicatorApp {
         .dataSource(dataSource)
         .producer(kafkaProducer)
         .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
+        .idleTimeout(Duration.ofSeconds(5))
 //        .fetchSize(1000)
 //        .bufferSize(5000)
-//        .idleTimeout(Duration.ofSeconds(10))
         .build()
     );
 
@@ -59,6 +59,7 @@ public class ReplicatorApp {
     pool.submit(() -> {
       try {
         replicator.replicateLocking();
+        log.info("status=finished");
       } catch (Throwable e) {
         log.error("status=fatal, msg={}", e.getMessage(), e);
       }
