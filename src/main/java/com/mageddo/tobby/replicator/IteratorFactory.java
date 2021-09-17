@@ -21,14 +21,17 @@ public class IteratorFactory {
   private final ParameterDAO parameterDAO;
   private final RecordProcessedDAO recordProcessedDAO;
   private final BatchParallelDeleteIdempotenceBasedReplicator batchParallelDeleteIdempotenceBasedReplicator;
+  private final UpdateIdempotenceBasedReplicator updateIdempotenceBasedReplicator;
 
   @Inject
   public IteratorFactory(RecordDAO recordDAO, ParameterDAO parameterDAO, RecordProcessedDAO recordProcessedDAO,
-      BatchParallelDeleteIdempotenceBasedReplicator batchParallelDeleteIdempotenceBasedReplicator) {
+      BatchParallelDeleteIdempotenceBasedReplicator batchParallelDeleteIdempotenceBasedReplicator,
+      UpdateIdempotenceBasedReplicator updateIdempotenceBasedReplicator) {
     this.recordDAO = recordDAO;
     this.parameterDAO = parameterDAO;
     this.recordProcessedDAO = recordProcessedDAO;
     this.batchParallelDeleteIdempotenceBasedReplicator = batchParallelDeleteIdempotenceBasedReplicator;
+    this.updateIdempotenceBasedReplicator = updateIdempotenceBasedReplicator;
   }
 
   public StreamingIterator create(
@@ -61,6 +64,8 @@ public class IteratorFactory {
         );
       case BATCH_PARALLEL_DELETE:
         return this.batchParallelDeleteIdempotenceBasedReplicator;
+      case BATCH_PARALLEL_UPDATE:
+        return this.updateIdempotenceBasedReplicator;
       default:
         throw new IllegalArgumentException("Not strategy implemented for: " + config.getIdempotenceStrategy());
     }

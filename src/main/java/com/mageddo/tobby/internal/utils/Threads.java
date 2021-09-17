@@ -8,6 +8,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -23,6 +25,15 @@ public class Threads {
       t.setDaemon(true);
       return t;
     });
+  }
+
+  public static <T, R> List<R> executeAndGet(
+      ExecutorService pool, List<T> objects, Function<T, R> converter
+  ) {
+    final List<Future<R>> futures = objects.stream()
+        .map(it -> pool.submit(() -> converter.apply(it)))
+        .collect(Collectors.toList());
+    return get(futures);
   }
 
   /**

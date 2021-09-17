@@ -2,7 +2,9 @@ package com.mageddo.tobby.converter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
@@ -50,6 +52,13 @@ public class ProducedRecordConverter {
         .value(record.getValue())
         .headers(record.getHeaders())
         .build()
+        ;
+  }
+
+  public static List<UUID> toIds(List<ProducedRecord> records) {
+    return records.stream()
+        .map(ProducedRecord::getId)
+        .collect(Collectors.toList())
         ;
   }
 }

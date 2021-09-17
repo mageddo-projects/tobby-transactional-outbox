@@ -45,6 +45,11 @@ public interface RecordDAO {
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer
   );
 
+  /**
+   * @deprecated use multiple threads on a single connection won't guarantee parallelism because only a
+   * statement can be ran at time.
+   */
+  @Deprecated
   void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds);
 
   void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds);
@@ -53,5 +58,8 @@ public interface RecordDAO {
 
   void acquireDeleting(Connection connection, UUID id);
 
+  void changeStatusToProcessed(Connection connection, List<UUID> ids);
+
   void changeStatusToProcessed(Connection connection, UUID id);
+
 }

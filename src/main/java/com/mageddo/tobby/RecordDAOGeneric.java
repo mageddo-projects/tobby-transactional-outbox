@@ -152,11 +152,11 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
-    if(recordIds.isEmpty()){
+    if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("m=acquireDeletingUsingThreads, status=noRecordsToDelete");
       }
-      return ;
+      return;
     }
     final StopWatch stopWatch = StopWatch.createStarted();
     final List<Future> promises = recordIds
@@ -265,11 +265,16 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
+  public void changeStatusToProcessed(Connection connection, List<UUID> ids) {
+    ids.forEach(id -> this.changeStatusToProcessed(connection, id));
+  }
+
+  @Override
   public void changeStatusToProcessed(Connection connection, UUID id) {
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
-    if(log.isDebugEnabled()){
+    if (log.isDebugEnabled()) {
       log.trace("status=status-changed, id={}", id);
     }
   }

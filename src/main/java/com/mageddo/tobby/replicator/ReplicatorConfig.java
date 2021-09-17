@@ -55,7 +55,7 @@ public class ReplicatorConfig {
 
   @NonNull
   @Builder.Default
-  private final IdempotenceStrategy idempotenceStrategy = IdempotenceStrategy.DELETE;
+  private final IdempotenceStrategy idempotenceStrategy = IdempotenceStrategy.BATCH_PARALLEL_UPDATE;
 
   /**
    * The amount of time Replicator will look back to find not replicated Records comparing the
