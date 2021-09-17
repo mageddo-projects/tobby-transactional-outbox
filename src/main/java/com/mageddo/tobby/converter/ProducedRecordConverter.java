@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.mageddo.tobby.ProducedRecord;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.Base64;
@@ -27,10 +28,19 @@ public class ProducedRecordConverter {
           .id(UUID.fromString(rs.getString("IDT_TTO_RECORD")))
           .partition(getInteger(rs))
           .headers(HeadersConverter.decodeFromBase64(rs.getString("TXT_HEADERS")))
+          .status(mapStatus(rs))
           .build();
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
+  }
+
+  private static Status mapStatus(ResultSet rs) throws SQLException {
+    final String status = rs.getString("IND_STATUS");
+    if (rs.wasNull()) {
+      return null;
+    }
+    return Status.valueOf(status);
   }
 
   private static Integer getInteger(ResultSet rs) throws SQLException {

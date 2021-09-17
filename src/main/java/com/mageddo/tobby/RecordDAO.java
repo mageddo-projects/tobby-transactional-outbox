@@ -45,6 +45,9 @@ public interface RecordDAO {
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer
   );
 
+  void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
+      Consumer<ProducedRecord> consumer);
+
   /**
    * @deprecated use multiple threads on a single connection won't guarantee parallelism because only a
    * statement can be ran at time.
@@ -52,6 +55,11 @@ public interface RecordDAO {
   @Deprecated
   void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds);
 
+  /**
+   * @deprecated Deleting using in is not a good strategy for Relational Database engines because it will be considered
+   * different statements then it will cause performance decrease.
+   */
+  @Deprecated
   void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds);
 
   void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds);

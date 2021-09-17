@@ -31,7 +31,7 @@ public enum IdempotenceStrategy {
   BATCH_PARALLEL_DELETE,
 
   /**
-   * Search for records which are at TTO_RECORD with IND_STATUS=PEND, divide them in multiple threads,
+   * Search for records which are at TTO_RECORD with IND_STATUS=WAIT, divide them in multiple threads,
    * change the status to OK, then try to send to kafka, if success commit the transaction otherwise rollback and try
    * that batch again.
    */

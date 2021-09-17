@@ -21,5 +21,11 @@ public class ProducedRecord {
   private byte[] value;
   private Headers headers;
   private LocalDateTime createdAt;
+  private Status status;
+
+  public enum Status {
+    WAIT,
+    OK
+  }
 
 }

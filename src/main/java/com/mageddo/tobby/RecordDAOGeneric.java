@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
@@ -41,14 +42,14 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
         .append("INSERT INTO TTO_RECORD ( \n")
-        .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, \n")
+        .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, IND_STATUS, \n")
         .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
-        .append("  ?, ?, ?, \n")
+        .append("  ?, ?, ?, ?, \n")
         .append("  ?, ?, ? \n")
         .append(") \n");
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
-      final UUID id = fillStatement(record, stm);
+      final UUID id = this.fillStatement(record, stm);
       stm.executeUpdate();
       return ProducedRecordConverter.from(id, record);
     } catch (SQLException e) {
@@ -137,6 +138,28 @@ public class RecordDAOGeneric implements RecordDAO {
   public void iterateOverRecords(Connection connection, int fetchSize, Consumer<ProducedRecord> consumer) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
+      try (ResultSet rs = stm.executeQuery()) {
+        if (log.isDebugEnabled()) {
+          log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        }
+        while (rs.next()) {
+          consumer.accept(ProducedRecordConverter.map(rs));
+        }
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  @Override
+  public void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
+      Consumer<ProducedRecord> consumer) {
+    final StopWatch stopWatch = StopWatch.createStarted();
+    try (PreparedStatement stm = this.createStreamingStatement(
+        connection,
+        "SELECT * FROM TTO_RECORD WHERE IND_STATUS='WAITING'",
+        fetchSize
+    )) {
       try (ResultSet rs = stm.executeQuery()) {
         if (log.isDebugEnabled()) {
           log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
@@ -274,8 +297,17 @@ public class RecordDAOGeneric implements RecordDAO {
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
-    if (log.isDebugEnabled()) {
-      log.trace("status=status-changed, id={}", id);
+    final String sql = "UPDATE TTO_RECORD SET IND_STATUS=? WHERE IDT_TTO_RECORD = ? ";
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+      stm.setString(1, "OK");
+      stm.setString(2, String.valueOf(id));
+      final int affected = stm.executeUpdate();
+      if (log.isTraceEnabled()) {
+        log.trace("m=changeStatusToProcessed, status=status-changed, id={}, affected={}", id, affected);
+      }
+      Validator.isTrue(affected == 1, "Couldn't update record: %s", id);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
     }
   }
 
@@ -294,9 +326,10 @@ public class RecordDAOGeneric implements RecordDAO {
     stm.setString(1, id.toString());
     stm.setString(2, record.getTopic());
     stm.setObject(3, record.getPartition());
-    stm.setString(4, Base64.encodeToString(record.getKey()));
-    stm.setString(5, Base64.encodeToString(record.getValue()));
-    stm.setString(6, HeadersConverter.encodeBase64(record.getHeaders()));
+    stm.setObject(4, Status.WAIT.name());
+    stm.setString(5, Base64.encodeToString(record.getKey()));
+    stm.setString(6, Base64.encodeToString(record.getValue()));
+    stm.setString(7, HeadersConverter.encodeBase64(record.getHeaders()));
     return id;
   }
 
