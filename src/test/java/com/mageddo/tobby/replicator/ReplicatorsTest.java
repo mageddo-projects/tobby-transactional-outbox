@@ -248,6 +248,7 @@ class ReplicatorsTest {
         .dataSource(this.dataSource)
         .producer(this.mockProducer)
         .idleTimeout(idleTimeout)
+        .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
         .build()
     );
   }
