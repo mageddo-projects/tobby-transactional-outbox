@@ -1,13 +1,13 @@
 package com.mageddo.tobby;
 
-import com.mageddo.db.DuplicatedRecordException;
-import com.mageddo.tobby.replicator.Replicators;
-
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+
+import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.replicator.Replicators;
 
 public interface RecordDAO {
 
@@ -52,4 +52,6 @@ public interface RecordDAO {
   void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds);
 
   void acquireDeleting(Connection connection, UUID id);
+
+  void changeStatusToProcessed(Connection connection, UUID id);
 }

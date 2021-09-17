@@ -6,6 +6,7 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyConfig;
 import com.mageddo.tobby.factory.SerializerCreator;
+import com.mageddo.tobby.producer.ProducerEventualConsistent;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -38,8 +39,18 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
-  public ProducerSpring producerSpring(RecordDAO recordDAO, DataSource dataSource) {
-    return new ProducerSpring(recordDAO, dataSource);
+  public RealKafkaProducerProvider realKafkaProducerProvider(KafkaProperties kafkaProperties) {
+    return new RealKafkaProducerProvider(kafkaProperties);
+  }
+
+  @Bean
+  public ProducerEventualConsistentSpring producerEventualConsistent(
+      RecordDAO recordDAO, DataSource dataSource, RealKafkaProducerProvider producerProvider
+  ) {
+    return new ProducerEventualConsistentSpring(
+        dataSource,
+        new ProducerEventualConsistent(producerProvider.createByteProducer(), recordDAO, dataSource)
+    );
   }
 
   @Bean

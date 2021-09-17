@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -262,6 +261,16 @@ public class RecordDAOGeneric implements RecordDAO {
       Validator.isTrue(affected == 1, "Couldn't delete record: %s", id);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
+    }
+  }
+
+  @Override
+  public void changeStatusToProcessed(Connection connection, UUID id) {
+    if (log.isTraceEnabled()) {
+      log.trace("status=changing-status, id={}", id);
+    }
+    if(log.isDebugEnabled()){
+      log.trace("status=status-changed, id={}", id);
     }
   }
 

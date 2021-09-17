@@ -29,7 +29,7 @@ public class ProducerJdbc implements Producer {
   public ProducedRecord send(ProducerRecord record) {
     final StopWatch totalStopWatch = StopWatch.createStarted();
     try (Connection connection = this.dataSource.getConnection();) {
-      return ConnectionUtils.useTransaction(connection, () -> {
+      return ConnectionUtils.useTransaction(connection, (conn) -> {
         return this.recordDAO.save(connection, record);
       });
     } catch (SQLException e) {
