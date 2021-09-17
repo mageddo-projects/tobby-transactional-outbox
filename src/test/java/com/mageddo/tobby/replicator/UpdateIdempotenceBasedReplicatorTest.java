@@ -2,6 +2,7 @@ package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,10 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class UpdateIdempotenceBasedReplicatorTest  {
+class UpdateIdempotenceBasedReplicatorTest {
 
 
   @Mock
@@ -67,6 +69,33 @@ class UpdateIdempotenceBasedReplicatorTest  {
   }
 
   @Test
+  void mustNotSendNorReplicateWhenWaitTimeIsNotMet() {
+
+    // arrange
+    this.replicator = Tobby
+        .replicator(this.defaultConfigBuilder()
+            .build()
+        );
+
+    final var record = ProducerRecordTemplates.coconut();
+    final var savedRecord = this.jdbcProducer.send(record);
+    assertNotNull(this.findRecord(savedRecord.getId()));
+
+    // act
+    this.replicator.replicate();
+
+    // assert
+    verify(this.producer, never()).send(any());
+
+    final var foundRecord = this.findRecord(savedRecord.getId());
+    assertNotNull(foundRecord);
+    assertEquals(Status.WAIT, foundRecord.getStatus());
+
+    assertNull(this.findProcessedRecord(savedRecord.getId()));
+
+  }
+
+  @Test
   void mustSendReplicateThenUpdateRecord() {
 
     // arrange
@@ -93,7 +122,7 @@ class UpdateIdempotenceBasedReplicatorTest  {
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecords() {
+  void mustSendReplicateThenUpdateRecords() {
 
     // arrange
     doReturn(mock(Future.class))
@@ -116,13 +145,13 @@ class UpdateIdempotenceBasedReplicatorTest  {
     this.replicator.replicate();
 
     // assert
+    int i=0;
     for (UUID id : ids) {
-
       final var foundRecord = this.findRecord(id);
       assertNotNull(foundRecord);
-      assertEquals(Status.OK, foundRecord.getStatus());
-
+      assertEquals(Status.OK, foundRecord.getStatus(), String.valueOf(i));
       assertNull(this.findProcessedRecord(id));
+      i++;
     }
 
   }
@@ -139,16 +168,21 @@ class UpdateIdempotenceBasedReplicatorTest  {
 
 
   public Replicators buildStrategy() {
-    return Tobby.replicator(ReplicatorConfig
+    return Tobby.replicator(defaultConfigBuilder()
+        .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
+        .build());
+  }
+
+  private ReplicatorConfig.ReplicatorConfigBuilder defaultConfigBuilder() {
+    return ReplicatorConfig
         .builder()
         .dataSource(this.dataSource)
         .producer(this.producer)
         .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
         .put(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE, "500")
         .put(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, "100")
-        .stopPredicate((ctx) -> true)
-        .build()
-    );
+        .idleTimeout(Duration.ofMillis(600))
+        ;
   }
 
 }
