@@ -6,7 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -153,13 +156,15 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
-      Consumer<ProducedRecord> consumer) {
+      Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(
         connection,
-        "SELECT * FROM TTO_RECORD WHERE IND_STATUS='WAITING'",
+        "SELECT * FROM TTO_RECORD WHERE IND_STATUS=? AND DAT_CREATED < ?",
         fetchSize
     )) {
+      stm.setString(1, Status.WAIT.name());
+      stm.setTimestamp(2, this.parseTimeToWaitBeforeReplicate(timeToWaitBeforeReplicate));
       try (ResultSet rs = stm.executeQuery()) {
         if (log.isDebugEnabled()) {
           log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
@@ -171,6 +176,12 @@ public class RecordDAOGeneric implements RecordDAO {
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
+  }
+
+  private Timestamp parseTimeToWaitBeforeReplicate(Duration timeToWaitBeforeReplicate) {
+    return Timestamp.valueOf(ZonedDateTime.now(ZoneId.of("UTC"))
+        .toLocalDateTime()
+        .minusMinutes(timeToWaitBeforeReplicate.toMinutes()));
   }
 
   @Override

@@ -58,7 +58,7 @@ class ReplicatorsTest {
     // arrange
     doReturn(mock(Future.class)).when(this.mockProducer)
         .send(any());
-    this.producer.send(ProducerRecordTemplates.strawberry());
+    final var send = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
@@ -68,6 +68,7 @@ class ReplicatorsTest {
             .dataSource(this.dataSource)
             .producer(this.mockProducer)
             .stopPredicate(it -> it.getWaveProcessed() == 0)
+            .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
             .build()
         )
         .replicate();

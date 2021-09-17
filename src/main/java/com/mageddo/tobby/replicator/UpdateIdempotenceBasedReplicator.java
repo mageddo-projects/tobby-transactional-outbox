@@ -1,6 +1,7 @@
 package com.mageddo.tobby.replicator;
 
 import java.sql.Connection;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -23,9 +24,10 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
-import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREADS;
-import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_THREADS;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_THREAD_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE;
 
 @Slf4j
 @Singleton
@@ -100,8 +102,11 @@ public class UpdateIdempotenceBasedReplicator implements Replicator, StreamingIt
   @Override
   public int iterate(Connection readConn) {
     final AtomicInteger counter = new AtomicInteger();
-    this.recordDAO.iterateOverRecords(
-        readConn, this.config.getFetchSize(), (record) -> {
+    this.recordDAO.iterateOverRecordsInWaitingStatus(
+        readConn,
+        this.config.getFetchSize(),
+        this.config.getTimeToWaitBeforeReplicate(),
+        (record) -> {
           counter.incrementAndGet();
           this.send(record);
         }
@@ -142,15 +147,24 @@ public class UpdateIdempotenceBasedReplicator implements Replicator, StreamingIt
      */
     private int threads;
 
+    /**
+     * How old the record must be before the replicator consider it to send to kafka
+     */
+    private Duration timeToWaitBeforeReplicate;
+
     public static Config from(ReplicatorConfig config) {
       return Config
           .builder()
           .fetchSize(config.getFetchSize())
-          .bufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE))
-          .threads(config.getInt(REPLICATORS_BATCH_PARALLEL_THREADS))
-          .threadBufferSize(config.getInt(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE))
+          .bufferSize(config.getInt(REPLICATORS_UPDATE_IDEMPOTENCE_BUFFER_SIZE))
+          .threads(config.getInt(REPLICATORS_UPDATE_IDEMPOTENCE_THREADS))
+          .threadBufferSize(config.getInt(REPLICATORS_UPDATE_IDEMPOTENCE_THREAD_BUFFER_SIZE))
+          .timeToWaitBeforeReplicate(
+              Duration.parse(config.get(REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE))
+          )
           .build();
     }
+
   }
 
 }

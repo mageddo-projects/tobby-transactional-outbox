@@ -1,6 +1,7 @@
 package com.mageddo.tobby;
 
 import java.sql.Connection;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +47,7 @@ public interface RecordDAO {
   );
 
   void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
-      Consumer<ProducedRecord> consumer);
+      Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer);
 
   /**
    * @deprecated use multiple threads on a single connection won't guarantee parallelism because only a
