@@ -23,7 +23,9 @@ public class ProducerEventualConsistent implements Producer {
   private final RecordDAO recordDAO;
   private final DataSource dataSource;
 
-  public ProducerEventualConsistent(org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer, RecordDAO recordDAO,
+  public ProducerEventualConsistent(
+      org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer,
+      RecordDAO recordDAO,
       DataSource dataSource) {
     this.kafkaProducer = kafkaProducer;
     this.recordDAO = recordDAO;
@@ -49,7 +51,7 @@ public class ProducerEventualConsistent implements Producer {
   @Override
   public ProducedRecord send(Connection connection, ProducerRecord record) {
     final ProducedRecord producedRecord = this.recordDAO.save(connection, record);
-    this.kafkaProducer.send(toKafkaProducerRecord(producedRecord), (metadata, e) -> {
+    this.getKafkaProducer().send(toKafkaProducerRecord(producedRecord), (metadata, e) -> {
       if (e == null) {
         this.markRecordAsSent(producedRecord);
       } else {
@@ -57,6 +59,10 @@ public class ProducerEventualConsistent implements Producer {
       }
     });
     return producedRecord;
+  }
+
+  private org.apache.kafka.clients.producer.Producer<byte[], byte[]> getKafkaProducer() {
+    return this.kafkaProducer;
   }
 
   private void markRecordAsSent(ProducedRecord producedRecord) {

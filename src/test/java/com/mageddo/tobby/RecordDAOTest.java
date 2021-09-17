@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.dagger.TobbyConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,7 @@ abstract class RecordDAOTest {
     assertArrayEquals(record.getValue(), producedRecord.getValue());
     assertEquals(record.getPartition(), producedRecord.getPartition());
     assertEquals(record.getTopic(), producedRecord.getTopic());
+    assertEquals(Status.WAIT, producedRecord.getStatus());
     final var headers = producedRecord.getHeaders();
     assertEquals(encodeBase64(record.getHeaders()), encodeBase64(headers));
     assertEquals("1", new String(headers.getFirst("version")

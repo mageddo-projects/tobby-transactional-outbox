@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
-public class RealKafkaProducerProvider {
+public class RealKafkaProducerProvider implements KafkaProducerProvider {
 
   private final KafkaProperties kafkaProperties;
 
@@ -17,6 +17,7 @@ public class RealKafkaProducerProvider {
     this.kafkaProperties = kafkaProperties;
   }
 
+  @Override
   public Producer<byte[], byte[]> createByteProducer() {
     return new KafkaProducer<>(
         this.kafkaProperties.buildProducerProperties(),
@@ -25,10 +26,12 @@ public class RealKafkaProducerProvider {
     );
   }
 
+  @Override
   public Producer<?, ?> createProducer() {
     return new KafkaProducer<>(this.kafkaProperties.buildProducerProperties());
   }
 
+  @Override
   public KafkaTemplate<?, ?> createKafkaTemplate() {
     return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(this.kafkaProperties.buildProducerProperties()));
   }

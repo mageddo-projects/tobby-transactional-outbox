@@ -45,7 +45,7 @@ public class TobbySpringConfiguration {
 
   @Bean
   public ProducerEventualConsistentSpring producerEventualConsistent(
-      RecordDAO recordDAO, DataSource dataSource, RealKafkaProducerProvider producerProvider
+      RecordDAO recordDAO, DataSource dataSource, KafkaProducerProvider producerProvider
   ) {
     return new ProducerEventualConsistentSpring(
         dataSource,
