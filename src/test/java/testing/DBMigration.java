@@ -77,6 +77,7 @@ public class DBMigration {
     return Flyway.configure()
         .dataSource(url, user, password)
         .locations(locations)
+        .validateOnMigrate(false)
         .load();
   }
 

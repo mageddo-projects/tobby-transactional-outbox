@@ -28,7 +28,7 @@ public class ProducerEventualConsistent implements Producer {
   private final org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer;
   private final RecordDAO recordDAO;
   private final DataSource dataSource;
-  private final ExecutorService pool = Threads.newPool(20);
+  private final ExecutorService pool = Threads.newPool(15);
 
   public ProducerEventualConsistent(
       org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer,
@@ -61,42 +61,38 @@ public class ProducerEventualConsistent implements Producer {
   public ProducedRecord send(final Connection connection, final ProducerRecord record) {
     final StopWatch stopWatch = StopWatch.createStarted();
     final ProducedRecord producedRecord = this.recordDAO.save(connection, record);
-//    final ProducedRecord producedRecord = ProducedRecordConverter.from(UUID.randomUUID(), record);
     final long saveTime = stopWatch.getTime();
     stopWatch.split();
     registerSynchronization(() -> this.sendToKafka(producedRecord));
-
-    log.trace("status=sent, saveTime={}, sendTime={}, total={}",
-        saveTime,
-        stopWatch.getTime() - stopWatch.getSplitTime(),
-        stopWatch.getTime()
-    );
+    if (log.isTraceEnabled()) {
+      log.trace("status=sent, saveTime={}, sendTime={}, total={}",
+          saveTime,
+          stopWatch.getTime() - stopWatch.getSplitTime(),
+          stopWatch.getTime()
+      );
+    }
     return producedRecord;
   }
 
   private void sendToKafka(ProducedRecord producedRecord) {
-    final StopWatch stopWatch1 = StopWatch.createStarted();
+    final StopWatch stopWatch = StopWatch.createStarted();
     this.getKafkaProducer()
         .send(toKafkaProducerRecord(producedRecord), (metadata, e) -> {
-          log.info("status=kafka-callback, id={}", producedRecord.getId());
-          final long intervalTime = stopWatch1.getTime();
           pool.submit(() -> {
             try {
-              log.info("status=pool-callback, id={}", producedRecord.getId());
               if (e == null) {
-                final long interval2Time = stopWatch1.getTime();
-                stopWatch1.split();
+                stopWatch.split();
                 this.markRecordAsSent(producedRecord);
-                final long saveTime1 = stopWatch1.getSplitTime();
+                final long saveTime1 = stopWatch.getSplitTime();
                 log.info(
-                    "status=updated, id={}, saveTime={}, interval={}, interval2={}, totalTime={}",
-                    producedRecord.getId(), saveTime1, intervalTime, interval2Time,
-                    stopWatch1.getTime()
+                    "status=updated, id={}, saveTime={}, totalTime={}",
+                    producedRecord.getId(), saveTime1,
+                    stopWatch.getTime()
                 );
               } else {
                 log.warn("status=cant-send-to-kafka id={} msg={}", producedRecord.getId(), e.getMessage(), e);
               }
-            } catch (Exception e2){
+            } catch (Exception e2) {
               log.warn("status=cant-update-record-status, id={}, msg={}", producedRecord.getId(), e2.getMessage(), e2);
             }
           });
