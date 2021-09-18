@@ -20,3 +20,5 @@ db-*.properties
 
 *.orig
 *.log
+
+files/

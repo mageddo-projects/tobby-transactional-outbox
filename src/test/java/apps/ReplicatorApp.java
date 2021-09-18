@@ -30,7 +30,7 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var dataSource = DBMigration.migrateAndGetDataSource(10);
+    final var dataSource = DBMigration.migrateAndGetDataSource(20);
     final var replicator = Tobby
         .replicator(
             ReplicatorConfig

@@ -1,9 +1,9 @@
 package templates;
 
+import java.util.List;
+
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
-
-import java.util.List;
 
 public class KafkaProducerRecordTemplates {
   public static ProducerRecord<String, byte[]> coconut() {
@@ -19,7 +19,7 @@ public class KafkaProducerRecordTemplates {
 
   public static ProducerRecord<String, byte[]> articles() {
     return new ProducerRecord<String, byte[]>(
-        "2021-fruit-v1",
+        "2021-fruit-v2",
         null,
         null,
         ("{\n"

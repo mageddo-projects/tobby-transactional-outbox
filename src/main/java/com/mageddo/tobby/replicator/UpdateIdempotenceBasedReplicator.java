@@ -12,7 +12,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
-import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ChangeAgents;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.RecordDAO;
@@ -25,6 +24,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.mageddo.db.ConnectionUtils.runAndClose;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_BUFFER_SIZE;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_THREADS;
 import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_THREAD_BUFFER_SIZE;
@@ -80,21 +80,19 @@ public class UpdateIdempotenceBasedReplicator implements Replicator, StreamingIt
       }
       from += records.size();
       batchThread.add(() -> {
-        try (Connection connection = this.dataSource.getConnection()) {
-          ConnectionUtils.useTransaction(connection, () -> {
-            final StopWatch stopWatch = StopWatch.createStarted();
-            this.recordDAO.changeStatusToProcessed(
-                connection,
-                ProducedRecordConverter.toIds(records),
-                ChangeAgents.REPLICATOR
-            );
-            this.batchSender.send(records);
-            if (log.isDebugEnabled()) {
-              log.debug("status=replicated, records={}, time={}", records.size(), stopWatch.getDisplayTime());
-            }
-          });
+        return runAndClose(this.dataSource.getConnection(), (connection) -> {
+          final StopWatch stopWatch = StopWatch.createStarted();
+          this.recordDAO.changeStatusToProcessed(
+              connection,
+              ProducedRecordConverter.toIds(records),
+              ChangeAgents.REPLICATOR
+          );
+          this.batchSender.send(records);
+          if (log.isDebugEnabled()) {
+            log.debug("status=replicated, records={}, time={}", records.size(), stopWatch.getDisplayTime());
+          }
           return null;
-        }
+        });
       });
     }
     Threads.executeAndGet(this.pool, batchThread.getCallables());
