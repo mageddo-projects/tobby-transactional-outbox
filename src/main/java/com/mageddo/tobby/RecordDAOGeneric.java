@@ -322,10 +322,14 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setTimestamp(i++, this.timeToStartScan());
       stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.daysInTheFuture(1)));
       final int affected = stm.executeUpdate();
+      final boolean success = affected == 1;
       if (log.isTraceEnabled()) {
-        log.trace("m=changeStatusToProcessed, status=status-changed, id={}, affected={}", id, affected);
+        log.trace(
+            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}",
+            id, affected, success
+        );
       }
-      Validator.isTrue(affected == 1, "Couldn't update record: %s", id);
+      Validator.isTrue(success, "Couldn't update record: %s", id);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }

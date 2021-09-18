@@ -3,7 +3,6 @@ package apps;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.internal.utils.Threads;
@@ -23,6 +22,7 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 @Slf4j
 public class ReplicatorApp {
   public static void main(String[] args) {
+
     final var kafkaProducer = new KafkaProducer<>(
         Map.of(
             BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"
@@ -49,7 +49,7 @@ public class ReplicatorApp {
         );
 
     final var poolSize = 5;
-    final var pool = Executors.newFixedThreadPool(poolSize);
+    final var pool = Threads.newPool(poolSize);
     for (int i = 0; i < poolSize; i++) {
       submit(replicator, pool);
     }

@@ -47,11 +47,22 @@ public class ConnectionUtils {
     try {
       return useTransaction(con, runnable);
     } finally {
-      try {
-        con.close();
-      } catch (SQLException e) {
-        throw new UncheckedSQLException(e);
+      quietClose(con);
+    }
+  }
+
+  public static <T> T runAndClose(Connection connection, Callable<T> runnable) {
+    try {
+      final T r = runnable.call(connection);
+      final boolean autoCommit = connection.getAutoCommit();
+      if (!autoCommit) {
+        connection.commit();
       }
+      return r;
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    } finally {
+      quietClose(connection);
     }
   }
 

@@ -34,7 +34,7 @@ public class ProducerConfig {
         .build();
   }
 
-  private static Map<String, Object> buildDefaultKafkaProducerConfigs() {
+  public static Map<String, Object> buildDefaultKafkaProducerConfigs() {
     final Map<String, Object> props = new HashMap<>();
     props.put(BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     props.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);

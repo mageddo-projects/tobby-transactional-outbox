@@ -3,7 +3,6 @@ package com.mageddo.tobby.replicator;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -11,6 +10,7 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.internal.utils.Threads;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,7 +136,7 @@ class ReplicatorsTest {
   void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach() {
     // arrange
     final var workers = 3;
-    final var executorService = Executors.newFixedThreadPool(workers);
+    final var executorService = Threads.newPool(workers);
     doReturn(mock(Future.class))
         .when(this.mockProducer)
         .send(any())
@@ -173,7 +173,7 @@ class ReplicatorsTest {
 
     // arrange
     final var workers = 3;
-    final var executorService = Executors.newFixedThreadPool(workers);
+    final var executorService = Threads.newPool(workers);
     doReturn(mock(Future.class))
         .when(this.mockProducer)
         .send(any())

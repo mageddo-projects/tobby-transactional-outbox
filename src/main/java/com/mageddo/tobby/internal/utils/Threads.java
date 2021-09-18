@@ -76,4 +76,13 @@ public class Threads {
       throw new UncheckedInterruptedException(e);
     }
   }
+
+  public static void threadDump(){
+    Thread
+        .getAllStackTraces()
+        .keySet()
+        .stream()
+        .map(it -> String.format("%s(%s)", it.getName(), it.getState()))
+        .forEach(System.out::println);
+  }
 }
