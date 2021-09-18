@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.producer.InterceptableProducer;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -43,7 +44,7 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   TobbyFactory tobby;
 
-  private com.mageddo.tobby.producer.Producer jdbcProducer;
+  private InterceptableProducer jdbcProducer;
 
   private Connection connection;
 

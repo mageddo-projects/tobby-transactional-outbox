@@ -1,12 +1,12 @@
 package com.mageddo.tobby.producer;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
+import com.mageddo.db.ConnectionUtils;
 import com.mageddo.tobby.ChangeAgents;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
@@ -18,11 +18,10 @@ import com.mageddo.tobby.internal.utils.Threads;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.db.ConnectionUtils.runAndClose;
-import static com.mageddo.db.ConnectionUtils.useTransactionAndClose;
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 
 @Slf4j
-public class ProducerEventualConsistent implements Producer {
+public class ProducerEventualConsistent implements InterceptableProducer {
 
   private final org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer;
   private final RecordDAO recordDAO;
@@ -42,7 +41,7 @@ public class ProducerEventualConsistent implements Producer {
   public ProducedRecord send(ProducerRecord record) {
     final StopWatch totalStopWatch = StopWatch.createStarted();
     try {
-      return useTransactionAndClose(this.dataSource.getConnection(), (conn) -> {
+      return ConnectionUtils.runAndClose(ConnectionHandler.wrap(this.dataSource.getConnection()), (conn) -> {
         return this.send(conn, record);
       });
     } catch (SQLException e) {
@@ -57,12 +56,25 @@ public class ProducerEventualConsistent implements Producer {
   private final AtomicInteger counter = new AtomicInteger();
 
   @Override
-  public ProducedRecord send(final Connection connection, final ProducerRecord record) {
+  public ProducedRecord send(final ConnectionHandler handler, final ProducerRecord record) {
     final StopWatch stopWatch = StopWatch.createStarted();
-    final ProducedRecord producedRecord = this.recordDAO.save(connection, record);
+    final ProducedRecord producedRecord = this.recordDAO.save(handler.connection(), record);
 //    final ProducedRecord producedRecord = ProducedRecordConverter.from(UUID.randomUUID(), record);
     final long saveTime = stopWatch.getTime();
     stopWatch.split();
+    handler.afterCommit(() -> {
+      this.sendToKafka(producedRecord);
+    });
+
+    log.trace("status=sent, saveTime={}, sendTime={}, total={}",
+        saveTime,
+        stopWatch.getTime() - stopWatch.getSplitTime(),
+        stopWatch.getTime()
+    );
+    return producedRecord;
+  }
+
+  private void sendToKafka(ProducedRecord producedRecord) {
     final StopWatch stopWatch1 = StopWatch.createStarted();
     this.getKafkaProducer()
         .send(toKafkaProducerRecord(producedRecord), (metadata, e) -> {
@@ -90,12 +102,6 @@ public class ProducerEventualConsistent implements Producer {
           });
           log.info("status=callback, id={}, counter={}", producedRecord.getId(), counter.incrementAndGet());
         });
-    log.trace("status=sent, saveTime={}, sendTime={}, total={}",
-        saveTime,
-        stopWatch.getTime() - stopWatch.getSplitTime(),
-        stopWatch.getTime()
-    );
-    return producedRecord;
   }
 
 

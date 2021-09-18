@@ -6,6 +6,8 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.producer.ProducerEventualConsistent;
 
+import com.mageddo.tobby.producer.ProducerJdbc;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 
 import dagger.Module;
@@ -22,7 +24,13 @@ class ProducersModule {
 
   @Provides
   @Singleton
-  public ProducerEventualConsistent producerJdbc(RecordDAO recordDAO) {
+  public ProducerJdbc producerJdbc(RecordDAO recordDAO){
+    return new ProducerJdbc(recordDAO, this.producerConfig.getDataSource());
+  }
+
+  @Provides
+  @Singleton
+  public ProducerEventualConsistent producerEventualConsistent(RecordDAO recordDAO) {
     return new ProducerEventualConsistent(
         new KafkaProducer<>(this.producerConfig.getProducerConfigs()),
         recordDAO,

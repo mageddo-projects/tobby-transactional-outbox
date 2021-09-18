@@ -12,6 +12,7 @@ import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 
+import com.mageddo.tobby.producer.InterceptableProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,7 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
 
   TobbyFactory tobby;
 
-  private com.mageddo.tobby.producer.Producer jdbcProducer;
+  private InterceptableProducer jdbcProducer;
 
   private Connection connection;
   private DataSource dataSource;

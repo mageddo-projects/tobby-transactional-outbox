@@ -7,6 +7,7 @@ import com.mageddo.db.SimpleDataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.factory.SerializerCreator;
+import com.mageddo.tobby.producer.InterceptableProducer;
 import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
@@ -26,7 +27,7 @@ import dagger.Component;
 )
 public interface TobbyFactory {
 
-  com.mageddo.tobby.producer.Producer producer();
+  InterceptableProducer producer();
 
   RecordDAO recordDAO();
 
@@ -49,7 +50,7 @@ public interface TobbyFactory {
   }
 
   default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer, com.mageddo.tobby.producer.Producer producer
+      Serializer<K> keySerializer, Serializer<V> valueSerializer, InterceptableProducer producer
   ) {
     return new SimpleJdbcKafkaProducerAdapter<>(keySerializer, valueSerializer, producer);
   }

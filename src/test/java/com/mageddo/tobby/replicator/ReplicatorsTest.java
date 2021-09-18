@@ -12,6 +12,8 @@ import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.internal.utils.Threads;
 
+import com.mageddo.tobby.producer.InterceptableProducer;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,7 @@ class ReplicatorsTest {
   @Mock
   Producer<byte[], byte[]> mockProducer;
 
-  com.mageddo.tobby.producer.Producer producer;
+  InterceptableProducer producer;
 
   TobbyFactory tobby;
 

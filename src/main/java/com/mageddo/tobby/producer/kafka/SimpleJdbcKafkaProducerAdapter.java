@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.mageddo.tobby.internal.utils.SyncFuture;
 
+import com.mageddo.tobby.producer.InterceptableProducer;
+
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -29,7 +31,7 @@ public class SimpleJdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   private final JdbcKafkaProducer<K, V> jdbcKafkaProducer;
 
   public SimpleJdbcKafkaProducerAdapter(
-      Serializer<K> keySerializer, Serializer<V> valueSerializer, com.mageddo.tobby.producer.Producer producer
+      Serializer<K> keySerializer, Serializer<V> valueSerializer, InterceptableProducer producer
   ) {
     this(new JdbcKafkaProducer<>(
         producer, keySerializer, valueSerializer

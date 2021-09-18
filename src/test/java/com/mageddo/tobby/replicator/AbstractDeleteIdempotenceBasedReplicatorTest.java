@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.dagger.TobbyFactory;
 
+import com.mageddo.tobby.producer.InterceptableProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,7 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
 
   TobbyFactory tobby;
 
-  com.mageddo.tobby.producer.Producer jdbcProducer;
+  InterceptableProducer jdbcProducer;
 
   Connection connection;
 

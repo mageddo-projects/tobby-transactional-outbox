@@ -15,6 +15,7 @@ import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 
+import com.mageddo.tobby.producer.InterceptableProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,7 @@ class UpdateIdempotenceBasedReplicatorTest {
 
   TobbyFactory tobby;
 
-  com.mageddo.tobby.producer.Producer jdbcProducer;
+  InterceptableProducer jdbcProducer;
 
   Connection connection;
 

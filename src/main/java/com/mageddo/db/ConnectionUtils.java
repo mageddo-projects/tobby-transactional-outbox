@@ -5,10 +5,13 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 
 import com.mageddo.tobby.UncheckedSQLException;
+import com.mageddo.tobby.producer.ConnectionHandler;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import static com.mageddo.tobby.producer.ConnectionHandlerExecutor.executeAfterCommitCallbacks;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -49,6 +52,12 @@ public class ConnectionUtils {
     } finally {
       quietClose(con);
     }
+  }
+
+  public static <T> T runAndClose(ConnectionHandler handler, CallableForHandler<T> runnable) {
+    final T r = runAndClose(handler.connection(), (con) -> runnable.call(handler));
+    executeAfterCommitCallbacks(handler);
+    return r;
   }
 
   public static <T> T runAndClose(Connection connection, Callable<T> runnable) {
@@ -99,5 +108,9 @@ public class ConnectionUtils {
 
   public interface Callable<T> {
     T call(Connection conn);
+  }
+
+  public interface CallableForHandler<T> {
+    T call(ConnectionHandler conn);
   }
 }
