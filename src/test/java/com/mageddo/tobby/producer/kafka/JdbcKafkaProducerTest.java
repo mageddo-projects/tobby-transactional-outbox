@@ -1,7 +1,6 @@
 package com.mageddo.tobby.producer.kafka;
 
-import com.mageddo.tobby.producer.InterceptableProducer;
-
+import com.mageddo.tobby.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.verify;
 class JdbcKafkaProducerTest {
 
   @Mock
-  InterceptableProducer delegate;
+  Producer delegate;
 
   JdbcKafkaProducer<String, byte[]> jdbcKafkaProducer;
 

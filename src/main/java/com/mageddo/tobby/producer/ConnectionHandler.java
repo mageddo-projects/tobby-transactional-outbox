@@ -3,6 +3,7 @@ package com.mageddo.tobby.producer;
 import java.sql.Connection;
 import java.util.List;
 
+@Deprecated
 public interface ConnectionHandler {
 
   Connection connection();

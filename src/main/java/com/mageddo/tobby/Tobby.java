@@ -4,7 +4,6 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.dagger.TobbyReplicatorConfig;
-import com.mageddo.tobby.producer.InterceptableProducer;
 import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
@@ -22,7 +21,7 @@ public class Tobby {
   //
   // vanilla producers
   //
-  public InterceptableProducer producer() {
+  public com.mageddo.tobby.producer.Producer producer() {
     return this.tobbyFactory.producer();
   }
 
@@ -56,7 +55,7 @@ public class Tobby {
   }
 
   public <K, V> Producer<K, V> kafkaProducer(
-      InterceptableProducer producer, Serializer<K> keySerializer, Serializer<V> valueSerializer
+      com.mageddo.tobby.producer.Producer producer, Serializer<K> keySerializer, Serializer<V> valueSerializer
   ) {
     return this.tobbyFactory.jdbcProducerAdapter(keySerializer, valueSerializer, producer);
   }

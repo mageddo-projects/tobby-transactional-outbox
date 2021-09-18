@@ -6,9 +6,7 @@ import com.mageddo.tobby.ParameterDAO;
 import com.mageddo.tobby.ParameterDAOUniversal;
 import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.RecordProcessedDAOGeneric;
-import com.mageddo.tobby.producer.InterceptableProducer;
 import com.mageddo.tobby.producer.ProducerEventualConsistent;
-import com.mageddo.tobby.producer.ProducerJdbc;
 
 import dagger.Binds;
 import dagger.Module;
@@ -17,10 +15,7 @@ import dagger.Module;
 interface DaosProducersBindsModule {
 
   @Binds
-  com.mageddo.tobby.producer.Producer producer(ProducerJdbc impl);
-
-  @Binds
-  InterceptableProducer interceptableProducer(ProducerEventualConsistent impl);
+  com.mageddo.tobby.producer.Producer producer(ProducerEventualConsistent impl);
 
   @Binds
   RecordProcessedDAO recordProcessedDAO(RecordProcessedDAOGeneric impl);

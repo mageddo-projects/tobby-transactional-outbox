@@ -1,5 +1,6 @@
 package com.mageddo.tobby.producer;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,9 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.db.ConnectionUtils.runAndClose;
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
+import static com.mageddo.tobby.transaction.TransactionSynchronizationManager.registerSynchronization;
 
 @Slf4j
-public class ProducerEventualConsistent implements InterceptableProducer {
+public class ProducerEventualConsistent implements Producer {
 
   private final org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer;
   private final RecordDAO recordDAO;
@@ -41,7 +43,7 @@ public class ProducerEventualConsistent implements InterceptableProducer {
   public ProducedRecord send(ProducerRecord record) {
     final StopWatch totalStopWatch = StopWatch.createStarted();
     try {
-      return ConnectionUtils.runAndClose(ConnectionHandler.wrap(this.dataSource.getConnection()), (conn) -> {
+      return ConnectionUtils.runAndClose(this.dataSource.getConnection(), (conn) -> {
         return this.send(conn, record);
       });
     } catch (SQLException e) {
@@ -56,15 +58,13 @@ public class ProducerEventualConsistent implements InterceptableProducer {
   private final AtomicInteger counter = new AtomicInteger();
 
   @Override
-  public ProducedRecord send(final ConnectionHandler handler, final ProducerRecord record) {
+  public ProducedRecord send(final Connection connection, final ProducerRecord record) {
     final StopWatch stopWatch = StopWatch.createStarted();
-    final ProducedRecord producedRecord = this.recordDAO.save(handler.connection(), record);
+    final ProducedRecord producedRecord = this.recordDAO.save(connection, record);
 //    final ProducedRecord producedRecord = ProducedRecordConverter.from(UUID.randomUUID(), record);
     final long saveTime = stopWatch.getTime();
     stopWatch.split();
-    handler.afterCommit(() -> {
-      this.sendToKafka(producedRecord);
-    });
+    registerSynchronization(() -> this.sendToKafka(producedRecord));
 
     log.trace("status=sent, saveTime={}, sendTime={}, total={}",
         saveTime,

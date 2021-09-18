@@ -7,6 +7,8 @@ import java.sql.Savepoint;
 import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.producer.ConnectionHandler;
 
+import com.mageddo.tobby.transaction.TransactionSynchronizationManager;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +56,7 @@ public class ConnectionUtils {
     }
   }
 
+  @Deprecated
   public static <T> T runAndClose(ConnectionHandler handler, CallableForHandler<T> runnable) {
     final T r = runAndClose(handler.connection(), (con) -> runnable.call(handler));
     executeAfterCommitCallbacks(handler);
@@ -67,6 +70,7 @@ public class ConnectionUtils {
       if (!autoCommit) {
         connection.commit();
       }
+      TransactionSynchronizationManager.execute();
       return r;
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);

@@ -6,7 +6,6 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
-import com.mageddo.tobby.producer.InterceptableProducer;
 import com.mageddo.tobby.producer.ProducerEventualConsistent;
 
 import org.apache.kafka.clients.producer.Producer;
@@ -60,7 +59,7 @@ public class TobbySpringConfiguration {
       @Value("${spring.kafka.producer.key-serializer:}") String keySerializerClass,
       @Value("${spring.kafka.producer.value-serializer:}") String valueSerializerClass,
       KafkaProperties kafkaProperties,
-      InterceptableProducer producer
+      com.mageddo.tobby.producer.Producer producer
   ) {
     final Serializer<?> keySerializer = SerializerCreator.create(
         keySerializerClass, StringSerializer.class.getName()
