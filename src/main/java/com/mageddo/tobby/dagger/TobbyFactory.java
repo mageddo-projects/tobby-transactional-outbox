@@ -86,6 +86,8 @@ public interface TobbyFactory {
     return DaggerTobbyFactory.builder()
         .daosProducersModule(new DaosProducersModule(config.getDataSource()))
         .producersModule(new ProducersModule(config))
-        .build();  }
+        .build();
+  }
 
+  com.mageddo.tobby.producer.ProducerJdbc jdbcProducer();
 }

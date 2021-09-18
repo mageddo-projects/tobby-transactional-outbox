@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.internal.utils.Threads;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,8 +50,13 @@ class ReplicatorsTest {
   @BeforeEach
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedPostgres();
-    this.tobby = TobbyFactory.build(this.dataSource);
-    this.producer = this.tobby.producer();
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.mockProducer)
+        .build()
+    );
+    this.producer = this.tobby.jdbcProducer();
   }
 
   @Test

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import lombok.Builder;
@@ -22,9 +23,17 @@ public class ProducerConfig {
   @NonNull
   private DataSource dataSource;
 
+  /**
+   * Properties used to create a producer, used when {@link #producer} is null
+   */
   @NonNull
   @Builder.Default
   private Map<String, Object> producerConfigs = buildDefaultKafkaProducerConfigs();
+
+  /**
+   * Produce used to post to kafka after save the tto_record, this property will override {@link #producerConfigs}
+   */
+  private Producer<byte[], byte[]> producer;
 
   public static ProducerConfig from(DataSource dataSource) {
     return ProducerConfig
