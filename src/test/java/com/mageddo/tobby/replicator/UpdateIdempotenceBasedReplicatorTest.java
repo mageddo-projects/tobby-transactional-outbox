@@ -14,6 +14,7 @@ import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +41,6 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class UpdateIdempotenceBasedReplicatorTest {
 
-
   @Mock
   Producer<byte[], byte[]> producer;
 
@@ -58,7 +58,12 @@ class UpdateIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyFactory.build(this.dataSource);
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.producer)
+        .build()
+    );
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy();
   }
@@ -103,6 +108,10 @@ class UpdateIdempotenceBasedReplicatorTest {
         .when(this.producer)
         .send(any());
 
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any(), any());
+
     final var record = ProducerRecordTemplates.coconut();
     final var savedRecord = this.jdbcProducer.send(record);
     assertNotNull(this.findRecord(savedRecord.getId()));
@@ -129,6 +138,10 @@ class UpdateIdempotenceBasedReplicatorTest {
         .when(this.producer)
         .send(any());
 
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any(), any());
+
     final int count = 1001;
 
     final List<UUID> ids = new ArrayList<>();
@@ -145,7 +158,7 @@ class UpdateIdempotenceBasedReplicatorTest {
     this.replicator.replicate();
 
     // assert
-    int i=0;
+    int i = 0;
     for (UUID id : ids) {
       final var foundRecord = this.findRecord(id);
       assertNotNull(foundRecord);
