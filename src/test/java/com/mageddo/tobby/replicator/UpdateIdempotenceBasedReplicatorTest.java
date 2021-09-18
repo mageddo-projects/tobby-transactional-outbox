@@ -127,7 +127,6 @@ class UpdateIdempotenceBasedReplicatorTest {
     assertEquals(Status.OK, foundRecord.getStatus());
 
     assertNull(this.findProcessedRecord(savedRecord.getId()));
-
   }
 
   @Test
