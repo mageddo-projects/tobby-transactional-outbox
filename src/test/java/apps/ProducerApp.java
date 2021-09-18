@@ -45,7 +45,7 @@ public class ProducerApp {
 
 
     final var recordsSent = new AtomicInteger();
-    final var threads = 20;
+    final var threads = 15;
     final var dc = DBMigration.migrateAndGetDataSource(80);
     final var tobby = Tobby.build(dc);
     final var producer = tobby.kafkaProducer(

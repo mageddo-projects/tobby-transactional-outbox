@@ -31,7 +31,8 @@
   </root>
 
 <!--  <logger name="com.mageddo.tobby" level="DEBUG"/>-->
-  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="TRACE"/>
+  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="DEBUG"/>
+  <logger name="com.mageddo.tobby.producer.ProducerEventualConsistent" level="DEBUG"/>
 <!--  <logger name="com.zaxxer.hikari.pool.ProxyConnection" level="ERROR"/>-->
 <!--  <logger name="com.mageddo.db.StmUtils" level="TRACE"/>-->
 <!--  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="TRACE"/>-->

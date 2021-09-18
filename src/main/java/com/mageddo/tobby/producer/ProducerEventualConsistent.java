@@ -28,7 +28,7 @@ public class ProducerEventualConsistent implements Producer {
   private final org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer;
   private final RecordDAO recordDAO;
   private final DataSource dataSource;
-  private final ExecutorService pool = Threads.newPool(15);
+  private final ExecutorService pool = Threads.newPool(20);
 
   public ProducerEventualConsistent(
       org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer,
@@ -83,12 +83,14 @@ public class ProducerEventualConsistent implements Producer {
               if (e == null) {
                 stopWatch.split();
                 this.markRecordAsSent(producedRecord);
-                final long saveTime1 = stopWatch.getSplitTime();
-                log.info(
-                    "status=updated, id={}, saveTime={}, totalTime={}",
-                    producedRecord.getId(), saveTime1,
-                    stopWatch.getTime()
-                );
+                final long saveTime = stopWatch.getSplitTime();
+                if (log.isDebugEnabled()) {
+                  log.debug(
+                      "status=updated, id={}, saveTime={}, totalTime={}",
+                      producedRecord.getId(), saveTime,
+                      stopWatch.getTime()
+                  );
+                }
               } else {
                 log.warn("status=cant-send-to-kafka id={} msg={}", producedRecord.getId(), e.getMessage(), e);
               }
@@ -96,7 +98,6 @@ public class ProducerEventualConsistent implements Producer {
               log.warn("status=cant-update-record-status, id={}, msg={}", producedRecord.getId(), e2.getMessage(), e2);
             }
           });
-          log.info("status=callback, id={}, counter={}", producedRecord.getId(), counter.incrementAndGet());
         });
   }
 

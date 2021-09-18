@@ -19,7 +19,7 @@ public class KafkaProducerRecordTemplates {
 
   public static ProducerRecord<String, byte[]> articles() {
     return new ProducerRecord<String, byte[]>(
-        "2021-fruit-v2",
+        "2021-fruit-v3",
         null,
         null,
         ("{\n"
