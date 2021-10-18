@@ -45,8 +45,8 @@ public class ProducerApp {
 
 
     final var recordsSent = new AtomicInteger();
-    final var threads = 15;
-    final var dc = DBMigration.migrateAndGetDataSource(80);
+    final var threads = 10;
+    final var dc = DBMigration.migrateAndGetDataSource(70);
     final var tobby = Tobby.build(dc);
     final var producer = tobby.kafkaProducer(
         StringSerializer.class, ByteArraySerializer.class
@@ -60,7 +60,7 @@ public class ProducerApp {
         try {
           final var stopWatch = new StopWatch();
           stopWatch.start();
-          for (int j = 1; recordsSent.get() < 250_000; j++) {
+          for (int j = 1; recordsSent.get() < 1_000_000; j++) {
 
 //            kafkaProducer.send(KafkaProducerRecordTemplates.articles());
             final var stopWatch1 = StopWatch.createStarted();
