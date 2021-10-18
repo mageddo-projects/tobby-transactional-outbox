@@ -7,6 +7,10 @@ public class TransactionSynchronizationManager {
 
   private static final ThreadLocal<List<TransactionSynchronization>> syncs = ThreadLocal.withInitial(ArrayList::new);
 
+  /**
+   * Add a transaction callback to the queue.
+   * @param synchronization the callback which will be executed
+   */
   public static void registerSynchronization(TransactionSynchronization synchronization) {
     syncs.get()
         .add(synchronization);
