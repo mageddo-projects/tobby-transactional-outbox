@@ -5,10 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.internal.utils.Threads;
-import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
@@ -21,29 +19,6 @@ public class ProducerApp {
 
   public static void main(String[] args) throws InterruptedException {
 
-//    {
-//      final var pool = Threads.newPool(20);
-//      final var counter = new AtomicInteger();
-//      for (int i = 0; i < 500_000; i++) {
-//        StopWatch stopWatch = StopWatch.createStarted();
-//        pool.submit(() -> {
-//          counter.incrementAndGet();
-//          try {
-//            Thread.sleep((long) (Math.random() * 2.0));
-//          } catch (InterruptedException e) {
-//          }
-//        });
-//        log.info("status=submitted, i={}, time={}", i, stopWatch.getTime());
-//      }
-//      log.info("status=submited, actual={}", counter.get());
-//      pool.shutdown();
-//      pool.awaitTermination(5, TimeUnit.DAYS);
-//      log.info("total={}", counter.get());
-//    }
-//
-//    System.exit(0);
-
-
     final var recordsSent = new AtomicInteger();
     final var threads = 10;
     final var dc = DBMigration.migrateAndGetDataSource(70);
@@ -52,8 +27,6 @@ public class ProducerApp {
         StringSerializer.class, ByteArraySerializer.class
     );
 
-    final var kafkaProducer = new KafkaProducer<String, byte[]>(
-        ProducerConfig.buildDefaultKafkaProducerConfigs());
     final var executorService = Threads.newPool(threads);
     for (int i = 0; i < threads; i++) {
       executorService.submit(() -> {
