@@ -3,7 +3,6 @@ package com.mageddo.tobby.producer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -54,8 +53,6 @@ public class ProducerEventuallyConsistent implements Producer {
       }
     }
   }
-
-  private final AtomicInteger counter = new AtomicInteger();
 
   @Override
   public ProducedRecord send(final Connection connection, final ProducerRecord record) {
