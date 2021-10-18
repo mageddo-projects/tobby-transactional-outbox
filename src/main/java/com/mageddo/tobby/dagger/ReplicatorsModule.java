@@ -8,6 +8,7 @@ import com.mageddo.tobby.replicator.BatchSender;
 import com.mageddo.tobby.replicator.IteratorFactory;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
+import com.mageddo.tobby.replicator.UpdateIdempotenceBasedReplicator;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.BatchParallelDeleteIdempotenceBasedReplicator;
 import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.RecordDeleter;
 
@@ -47,6 +48,24 @@ class ReplicatorsModule {
   @Singleton
   BatchParallelDeleteIdempotenceBasedReplicator.Config config() {
     return BatchParallelDeleteIdempotenceBasedReplicator.Config.from(this.config);
+  }
+
+  @Provides
+  @Singleton
+  UpdateIdempotenceBasedReplicator updateIdempotenceBasedReplicator(
+      RecordDAO recordDAO,
+      BatchSender batchSender,
+      UpdateIdempotenceBasedReplicator.Config config
+  ) {
+    return new UpdateIdempotenceBasedReplicator(
+        recordDAO, this.config.getDataSource(), batchSender, config
+    );
+  }
+
+  @Provides
+  @Singleton
+  UpdateIdempotenceBasedReplicator.Config updateIdempotenceBasedReplicatorConfig() {
+    return UpdateIdempotenceBasedReplicator.Config.from(this.config);
   }
 
   @Provides

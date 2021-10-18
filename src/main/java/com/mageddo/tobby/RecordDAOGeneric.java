@@ -6,25 +6,29 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
+import com.mageddo.tobby.internal.utils.LocalDateTimes;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Validator;
 
 import lombok.extern.slf4j.Slf4j;
+
+import static com.mageddo.tobby.internal.utils.LocalDateTimes.minutesAgo;
 
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
@@ -42,14 +46,14 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
         .append("INSERT INTO TTO_RECORD ( \n")
-        .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, \n")
+        .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, IND_STATUS, \n")
         .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
-        .append("  ?, ?, ?, \n")
+        .append("  ?, ?, ?, ?, \n")
         .append("  ?, ?, ? \n")
         .append(") \n");
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
-      final UUID id = fillStatement(record, stm);
+      final UUID id = this.fillStatement(record, stm);
       stm.executeUpdate();
       return ProducedRecordConverter.from(id, record);
     } catch (SQLException e) {
@@ -152,12 +156,41 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
+  public void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
+      Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer) {
+    final StopWatch stopWatch = StopWatch.createStarted();
+    try (PreparedStatement stm = this.createStreamingStatement(
+        connection,
+        "SELECT * FROM TTO_RECORD WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?",
+        fetchSize
+    )) {
+      stm.setString(1, Status.WAIT.name());
+      stm.setTimestamp(2, this.timeToStartScan());
+      stm.setTimestamp(3, Timestamp.valueOf(minutesAgo((int) timeToWaitBeforeReplicate.toMinutes())));
+      try (ResultSet rs = stm.executeQuery()) {
+        if (log.isDebugEnabled()) {
+          log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
+        }
+        while (rs.next()) {
+          consumer.accept(ProducedRecordConverter.map(rs));
+        }
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  private Timestamp timeToStartScan() {
+    return Timestamp.valueOf(LocalDateTimes.daysAgo(2));
+  }
+
+  @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
-    if(recordIds.isEmpty()){
+    if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("m=acquireDeletingUsingThreads, status=noRecordsToDelete");
       }
-      return ;
+      return;
     }
     final StopWatch stopWatch = StopWatch.createStarted();
     final List<Future> promises = recordIds
@@ -265,6 +298,43 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
+  @Override
+  public void changeStatusToProcessed(Connection connection, List<UUID> ids, String changeAgent) {
+    ids.forEach(id -> this.changeStatusToProcessed(connection, id, changeAgent));
+  }
+
+  @Override
+  public void changeStatusToProcessed(Connection connection, UUID id, String changeAgent) {
+    if (log.isTraceEnabled()) {
+      log.trace("status=changing-status, id={}", id);
+    }
+    final StringBuilder sql = new StringBuilder()
+        .append("UPDATE TTO_RECORD SET \n")
+        .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=? \n")
+        .append("WHERE IDT_TTO_RECORD = ? \n")
+        .append("AND DAT_CREATED BETWEEN ? AND ? \n");
+    try (PreparedStatement stm = connection.prepareStatement(sql.toString())) {
+      int i = 1;
+      stm.setString(i++, Status.OK.name());
+      stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.now()));
+      stm.setString(i++, changeAgent);
+      stm.setString(i++, String.valueOf(id));
+      stm.setTimestamp(i++, this.timeToStartScan());
+      stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.daysInTheFuture(1)));
+      final int affected = stm.executeUpdate();
+      final boolean success = affected == 1;
+      if (log.isTraceEnabled()) {
+        log.trace(
+            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}",
+            id, affected, success
+        );
+      }
+      Validator.isTrue(success, "Couldn't update record: %s", id);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
   private PreparedStatement createStreamingStatement(Connection con, String sql, int fetchSize) throws SQLException {
     final PreparedStatement stm = con.prepareStatement(
         sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY
@@ -280,9 +350,10 @@ public class RecordDAOGeneric implements RecordDAO {
     stm.setString(1, id.toString());
     stm.setString(2, record.getTopic());
     stm.setObject(3, record.getPartition());
-    stm.setString(4, Base64.encodeToString(record.getKey()));
-    stm.setString(5, Base64.encodeToString(record.getValue()));
-    stm.setString(6, HeadersConverter.encodeBase64(record.getHeaders()));
+    stm.setObject(4, Status.WAIT.name());
+    stm.setString(5, Base64.encodeToString(record.getKey()));
+    stm.setString(6, Base64.encodeToString(record.getValue()));
+    stm.setString(7, HeadersConverter.encodeBase64(record.getHeaders()));
     return id;
   }
 

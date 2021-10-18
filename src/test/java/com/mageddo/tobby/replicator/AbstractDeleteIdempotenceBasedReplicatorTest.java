@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -34,7 +34,7 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
 
   Replicators replicator;
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
 
   com.mageddo.tobby.producer.Producer jdbcProducer;
 
@@ -48,7 +48,7 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyConfig.build(this.dataSource);
+    this.tobby = TobbyFactory.build(this.dataSource);
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy();
   }

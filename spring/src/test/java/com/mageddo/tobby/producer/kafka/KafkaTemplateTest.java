@@ -3,12 +3,12 @@ package com.mageddo.tobby.producer.kafka;
 import java.util.Map;
 import java.util.UUID;
 
+import com.mageddo.tobby.producer.Config;
 import com.mageddo.tobby.producer.spring.EnableTobbyTransactionalOutbox;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -19,10 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@EnableTobbyTransactionalOutbox
-@SpringBootApplication()
-@SpringBootTest
 @EnableKafka
+@EnableTobbyTransactionalOutbox
+@SpringBootTest(classes = Config.class)
 @ExtendWith(SpringExtension.class)
 public class KafkaTemplateTest {
 
@@ -33,7 +32,7 @@ public class KafkaTemplateTest {
   JdbcTemplate jdbcTemplate;
 
   @Test
-  void mustConfigureKafkaProducerAdapter(){
+  void mustConfigureKafkaProducerAdapter() {
     // arrange
 
     // act

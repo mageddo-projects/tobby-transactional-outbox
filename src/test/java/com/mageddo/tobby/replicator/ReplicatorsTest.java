@@ -3,14 +3,15 @@ package com.mageddo.tobby.replicator;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.internal.utils.Threads;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,15 +43,20 @@ class ReplicatorsTest {
 
   com.mageddo.tobby.producer.Producer producer;
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
 
   DataSource dataSource;
 
   @BeforeEach
   void beforeEach() {
     this.dataSource = DBMigration.migrateEmbeddedPostgres();
-    this.tobby = TobbyConfig.build(this.dataSource);
-    this.producer = this.tobby.producer();
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.mockProducer)
+        .build()
+    );
+    this.producer = this.tobby.jdbcProducer();
   }
 
   @Test
@@ -58,7 +64,7 @@ class ReplicatorsTest {
     // arrange
     doReturn(mock(Future.class)).when(this.mockProducer)
         .send(any());
-    this.producer.send(ProducerRecordTemplates.strawberry());
+    final var send = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
@@ -68,6 +74,7 @@ class ReplicatorsTest {
             .dataSource(this.dataSource)
             .producer(this.mockProducer)
             .stopPredicate(it -> it.getWaveProcessed() == 0)
+            .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
             .build()
         )
         .replicate();
@@ -135,7 +142,7 @@ class ReplicatorsTest {
   void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach() {
     // arrange
     final var workers = 3;
-    final var executorService = Executors.newFixedThreadPool(workers);
+    final var executorService = Threads.newPool(workers);
     doReturn(mock(Future.class))
         .when(this.mockProducer)
         .send(any())
@@ -172,7 +179,7 @@ class ReplicatorsTest {
 
     // arrange
     final var workers = 3;
-    final var executorService = Executors.newFixedThreadPool(workers);
+    final var executorService = Threads.newPool(workers);
     doReturn(mock(Future.class))
         .when(this.mockProducer)
         .send(any())
@@ -247,6 +254,7 @@ class ReplicatorsTest {
         .dataSource(this.dataSource)
         .producer(this.mockProducer)
         .idleTimeout(idleTimeout)
+        .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
         .build()
     );
   }

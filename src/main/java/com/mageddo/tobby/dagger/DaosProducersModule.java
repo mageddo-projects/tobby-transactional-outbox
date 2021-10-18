@@ -8,7 +8,6 @@ import com.mageddo.db.DBUtils;
 import com.mageddo.db.SqlErrorCodes;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.factory.DAOFactory;
-import com.mageddo.tobby.producer.ProducerJdbc;
 
 import dagger.Module;
 import dagger.Provides;
@@ -18,7 +17,7 @@ class DaosProducersModule {
 
   private final DataSource dataSource;
 
-  public DaosProducersModule(DataSource dataSource) {
+  DaosProducersModule(DataSource dataSource) {
     this.dataSource = dataSource;
   }
 
@@ -34,12 +33,6 @@ class DaosProducersModule {
   @Singleton
   public RecordDAO recordDAO(DB db) {
     return DAOFactory.createRecordDao(db);
-  }
-
-  @Provides
-  @Singleton
-  ProducerJdbc producerJdbc(RecordDAO recordDAO) {
-    return new ProducerJdbc(recordDAO, this.dataSource);
   }
 
 }

@@ -16,6 +16,9 @@ import lombok.NoArgsConstructor;
 public class HeadersConverter {
 
   public static Headers toKafkaHeaders(com.mageddo.tobby.Headers headers) {
+    if (headers == null) {
+      return null;
+    }
     final RecordHeaders kafkaHeaders = new RecordHeaders();
     for (com.mageddo.tobby.Header header : headers.asList()) {
       kafkaHeaders.add(toKafkaHeader(header));

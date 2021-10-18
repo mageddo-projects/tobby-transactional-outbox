@@ -1,0 +1,13 @@
+version: '3'
+services:
+  postgres-13:
+    image: postgres:13.2
+    environment:
+      - TZ=UTC
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=db
+    volumes:
+      - /tmp/postgres/13.2/data:/var/lib/postgresql/data
+    ports:
+      - 5460:5432

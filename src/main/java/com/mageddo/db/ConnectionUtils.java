@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 
 import com.mageddo.tobby.UncheckedSQLException;
+import com.mageddo.tobby.transaction.TransactionSynchronizationManager;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -13,8 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ConnectionUtils {
+
   public static void useTransaction(Connection con, Runnable runnable) {
-    useTransaction(con, () -> {
+    useTransaction(con, (conn) -> {
       runnable.run();
       return null;
     });
@@ -26,7 +28,7 @@ public class ConnectionUtils {
       if (isAutoCommit) {
         con.setAutoCommit(false);
       }
-      final T r = runnable.call();
+      final T r = runnable.call(con);
       if (isAutoCommit) {
         con.setAutoCommit(true);
       } else {
@@ -39,6 +41,30 @@ public class ConnectionUtils {
     } catch (Exception e) {
       ConnectionUtils.quietRollback(con);
       throw e;
+    }
+  }
+
+  public static <T> T useTransactionAndClose(Connection con, Callable<T> runnable) {
+    try {
+      return useTransaction(con, runnable);
+    } finally {
+      quietClose(con);
+    }
+  }
+
+  public static <T> T runAndClose(Connection connection, Callable<T> runnable) {
+    try {
+      final T r = runnable.call(connection);
+      final boolean autoCommit = connection.getAutoCommit();
+      if (!autoCommit) {
+        connection.commit();
+      }
+      TransactionSynchronizationManager.execute();
+      return r;
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    } finally {
+      quietClose(connection);
     }
   }
 
@@ -74,6 +100,7 @@ public class ConnectionUtils {
   }
 
   public interface Callable<T> {
-    T call();
+    T call(Connection conn);
   }
+
 }
