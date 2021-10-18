@@ -20,12 +20,12 @@ import static org.springframework.transaction.support.TransactionSynchronization
 import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 @Slf4j
-public class ProducerEventualConsistentSpring implements Producer {
+public class ProducerEventuallyConsistentSpring implements Producer {
 
   private final DataSource dataSource;
   private final ProducerEventuallyConsistent delegate;
 
-  public ProducerEventualConsistentSpring(DataSource dataSource, ProducerEventuallyConsistent delegate) {
+  public ProducerEventuallyConsistentSpring(DataSource dataSource, ProducerEventuallyConsistent delegate) {
     this.dataSource = dataSource;
     this.delegate = delegate;
   }

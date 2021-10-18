@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 class ProducerSpringTest {
 
   @SpyBean
-  ProducerEventualConsistentSpring producer;
+  ProducerEventuallyConsistentSpring producer;
 
   @Autowired
   JdbcTemplate jdbcTemplate;
@@ -56,7 +56,7 @@ class ProducerSpringTest {
     final var className = this.producer
         .getClass()
         .getSimpleName();
-    assertTrue(className.startsWith(ProducerEventualConsistentSpring.class.getSimpleName()), className);
+    assertTrue(className.startsWith(ProducerEventuallyConsistentSpring.class.getSimpleName()), className);
   }
 
   @Test
