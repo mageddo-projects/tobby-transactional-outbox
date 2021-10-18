@@ -23,14 +23,14 @@ import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter
 import static com.mageddo.tobby.transaction.TransactionSynchronizationManager.registerSynchronization;
 
 @Slf4j
-public class ProducerEventualConsistent implements Producer {
+public class ProducerEventuallyConsistent implements Producer {
 
   private final org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer;
   private final RecordDAO recordDAO;
   private final DataSource dataSource;
   private final ExecutorService pool = Threads.newPool(20);
 
-  public ProducerEventualConsistent(
+  public ProducerEventuallyConsistent(
       org.apache.kafka.clients.producer.Producer<byte[], byte[]> kafkaProducer,
       RecordDAO recordDAO,
       DataSource dataSource) {

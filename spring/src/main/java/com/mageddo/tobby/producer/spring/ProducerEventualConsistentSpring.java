@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.Producer;
-import com.mageddo.tobby.producer.ProducerEventualConsistent;
+import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 import com.mageddo.tobby.transaction.TransactionSynchronizationManager;
 
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -23,9 +23,9 @@ import static org.springframework.transaction.support.TransactionSynchronization
 public class ProducerEventualConsistentSpring implements Producer {
 
   private final DataSource dataSource;
-  private final ProducerEventualConsistent delegate;
+  private final ProducerEventuallyConsistent delegate;
 
-  public ProducerEventualConsistentSpring(DataSource dataSource, ProducerEventualConsistent delegate) {
+  public ProducerEventualConsistentSpring(DataSource dataSource, ProducerEventuallyConsistent delegate) {
     this.dataSource = dataSource;
     this.delegate = delegate;
   }

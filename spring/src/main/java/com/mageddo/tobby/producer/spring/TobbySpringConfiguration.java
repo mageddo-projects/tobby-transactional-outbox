@@ -6,7 +6,7 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
-import com.mageddo.tobby.producer.ProducerEventualConsistent;
+import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -49,7 +49,7 @@ public class TobbySpringConfiguration {
   ) {
     return new ProducerEventualConsistentSpring(
         dataSource,
-        new ProducerEventualConsistent(producerProvider.createByteProducer(), recordDAO, dataSource)
+        new ProducerEventuallyConsistent(producerProvider.createByteProducer(), recordDAO, dataSource)
     );
   }
 
