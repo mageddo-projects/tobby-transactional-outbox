@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,13 +18,17 @@ import java.util.stream.Collectors;
 
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.converter.HeadersConverter;
 import com.mageddo.tobby.converter.ProducedRecordConverter;
 import com.mageddo.tobby.internal.utils.Base64;
+import com.mageddo.tobby.internal.utils.LocalDateTimes;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Validator;
 
 import lombok.extern.slf4j.Slf4j;
+
+import static com.mageddo.tobby.internal.utils.LocalDateTimes.minutesAgo;
 
 @Slf4j
 public class RecordDAOGeneric implements RecordDAO {
@@ -151,8 +156,9 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
-      Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer) {
+  public void iterateOverRecordsInWaitingStatus(
+      Connection connection, int fetchSize, Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer
+  ) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(
         connection,

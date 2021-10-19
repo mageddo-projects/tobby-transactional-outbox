@@ -4,8 +4,9 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
+import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -31,22 +32,14 @@ public class TobbySpringConfiguration {
     return configProperties.toConfig();
   }
 
-
- // novo
   @Bean
   @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-context", matchIfMissing = true)
-  public TobbyConfig tobbyContext(DataSource dataSource, Tobby.Config config) {
-    return TobbyConfig.build(dataSource, config);
-  }
-
-  @Bean
-  public TobbyFactory tobbyConfig(DataSource dataSource) {
-    return TobbyFactory.build(dataSource);
+  public TobbyFactory tobbyFactory(DataSource dataSource, Tobby.Config config) {
+    return TobbyFactory.build(dataSource, config);
   }
 
   @Bean
   @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby", matchIfMissing = true)
-  @Bean
   public Tobby tobby(TobbyFactory tobbyFactory) {
     return Tobby.builder()
         .tobbyFactory(tobbyFactory)
@@ -94,8 +87,8 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
-  public RecordDAO recordDAO(TobbyConfig tobbyConfig) {
-    return tobbyConfig.recordDAO();
+  public RecordDAO recordDAO(TobbyFactory tobbyFactory) {
+    return tobbyFactory.recordDAO();
   }
 
 }

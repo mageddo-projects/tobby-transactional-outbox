@@ -8,13 +8,12 @@ import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.replicator.ReplicatorConfig;
 import com.mageddo.tobby.replicator.Replicators;
 
-import lombok.Data;
-import lombok.NonNull;
-
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serializer;
 
 import lombok.Builder;
+import lombok.Data;
+import lombok.NonNull;
 
 @Builder
 public class Tobby {
@@ -78,18 +77,14 @@ public class Tobby {
         .build();
   }
 
-  public static Tobby build(ProducerConfig config) {
-    return Tobby
-        .builder()
-        .tobbyFactory(TobbyFactory.build(config))
-        .build();
+  public static Tobby build(ProducerConfig producerConfig) {
+    return build(producerConfig, Config.theDefault());
   }
 
-  // FIXME
-  public static Tobby build(DataSource dataSource, Config config) {
+  public static Tobby build(ProducerConfig producerConfig, Config config) {
     return Tobby
         .builder()
-        .tobbyConfig(TobbyConfig.build(dataSource, config))
+        .tobbyFactory(TobbyFactory.build(producerConfig, config))
         .build();
   }
 

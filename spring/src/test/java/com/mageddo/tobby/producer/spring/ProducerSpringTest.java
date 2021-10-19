@@ -7,18 +7,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.mageddo.tobby.ProducerRecord;
-import com.mageddo.tobby.producer.Producer;
+import com.mageddo.tobby.producer.Config;
+import com.mageddo.tobby.producer.MockKafkaProducerProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import templates.ProducerRecordTemplates;
 

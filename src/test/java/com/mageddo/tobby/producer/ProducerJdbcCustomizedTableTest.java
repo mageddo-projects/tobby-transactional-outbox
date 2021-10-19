@@ -8,10 +8,10 @@ import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
-import com.mageddo.tobby.dagger.TobbyConfig;
+
+import com.mageddo.tobby.dagger.TobbyFactory;
 
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.result.ResultIterable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith({PostgresExtension.class, MockitoExtension.class})
 class ProducerJdbcCustomizedTableTest {
 
-  TobbyConfig tobby;
+  TobbyFactory tobby;
   Producer jdbcProducer;
   Connection connection;
   DataSource dataSource;
@@ -38,7 +38,7 @@ class ProducerJdbcCustomizedTableTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedPostgres();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyConfig.build(this.dataSource, Tobby.Config
+    this.tobby = TobbyFactory.build(this.dataSource, Tobby.Config
         .builder()
         .recordTableName("TTO_RECORD_V2")
         .build()
