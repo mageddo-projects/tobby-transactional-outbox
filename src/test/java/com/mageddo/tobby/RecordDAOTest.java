@@ -9,7 +9,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 
 import com.mageddo.db.DuplicatedRecordException;
-import com.mageddo.tobby.dagger.TobbyConfig;
+import com.mageddo.tobby.ProducedRecord.Status;
+import com.mageddo.tobby.dagger.TobbyFactory;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +34,7 @@ abstract class RecordDAOTest {
 
   @BeforeEach
   void beforeEach() throws SQLException {
-    final var tobby = TobbyConfig.build(this.dataSource());
+    final var tobby = TobbyFactory.build(this.dataSource());
     this.recordDAO = tobby.recordDAO();
     this.connection = dataSource().getConnection();
   }
@@ -58,6 +60,7 @@ abstract class RecordDAOTest {
     assertArrayEquals(record.getValue(), producedRecord.getValue());
     assertEquals(record.getPartition(), producedRecord.getPartition());
     assertEquals(record.getTopic(), producedRecord.getTopic());
+    assertEquals(Status.WAIT, producedRecord.getStatus());
     final var headers = producedRecord.getHeaders();
     assertEquals(encodeBase64(record.getHeaders()), encodeBase64(headers));
     assertEquals("1", new String(headers.getFirst("version")

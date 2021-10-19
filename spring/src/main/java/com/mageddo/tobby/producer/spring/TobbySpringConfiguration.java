@@ -31,6 +31,8 @@ public class TobbySpringConfiguration {
     return configProperties.toConfig();
   }
 
+
+ // novo
   @Bean
   @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-context", matchIfMissing = true)
   public TobbyConfig tobbyContext(DataSource dataSource, Tobby.Config config) {
@@ -38,16 +40,32 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
+  public TobbyFactory tobbyConfig(DataSource dataSource) {
+    return TobbyFactory.build(dataSource);
+  }
+
+  @Bean
   @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby", matchIfMissing = true)
-  public Tobby tobby(TobbyConfig tobbyConfig) {
+  @Bean
+  public Tobby tobby(TobbyFactory tobbyFactory) {
     return Tobby.builder()
-        .tobbyConfig(tobbyConfig)
+        .tobbyFactory(tobbyFactory)
         .build();
   }
 
   @Bean
-  public ProducerSpring producerSpring(RecordDAO recordDAO, DataSource dataSource) {
-    return new ProducerSpring(recordDAO, dataSource);
+  public RealKafkaProducerProvider realKafkaProducerProvider(KafkaProperties kafkaProperties) {
+    return new RealKafkaProducerProvider(kafkaProperties);
+  }
+
+  @Bean
+  public ProducerEventuallyConsistentSpring producerEventualConsistent(
+      RecordDAO recordDAO, DataSource dataSource, KafkaProducerProvider producerProvider
+  ) {
+    return new ProducerEventuallyConsistentSpring(
+        dataSource,
+        new ProducerEventuallyConsistent(producerProvider.createByteProducer(), recordDAO, dataSource)
+    );
   }
 
   @Bean

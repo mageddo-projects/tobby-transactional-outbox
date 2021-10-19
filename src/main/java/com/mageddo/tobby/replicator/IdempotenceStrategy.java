@@ -28,5 +28,12 @@ public enum IdempotenceStrategy {
   /**
    * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batches across multiple threads
    */
-  BATCH_PARALLEL_DELETE
+  BATCH_PARALLEL_DELETE,
+
+  /**
+   * Search for records which are at TTO_RECORD with IND_STATUS=WAIT, divide them in multiple threads,
+   * change the status to OK, then try to send to kafka, if success commit the transaction otherwise rollback and try
+   * that batch again.
+   */
+  BATCH_PARALLEL_UPDATE
 }

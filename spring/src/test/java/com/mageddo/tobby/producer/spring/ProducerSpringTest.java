@@ -31,15 +31,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @EnableTobbyTransactionalOutbox
-@SpringBootTest(classes = App.class)
-@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = Config.class)
+@ExtendWith({SpringExtension.class})
 class ProducerSpringTest {
 
   @SpyBean
-  Producer producer;
+  ProducerEventuallyConsistentSpring producer;
 
   @Autowired
   JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  MockKafkaProducerProvider kafkaProducerProvider;
 
   @Autowired
   TransactionalService transactionalService;
@@ -54,13 +57,14 @@ class ProducerSpringTest {
     final var className = this.producer
         .getClass()
         .getSimpleName();
-    assertTrue(className.startsWith(ProducerSpring.class.getSimpleName()), className);
+    assertTrue(className.startsWith(ProducerEventuallyConsistentSpring.class.getSimpleName()), className);
   }
 
   @Test
   void mustProduceMessagesSavingToDatabase() {
     // arrange
     final ProducerRecord record = ProducerRecordTemplates.grape();
+
     // act
     this.producer.send(record);
 
@@ -75,6 +79,8 @@ class ProducerSpringTest {
     assertNull(foundRecord.get("TXT_HEADERS"));
     assertNull(foundRecord.get("NUM_PARTITION"));
     assertNotNull(foundRecord.get("DAT_CREATED"));
+
+    assertEquals(1, this.kafkaProducerProvider.getMockProducer().history().size());
   }
 
   @Test
@@ -86,7 +92,7 @@ class ProducerSpringTest {
       capturedConnections.add((Connection) r);
       return r;
     })
-        .when((ProducerSpring) this.producer)
+        .when(this.producer)
         .getConnection();
     final var wantedInvocations = 3;
     final var record = ProducerRecordTemplates.grape();
@@ -98,7 +104,7 @@ class ProducerSpringTest {
     this.producer.send(record);
     this.producer.send(record);
 
-    verify((ProducerSpring) this.producer, times(wantedInvocations)).getConnection();
+    verify(this.producer, times(wantedInvocations)).getConnection();
 
     assertEquals(wantedInvocations, capturedConnections.size());
     assertEquals(wantedInvocations, new HashSet<>(capturedConnections).size());
@@ -114,7 +120,7 @@ class ProducerSpringTest {
       capturedConnections.add((Connection) r);
       return r;
     })
-        .when((ProducerSpring) this.producer)
+        .when(this.producer)
         .getConnection();
     final var wantedInvocations = 3;
     final var record = ProducerRecordTemplates.grape();
@@ -123,10 +129,12 @@ class ProducerSpringTest {
     this.transactionalService.send(record, wantedInvocations);
 
     // assert
-    verify((ProducerSpring) this.producer, times(wantedInvocations)).getConnection();
+    verify(this.producer, times(wantedInvocations)).getConnection();
 
     assertEquals(wantedInvocations, capturedConnections.size());
     assertEquals(1, new HashSet<>(capturedConnections).size());
 
   }
+
+
 }

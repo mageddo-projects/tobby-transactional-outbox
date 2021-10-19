@@ -11,9 +11,10 @@ import java.util.concurrent.Future;
 import javax.sql.DataSource;
 
 import com.mageddo.tobby.ProducedRecord;
+import com.mageddo.tobby.ProducedRecord.Status;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
-import com.mageddo.tobby.replicator.idempotencestrategy.batchdelete.DeleteMode;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -26,15 +27,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
 
-import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_DELETE_DELETE_MODE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE;
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class BatchDeleteIdempotenceBasedReplicatorTest {
+class UpdateIdempotenceBasedReplicatorTest {
 
   @Mock
   Producer<byte[], byte[]> producer;
@@ -43,19 +48,24 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
 
   TobbyFactory tobby;
 
-  private com.mageddo.tobby.producer.Producer jdbcProducer;
+  com.mageddo.tobby.producer.Producer jdbcProducer;
 
-  private Connection connection;
+  Connection connection;
 
-  private DataSource dataSource;
+  DataSource dataSource;
 
   @BeforeEach
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyFactory.build(this.dataSource);
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.producer)
+        .build()
+    );
     this.jdbcProducer = tobby.producer();
-    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE);
+    this.replicator = this.buildStrategy();
   }
 
   @AfterEach
@@ -64,12 +74,13 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecord() {
+  void mustNotSendNorReplicateWhenWaitTimeIsNotMet() {
 
     // arrange
-    doReturn(mock(Future.class))
-        .when(this.producer)
-        .send(any());
+    this.replicator = Tobby
+        .replicator(this.defaultConfigBuilder()
+            .build()
+        );
 
     final var record = ProducerRecordTemplates.coconut();
     final var savedRecord = this.jdbcProducer.send(record);
@@ -79,48 +90,56 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
     this.replicator.replicate();
 
     // assert
-    assertNull(this.findRecord(savedRecord.getId()));
+    verify(this.producer, never()).send(any());
+
+    final var foundRecord = this.findRecord(savedRecord.getId());
+    assertNotNull(foundRecord);
+    assertEquals(Status.WAIT, foundRecord.getStatus());
+
     assertNull(this.findProcessedRecord(savedRecord.getId()));
 
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecords() {
+  void mustSendReplicateThenUpdateRecord() {
 
     // arrange
     doReturn(mock(Future.class))
         .when(this.producer)
         .send(any());
 
-    final int count = 1001;
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any(), any());
 
-    final List<UUID> ids = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      final var record = ProducerRecordTemplates.coconut();
-      final var savedRecord = this.jdbcProducer.send(record);
-      assertNotNull(this.findRecord(savedRecord.getId()));
-      ids.add(savedRecord.getId());
-    }
+    final var record = ProducerRecordTemplates.coconut();
+    final var savedRecord = this.jdbcProducer.send(record);
+    assertNotNull(this.findRecord(savedRecord.getId()));
 
     // act
     this.replicator.replicate();
 
     // assert
-    for (UUID id : ids) {
-      assertNull(this.findRecord(id));
-      assertNull(this.findProcessedRecord(id));
-    }
+    verify(this.producer).send(any());
 
+    final var foundRecord = this.findRecord(savedRecord.getId());
+    assertNotNull(foundRecord);
+    assertEquals(Status.OK, foundRecord.getStatus());
+
+    assertNull(this.findProcessedRecord(savedRecord.getId()));
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecordsUsingDeleteUsingThreadsMode() {
+  void mustSendReplicateThenUpdateRecords() {
 
     // arrange
-    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE_USING_THREADS);
     doReturn(mock(Future.class))
         .when(this.producer)
         .send(any());
+
+    doReturn(mock(Future.class))
+        .when(this.producer)
+        .send(any(), any());
 
     final int count = 1001;
 
@@ -128,7 +147,9 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
     for (int i = 0; i < count; i++) {
       final var record = ProducerRecordTemplates.coconut();
       final var savedRecord = this.jdbcProducer.send(record);
-      assertNotNull(this.findRecord(savedRecord.getId()));
+      final var foundRecord = this.findRecord(savedRecord.getId());
+      assertNotNull(foundRecord);
+      assertEquals(Status.WAIT, foundRecord.getStatus());
       ids.add(savedRecord.getId());
     }
 
@@ -136,39 +157,13 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
     this.replicator.replicate();
 
     // assert
+    int i = 0;
     for (UUID id : ids) {
-      assertNull(this.findRecord(id));
+      final var foundRecord = this.findRecord(id);
+      assertNotNull(foundRecord);
+      assertEquals(Status.OK, foundRecord.getStatus(), String.valueOf(i));
       assertNull(this.findProcessedRecord(id));
-    }
-
-  }
-
-  @Test
-  void mustSendReplicateThenDeleteRecordsUsingDeleteUsingInMode() {
-
-    // arrange
-    this.replicator = this.buildStrategy(DeleteMode.BATCH_DELETE_USING_IN);
-    doReturn(mock(Future.class))
-        .when(this.producer)
-        .send(any());
-
-    final int count = 1001;
-
-    final List<UUID> ids = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      final var record = ProducerRecordTemplates.coconut();
-      final var savedRecord = this.jdbcProducer.send(record);
-      assertNotNull(this.findRecord(savedRecord.getId()));
-      ids.add(savedRecord.getId());
-    }
-
-    // act
-    this.replicator.replicate();
-
-    // assert
-    for (UUID id : ids) {
-      assertNull(this.findRecord(id));
-      assertNull(this.findProcessedRecord(id));
+      i++;
     }
 
   }
@@ -183,16 +178,23 @@ class BatchDeleteIdempotenceBasedReplicatorTest {
         .find(this.connection, id);
   }
 
-  private Replicators buildStrategy(DeleteMode deleteMode) {
-    return Tobby.replicator(ReplicatorConfig
+
+  public Replicators buildStrategy() {
+    return Tobby.replicator(defaultConfigBuilder()
+        .put(ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT0S")
+        .build());
+  }
+
+  private ReplicatorConfig.ReplicatorConfigBuilder defaultConfigBuilder() {
+    return ReplicatorConfig
         .builder()
         .dataSource(this.dataSource)
         .producer(this.producer)
+        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
+        .put(REPLICATORS_BATCH_PARALLEL_BUFFER_SIZE, "500")
+        .put(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, "100")
         .idleTimeout(Duration.ofMillis(600))
-        .idempotenceStrategy(IdempotenceStrategy.BATCH_DELETE)
-        .put(REPLICATORS_BATCH_DELETE_DELETE_MODE, deleteMode.name())
-        .build()
-    );
+        ;
   }
 
 }

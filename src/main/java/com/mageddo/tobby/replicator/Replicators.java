@@ -104,6 +104,7 @@ public class Replicators {
         return;
       }
       if (!this.shouldRun(lastTimeProcessed)) {
+        // idle for a "long" time, finishing the job
         log.info(
             "status=idleTimedOut, lastTimeProcessed={}, idleTimeout={}", lastTimeProcessed, this.config.getIdleTimeout()
         );
@@ -131,7 +132,7 @@ public class Replicators {
     }
     final Connection readConn = this.chooseReadConnection(readConnParam);
     try (Connection writeConn = this.getConnection()) {
-      return useTransaction(writeConn, () -> {
+      return useTransaction(writeConn, (con) -> {
         final BufferedReplicator bufferedReplicator = new BufferedReplicator(
             this.config.getProducer(), this.config.getBufferSize(), wave
         );

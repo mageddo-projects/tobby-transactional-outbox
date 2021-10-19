@@ -53,7 +53,7 @@ public class BatchSender {
             .map(it -> this.producer.send(toKafkaProducerRecord(it)))
             .collect(Collectors.toList());
         Threads.get(futures);
-        log.debug("status=sent, time={}", stopWatch.getTime());
+        log.debug("status=sent, records={}, time={}", records.size(), stopWatch.getTime());
         break;
       } catch (UncheckedExecutionException e) {
         log.warn("status=failed-to-post-to-kafka, msg={}", e.getMessage(), e);

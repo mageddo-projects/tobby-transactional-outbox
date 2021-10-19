@@ -3,7 +3,6 @@ package apps;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.internal.utils.Threads;
@@ -17,11 +16,13 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import lombok.extern.slf4j.Slf4j;
 import testing.DBMigration;
 
+import static com.mageddo.tobby.replicator.ReplicatorConfig.REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 @Slf4j
 public class ReplicatorApp {
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) {
+
     final var kafkaProducer = new KafkaProducer<>(
         Map.of(
             BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"
@@ -29,21 +30,26 @@ public class ReplicatorApp {
         new ByteArraySerializer(),
         new ByteArraySerializer()
     );
-    final var dataSource = DBMigration.migrateAndGetDataSource(10);
-    final var replicator = Tobby.replicator(ReplicatorConfig
-        .builder()
-        .dataSource(dataSource)
-        .producer(kafkaProducer)
-        .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_DELETE)
-        .fetchSize(1000)
-        .bufferSize(5000)
-//        .idleTimeout(Duration.ofSeconds(10))
-        .put(ReplicatorConfig.REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, "1000")
-        .build()
-    );
+    final var dataSource = DBMigration.migrateAndGetDataSource(20);
+    final var replicator = Tobby
+        .replicator(
+            ReplicatorConfig
+                .builder()
+                .dataSource(dataSource)
+                .producer(kafkaProducer)
+                .idempotenceStrategy(IdempotenceStrategy.BATCH_PARALLEL_UPDATE)
+                .idleTimeout(Duration.ofMillis(1000))
+                .put(
+                    REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE,
+                    String.valueOf(Duration.ofMinutes(3))
+                )
+//        .fetchSize(1000)
+//        .bufferSize(5000)
+                .build()
+        );
 
     final var poolSize = 5;
-    final var pool = Executors.newFixedThreadPool(poolSize);
+    final var pool = Threads.newPool(poolSize);
     for (int i = 0; i < poolSize; i++) {
       submit(replicator, pool);
     }
@@ -60,6 +66,7 @@ public class ReplicatorApp {
     pool.submit(() -> {
       try {
         replicator.replicateLocking();
+        log.info("status=finished");
       } catch (Throwable e) {
         log.error("status=fatal, msg={}", e.getMessage(), e);
       }

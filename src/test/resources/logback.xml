@@ -14,9 +14,10 @@
 
   <property
     name="logFile"
-    value="${java.io.tmpdir}/replicator-app.log"
+    value="${java.io.tmpdir}/tobby.log"
   />
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+<!--    <param name="Append" value="false" />-->
     <file>${logFile}</file>
     <encoder>
       <pattern>${logPattern}</pattern>
@@ -25,11 +26,13 @@
   </appender>
 
   <root level="INFO">
-    <appender-ref ref="CONSOLE"/>
-<!--    <appender-ref ref="FILE"/>-->
+<!--    <appender-ref ref="CONSOLE"/>-->
+    <appender-ref ref="FILE"/>
   </root>
 
-  <logger name="com.mageddo.tobby" level="DEBUG"/>
+<!--  <logger name="com.mageddo.tobby" level="DEBUG"/>-->
+  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="DEBUG"/>
+  <logger name="com.mageddo.tobby.producer.ProducerEventuallyConsistent" level="DEBUG"/>
 <!--  <logger name="com.zaxxer.hikari.pool.ProxyConnection" level="ERROR"/>-->
 <!--  <logger name="com.mageddo.db.StmUtils" level="TRACE"/>-->
 <!--  <logger name="com.mageddo.tobby.RecordDAOGeneric" level="TRACE"/>-->

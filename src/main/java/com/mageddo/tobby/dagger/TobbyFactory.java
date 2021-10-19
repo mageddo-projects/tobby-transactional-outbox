@@ -75,16 +75,19 @@ public interface TobbyConfig {
     );
   }
 
-  static TobbyConfig build(String url, String username, String password) {
-    return build(url, username, password, null);
+  static TobbyFactory build(String url, String username, String password) {
+    return build(new SimpleDataSource(url, password, username));
   }
 
-  static TobbyConfig build(String url, String username, String password, Tobby.Config config) {
-    return build(new SimpleDataSource(url, password, username), config);
+  static TobbyFactory build(DataSource dataSource) {
+    return build(ProducerConfig.from(dataSource));
   }
 
-  static TobbyConfig build(DataSource dataSource) {
-    return build(dataSource, null);
+  static TobbyFactory build(ProducerConfig config) {
+    return DaggerTobbyFactory.builder()
+        .daosProducersModule(new DaosProducersModule(config.getDataSource()))
+        .producersModule(new ProducersModule(config))
+        .build();
   }
 
   static TobbyConfig build(DataSource dataSource, Tobby.Config config) {
@@ -95,4 +98,5 @@ public interface TobbyConfig {
         .build();
   }
 
+  com.mageddo.tobby.producer.ProducerJdbc jdbcProducer();
 }

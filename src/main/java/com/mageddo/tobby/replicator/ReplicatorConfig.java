@@ -34,6 +34,18 @@ public class ReplicatorConfig {
   public static final String REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE =
       "replicators.batch-parallel-delete.thread-buffer-size";
 
+
+  public static final String REPLICATORS_UPDATE_IDEMPOTENCE_THREADS =
+      "replicators.update-idempotence.threads";
+  public static final String REPLICATORS_UPDATE_IDEMPOTENCE_BUFFER_SIZE =
+      "replicators.update-idempotence.buffer-size";
+  public static final String REPLICATORS_UPDATE_IDEMPOTENCE_THREAD_BUFFER_SIZE =
+      "replicators.update-idempotence.thread-buffer-size";
+
+  public static final String REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE =
+      "replicators.update-idempotence.time-to-wait-before-replicate";
+
+
   /**
    * Producer used to send messages to kafka server.
    */
@@ -55,7 +67,7 @@ public class ReplicatorConfig {
 
   @NonNull
   @Builder.Default
-  private final IdempotenceStrategy idempotenceStrategy = IdempotenceStrategy.DELETE;
+  private final IdempotenceStrategy idempotenceStrategy = IdempotenceStrategy.BATCH_PARALLEL_UPDATE;
 
   /**
    * The amount of time Replicator will look back to find not replicated Records comparing the
@@ -140,6 +152,11 @@ public class ReplicatorConfig {
       props.put(REPLICATORS_BATCH_PARALLEL_THREADS, "10");
       props.put(REPLICATORS_BATCH_PARALLEL_DELETE_MODE, DeleteMode.BATCH_DELETE_USING_IN.name());
       props.put(REPLICATORS_BATCH_PARALLEL_THREAD_BUFFER_SIZE, String.valueOf(1_000));
+
+      props.put(REPLICATORS_UPDATE_IDEMPOTENCE_BUFFER_SIZE, String.valueOf(20_000));
+      props.put(REPLICATORS_UPDATE_IDEMPOTENCE_THREADS, "10");
+      props.put(REPLICATORS_UPDATE_IDEMPOTENCE_THREAD_BUFFER_SIZE, String.valueOf(1_000));
+      props.put(REPLICATORS_UPDATE_IDEMPOTENCE_TIME_TO_WAIT_BEFORE_REPLICATE, "PT10M");
       return props;
     }
   }
