@@ -45,7 +45,7 @@ public class RecordDAOGeneric implements RecordDAO {
   public ProducedRecord save(Connection connection, ProducerRecord record) {
     final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
-        .append("INSERT INTO TTO_RECORD ( \n")
+        .append(this.withTableName("INSERT INTO %s ( \n"))
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, IND_STATUS, \n")
         .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
@@ -67,7 +67,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public ProducedRecord find(Connection connection, UUID id) {
-    final String sql = "SELECT * FROM TTO_RECORD WHERE IDT_TTO_RECORD = ?";
+    final String sql = this.withTableName("SELECT * FROM %s WHERE IDT_TTO_RECORD = ?");
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, id.toString());
       try (ResultSet rs = stm.executeQuery()) {
@@ -85,8 +85,7 @@ public class RecordDAOGeneric implements RecordDAO {
   public void iterateNotProcessedRecordsUsingInsertIdempotence(
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
-    final String sql = new StringBuilder()
-        .append("SELECT * FROM TTO_RECORD R \n")
+    final String sql = new StringBuilder(this.withTableName("SELECT * FROM %s R \n"))
         .append("WHERE DAT_CREATED > ? \n")
         .append("AND DAT_CREATED < ? \n")
         .append("AND NOT EXISTS ( \n")
@@ -141,7 +140,8 @@ public class RecordDAOGeneric implements RecordDAO {
   @Override
   public void iterateOverRecords(Connection connection, int fetchSize, Consumer<ProducedRecord> consumer) {
     final StopWatch stopWatch = StopWatch.createStarted();
-    try (PreparedStatement stm = this.createStreamingStatement(connection, "SELECT * FROM TTO_RECORD", fetchSize)) {
+    final String sql = this.withTableName("SELECT * FROM %s");
+    try (PreparedStatement stm = this.createStreamingStatement(connection, sql, fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
         if (log.isDebugEnabled()) {
           log.debug("status=queryExecuted, time={}", stopWatch.getDisplayTime());
@@ -156,12 +156,13 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void iterateOverRecordsInWaitingStatus(Connection connection, int fetchSize,
-      Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer) {
+  public void iterateOverRecordsInWaitingStatus(
+      Connection connection, int fetchSize, Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer
+  ) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(
         connection,
-        "SELECT * FROM TTO_RECORD WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?",
+        this.withTableName("SELECT * FROM %s WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?"),
         fetchSize
     )) {
       stm.setString(1, Status.WAIT.name());
@@ -226,7 +227,7 @@ public class RecordDAOGeneric implements RecordDAO {
     while (true) {
 
       final List<String> params = this.subList(recordIds, skip);
-      final StringBuilder sql = new StringBuilder("DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD IN (")
+      final StringBuilder sql = new StringBuilder(this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD IN ("))
           .append(this.buildBinds(params))
           .append(")");
       if (params.isEmpty()) {
@@ -268,7 +269,7 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (Statement stm = connection.createStatement()) {
       for (final UUID recordId : recordIds) {
-        stm.addBatch(String.format("DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = '%s'", recordId));
+        stm.addBatch(String.format("DELETE FROM %s WHERE IDT_TTO_RECORD = '%s'", getTableName(), recordId));
       }
       final int affected = stm.executeBatch().length;
       Validator.isTrue(
@@ -285,7 +286,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeleting(Connection connection, UUID id) {
-    final String sql = "DELETE FROM TTO_RECORD WHERE IDT_TTO_RECORD = ? ";
+    final String sql = this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD = ? ");
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
       final int affected = stm.executeUpdate();
@@ -305,11 +306,12 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void changeStatusToProcessed(Connection connection, UUID id, String changeAgent) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
     final StringBuilder sql = new StringBuilder()
-        .append("UPDATE TTO_RECORD SET \n")
+        .append(this.withTableName("UPDATE %s SET \n"))
         .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=? \n")
         .append("WHERE IDT_TTO_RECORD = ? \n")
         .append("AND DAT_CREATED BETWEEN ? AND ? \n");
@@ -325,14 +327,18 @@ public class RecordDAOGeneric implements RecordDAO {
       final boolean success = affected == 1;
       if (log.isTraceEnabled()) {
         log.trace(
-            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}",
-            id, affected, success
+            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}, time={}",
+            id, affected, success, stopWatch.getTime()
         );
       }
       Validator.isTrue(success, "Couldn't update record: %s", id);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }
+  }
+
+  private String withTableName(String sql) {
+    return String.format(sql, getTableName());
   }
 
   private PreparedStatement createStreamingStatement(Connection con, String sql, int fetchSize) throws SQLException {
@@ -371,4 +377,9 @@ public class RecordDAOGeneric implements RecordDAO {
         .map(it -> "?")
         .collect(Collectors.joining(", "));
   }
+
+  static String getTableName(){
+    return System.getProperty("tobby.record-table.name", "TTO_RECORD");
+  }
+
 }

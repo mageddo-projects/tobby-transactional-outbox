@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import com.mageddo.db.SimpleDataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
+import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
@@ -19,9 +20,10 @@ import dagger.Component;
 @Singleton
 @Component(
     modules = {
+        ProducersModule.class,
+        ConfigModule.class,
         DaosProducersModule.class,
-        DaosProducersBindsModule.class,
-        ProducersModule.class
+        DaosProducersBindsModule.class
     }
 )
 public interface TobbyFactory {
@@ -79,13 +81,22 @@ public interface TobbyFactory {
   }
 
   static TobbyFactory build(DataSource dataSource) {
-    return build(ProducerConfig.from(dataSource));
+    return build(dataSource, Tobby.Config.theDefault());
   }
 
-  static TobbyFactory build(ProducerConfig config) {
+  static TobbyFactory build(DataSource dataSource, Tobby.Config config) {
+    return build(ProducerConfig.from(dataSource), config);
+  }
+
+  static TobbyFactory build(ProducerConfig producerConfig) {
+    return build(producerConfig, Tobby.Config.theDefault());
+  }
+
+  static TobbyFactory build(ProducerConfig producerConfig, Tobby.Config config) {
     return DaggerTobbyFactory.builder()
-        .daosProducersModule(new DaosProducersModule(config.getDataSource()))
-        .producersModule(new ProducersModule(config))
+        .daosProducersModule(new DaosProducersModule(producerConfig.getDataSource()))
+        .producersModule(new ProducersModule(producerConfig))
+        .configModule(new ConfigModule(config))
         .build();
   }
 

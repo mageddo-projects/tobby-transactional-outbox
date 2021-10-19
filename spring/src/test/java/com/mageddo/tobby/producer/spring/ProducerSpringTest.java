@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.mageddo.tobby.ProducerRecord;
-
 import com.mageddo.tobby.producer.Config;
 import com.mageddo.tobby.producer.MockKafkaProducerProvider;
 

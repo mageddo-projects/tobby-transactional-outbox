@@ -23,15 +23,23 @@ import org.springframework.kafka.core.KafkaTemplate;
 @EnableKafka
 @Configuration
 @ConditionalOnProperty(value = "tobby.transactional.outbox.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(KafkaProperties.class)
+@EnableConfigurationProperties({KafkaProperties.class, TobbyConfigProperties.class})
 public class TobbySpringConfiguration {
 
   @Bean
-  public TobbyFactory tobbyConfig(DataSource dataSource) {
-    return TobbyFactory.build(dataSource);
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-config", matchIfMissing = true)
+  public Tobby.Config tobbyConfig(TobbyConfigProperties configProperties) {
+    return configProperties.toConfig();
   }
 
   @Bean
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-context", matchIfMissing = true)
+  public TobbyFactory tobbyFactory(DataSource dataSource, Tobby.Config config) {
+    return TobbyFactory.build(dataSource, config);
+  }
+
+  @Bean
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby", matchIfMissing = true)
   public Tobby tobby(TobbyFactory tobbyFactory) {
     return Tobby.builder()
         .tobbyFactory(tobbyFactory)
