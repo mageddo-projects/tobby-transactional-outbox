@@ -306,6 +306,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void changeStatusToProcessed(Connection connection, UUID id, String changeAgent) {
+    final StopWatch stopWatch = StopWatch.createStarted();
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
@@ -326,8 +327,8 @@ public class RecordDAOGeneric implements RecordDAO {
       final boolean success = affected == 1;
       if (log.isTraceEnabled()) {
         log.trace(
-            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}",
-            id, affected, success
+            "m=changeStatusToProcessed, status=status-changed, id={}, affected={}, success={}, time={}",
+            id, affected, success, stopWatch.getTime()
         );
       }
       Validator.isTrue(success, "Couldn't update record: %s", id);

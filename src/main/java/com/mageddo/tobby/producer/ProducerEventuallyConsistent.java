@@ -78,14 +78,14 @@ public class ProducerEventuallyConsistent implements Producer {
           pool.submit(() -> {
             try {
               if (e == null) {
+                final long kafkaSendTime = stopWatch.getTime();
                 stopWatch.split();
                 this.markRecordAsSent(producedRecord);
-                final long saveTime = stopWatch.getSplitTime();
+                final long updateTime = stopWatch.getSplitTime();
                 if (log.isDebugEnabled()) {
                   log.debug(
-                      "status=updated, id={}, saveTime={}, totalTime={}",
-                      producedRecord.getId(), saveTime,
-                      stopWatch.getTime()
+                      "status=updated, id={}, kafkaSendTime={}, updateTime={}, totalTime={}",
+                      producedRecord.getId(), kafkaSendTime, updateTime, stopWatch.getTime()
                   );
                 }
               } else {
