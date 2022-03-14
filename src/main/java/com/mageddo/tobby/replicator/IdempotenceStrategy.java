@@ -1,5 +1,7 @@
 package com.mageddo.tobby.replicator;
 
+import lombok.Builder;
+
 public enum IdempotenceStrategy {
   /**
    * Search for records that are at TTO_RECORD but aren't at TTO_RECORD_PROCESSED, the try to insert records
@@ -23,6 +25,7 @@ public enum IdempotenceStrategy {
    * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batch
    * considering ReplicatorConfig#getBufferSize()
    */
+  @Deprecated
   BATCH_DELETE,
 
   /**
