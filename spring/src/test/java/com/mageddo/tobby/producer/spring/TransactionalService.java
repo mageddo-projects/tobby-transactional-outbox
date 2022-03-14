@@ -18,7 +18,7 @@ public class TransactionalService {
   @Transactional
   public void send(ProducerRecord record, int wantedInvocations) {
     for (int i = 0; i < wantedInvocations; i++) {
-      this.producer.send(record);
+      this.producer.send(record.copyWithNewId());
     }
   }
 

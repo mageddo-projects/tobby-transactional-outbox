@@ -32,7 +32,7 @@ public class ProducerRecord {
   /**
    * Returns a copy of the same event with new id.
    */
-  public ProducerRecord copy() {
+  public ProducerRecord copyWithNewId() {
     return this.toBuilder()
         .id(UUID.randomUUID())
         .build();
