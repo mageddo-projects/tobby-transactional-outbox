@@ -1,8 +1,5 @@
 package com.mageddo.tobby.producer.kafka.converter;
 
-import com.mageddo.tobby.internal.utils.KafkaHeaders;
-
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
@@ -63,13 +60,10 @@ class ProducerRecordConverterTest {
   }
 
   @Test
-  void mustSaveProducedRecordWithCustomizedEventId() {
+  void mustSaveProducedRecordWithCustomizedEventIdAndRemoveTobbyHeaders() {
     // arrange
     final var eventId = UUID.fromString("51b466e3-bb4b-47ad-a6d8-7d1324c2bef6");
-    final var record = new ProducerRecord<String, String>(
-        "fruit", null, null, "Orange",
-        KafkaHeaders.withEventId(eventId)
-    );
+    final var record = KafkaProducerRecordTemplates.withCustomEventID(eventId);
 
     // act
     final var result = ProducerRecordConverter.of(
@@ -78,6 +72,29 @@ class ProducerRecordConverterTest {
 
     // assert
     assertEquals(eventId, result.getId());
+    assertTrue(
+        result
+            .getHeaders()
+            .isEmpty(),
+        result.getHeaders()
+            .toString()
+    );
+  }
+
+  @Test
+  void mustSaveProducedRecordWithCustomizedEventIdAndRemoveTobbyHeadersButKeepOthers() {
+    // arrange
+    final var eventId = UUID.fromString("51b466e3-bb4b-47ad-a6d8-7d1324c2bef6");
+    final var record = KafkaProducerRecordTemplates.withCustomEventIDAndAnotherHeader(eventId);
+
+    // act
+    final var result = ProducerRecordConverter.of(
+        new StringSerializer(), new StringSerializer(), record
+    );
+
+    // assert
+    assertEquals(eventId, result.getId());
+    assertEquals("[{X-KEY=[(X-KEY, 1)]}]", String.valueOf(result.getHeaders()));
   }
 
   @Test

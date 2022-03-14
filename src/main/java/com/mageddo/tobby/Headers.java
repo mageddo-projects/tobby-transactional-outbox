@@ -1,5 +1,7 @@
 package com.mageddo.tobby;
 
+import com.mageddo.tobby.internal.utils.Sets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,12 +11,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Headers implements Iterable<Header> {
 
   public static final String TOBBY_EVENT_ID = "TTO_EID";
+
+  private static final Set<String> TOBBY_HEADERS = Sets.of(TOBBY_EVENT_ID);
 
   private final Map<String, List<Header>> headers;
 
@@ -47,6 +52,15 @@ public class Headers implements Iterable<Header> {
         .valueOf(id)
         .getBytes();
     return of(TOBBY_EVENT_ID, b);
+  }
+
+  public static boolean isTobbyHeader(String key) {
+    return TOBBY_HEADERS.contains(key);
+  }
+
+  @Override
+  public String toString() {
+    return "[" + this.headers + "]";
   }
 
   public Headers add(String key, byte[] value) {
