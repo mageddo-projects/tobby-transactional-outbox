@@ -1,10 +1,10 @@
 package com.mageddo.tobby;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
-
-import java.util.UUID;
 
 @Value
 @Builder(toBuilder = true)
@@ -26,6 +26,15 @@ public class ProducerRecord {
         .topic(topic)
         .key(key)
         .value(value)
+        .build();
+  }
+
+  /**
+   * Returns a copy of the same event with new id.
+   */
+  public ProducerRecord copy() {
+    return this.toBuilder()
+        .id(UUID.randomUUID())
         .build();
   }
 }

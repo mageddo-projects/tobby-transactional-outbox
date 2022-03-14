@@ -96,11 +96,11 @@ class ProducerSpringTest {
     final var record = ProducerRecordTemplates.grape();
 
     // act
-    this.producer.send(record);
+    this.producer.send(record.copy());
 
     // assert
-    this.producer.send(record);
-    this.producer.send(record);
+    this.producer.send(record.copy());
+    this.producer.send(record.copy());
 
     verify(this.producer, times(wantedInvocations)).getConnection();
 
