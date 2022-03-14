@@ -53,9 +53,9 @@ public class RecordDAOGeneric implements RecordDAO {
         .append("  ?, ?, ? \n")
         .append(") \n");
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
-      final UUID id = this.fillStatement(record, stm);
+      this.fillStatement(record, stm);
       stm.executeUpdate();
-      return ProducedRecordConverter.from(id, record);
+      return ProducedRecordConverter.from(record);
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     } finally {
@@ -351,16 +351,14 @@ public class RecordDAOGeneric implements RecordDAO {
     return stm;
   }
 
-  private UUID fillStatement(ProducerRecord record, PreparedStatement stm) throws SQLException {
-    final UUID id = UUID.randomUUID();
-    stm.setString(1, id.toString());
+  private void fillStatement(ProducerRecord record, PreparedStatement stm) throws SQLException {
+    stm.setString(1, String.valueOf(record.getId()));
     stm.setString(2, record.getTopic());
     stm.setObject(3, record.getPartition());
     stm.setObject(4, Status.WAIT.name());
     stm.setString(5, Base64.encodeToString(record.getKey()));
     stm.setString(6, Base64.encodeToString(record.getValue()));
     stm.setString(7, HeadersConverter.encodeBase64(record.getHeaders()));
-    return id;
   }
 
   private List<String> subList(List<UUID> recordIds, int skip) {

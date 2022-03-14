@@ -1,38 +1,31 @@
 package com.mageddo.tobby;
 
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
+
+import java.util.UUID;
 
 @Value
 @Builder(toBuilder = true)
 public class ProducerRecord {
 
+  @NonNull
+  private UUID id;
+
+  @NonNull
   private String topic;
   private Integer partition;
   private byte[] key;
   private byte[] value;
   private Headers headers;
 
-  public ProducerRecord(String topic, byte[] value) {
-    this(topic, null, value);
+  public static ProducerRecord of(String topic, byte[] key, byte[] value) {
+    return ProducerRecord.builder()
+        .id(UUID.randomUUID())
+        .topic(topic)
+        .key(key)
+        .value(value)
+        .build();
   }
-
-  public ProducerRecord(String topic, byte[] key, byte[] value) {
-    this(topic, null, key, value);
-  }
-
-  public ProducerRecord(String topic, Integer partition, byte[] key, byte[] value) {
-    this(topic, partition, key, value, null);
-  }
-
-  public ProducerRecord(
-      String topic, Integer partition, byte[] key, byte[] value, Headers headers
-  ) {
-    this.topic = topic;
-    this.partition = partition;
-    this.key = key;
-    this.value = value;
-    this.headers = headers;
-  }
-
 }

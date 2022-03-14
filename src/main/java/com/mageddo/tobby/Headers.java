@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 public class Headers implements Iterable<Header> {
 
+  public static final String TOBBY_EVENT_ID = "TB_EID";
+
   private final Map<String, List<Header>> headers;
 
   public Headers() {

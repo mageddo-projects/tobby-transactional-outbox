@@ -4,21 +4,21 @@ import com.mageddo.tobby.Headers;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.kafka.converter.ProducerRecordConverter;
 
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProducerRecordTemplates {
 
   public static ProducerRecord strawberry() {
-    return new ProducerRecord("fruit", "Strawberry".getBytes(), "Strawberry".getBytes());
+    return ProducerRecord.of("fruit", "Strawberry".getBytes(), "Strawberry".getBytes());
   }
 
   public static ProducerRecord banana() {
-    return new ProducerRecord("fruit", null, null);
+    return ProducerRecord.of("fruit", null, null);
   }
 
   public static ProducerRecord strawberryWithHeaders() {
@@ -35,7 +35,7 @@ public class ProducerRecordTemplates {
   }
 
   public static ProducerRecord grape() {
-    return new ProducerRecord(
+    return ProducerRecord.of(
         "fruit",
         "some key".getBytes(),
         "Grape".getBytes()
