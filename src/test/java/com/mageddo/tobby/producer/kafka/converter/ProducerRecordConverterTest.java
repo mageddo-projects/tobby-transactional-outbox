@@ -1,14 +1,21 @@
 package com.mageddo.tobby.producer.kafka.converter;
 
+import com.mageddo.tobby.internal.utils.KafkaHeaders;
+
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 
 import templates.KafkaProducerRecordTemplates;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProducerRecordConverterTest {
 
@@ -53,6 +60,46 @@ class ProducerRecordConverterTest {
       assertEquals(expected.key(), actual.getKey());
       assertArrayEquals(expected.value(), actual.getValue());
     }
+  }
+
+  @Test
+  void mustSaveProducedRecordWithCustomizedEventId() {
+    // arrange
+    final var eventId = UUID.fromString("51b466e3-bb4b-47ad-a6d8-7d1324c2bef6");
+    final var record = new ProducerRecord<String, String>(
+        "fruit", null, null, "Orange",
+        KafkaHeaders.withEventId(eventId)
+    );
+
+    // act
+    final var result = ProducerRecordConverter.of(
+        new StringSerializer(), new StringSerializer(), record
+    );
+
+    // assert
+    assertEquals(eventId, result.getId());
+  }
+
+  @Test
+  void mustSaveProducedRecordRandomEventId() {
+    // arrange
+    final var record = KafkaProducerRecordTemplates.mango();
+
+    // act
+    final var firstId = ProducerRecordConverter
+        .of(
+            new StringSerializer(), new StringSerializer(), record
+        )
+        .getId();
+
+    final var secondId = ProducerRecordConverter
+        .of(
+            new StringSerializer(), new StringSerializer(), record
+        )
+        .getId();
+
+    // assert
+    assertNotEquals(firstId, secondId);
   }
 
 }

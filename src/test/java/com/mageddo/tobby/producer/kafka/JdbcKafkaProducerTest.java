@@ -1,6 +1,7 @@
 package com.mageddo.tobby.producer.kafka;
 
 import com.mageddo.tobby.producer.Producer;
+
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,8 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import templates.ProducedRecordTemplates;
 import templates.KafkaProducerRecordTemplates;
+import templates.ProducedRecordTemplates;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
