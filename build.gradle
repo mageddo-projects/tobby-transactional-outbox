@@ -45,6 +45,7 @@ allprojects {
     testLogging {
       events "skipped", "failed"
     }
+    failFast = true
   }
 
   compileTestJava {
