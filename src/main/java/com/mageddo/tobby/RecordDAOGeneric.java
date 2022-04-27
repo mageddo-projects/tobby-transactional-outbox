@@ -300,19 +300,20 @@ public class RecordDAOGeneric implements RecordDAO {
   }
 
   @Override
-  public void changeStatusToProcessed(Connection connection, List<UUID> ids, String changeAgent) {
-    ids.forEach(id -> this.changeStatusToProcessed(connection, id, changeAgent));
+  public void changeStatusToProcessed(Connection connection, List<ProducedRecord> records, String changeAgent) {
+    records.forEach(record -> this.changeStatusToProcessed(connection, record, changeAgent));
   }
 
   @Override
-  public void changeStatusToProcessed(Connection connection, UUID id, String changeAgent) {
+  public void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent) {
     final StopWatch stopWatch = StopWatch.createStarted();
+    final UUID id = record.getId();
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
     final StringBuilder sql = new StringBuilder()
         .append(this.withTableName("UPDATE %s SET \n"))
-        .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=? \n")
+        .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=?, NUM_SENT_PARTITION=?, NUM_SENT_OFFSET=? \n")
         .append("WHERE IDT_TTO_RECORD = ? \n")
         .append("AND DAT_CREATED BETWEEN ? AND ? \n");
     try (PreparedStatement stm = connection.prepareStatement(sql.toString())) {
@@ -323,6 +324,8 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setString(i++, String.valueOf(id));
       stm.setTimestamp(i++, this.timeToStartScan());
       stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.daysInTheFuture(1)));
+      stm.setInt(i++, record.getSentPartition());
+      stm.setLong(i++, record.getSentOffset());
       final int affected = stm.executeUpdate();
       final boolean success = affected == 1;
       if (log.isTraceEnabled()) {

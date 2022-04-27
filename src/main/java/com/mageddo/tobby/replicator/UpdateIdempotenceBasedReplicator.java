@@ -82,12 +82,12 @@ public class UpdateIdempotenceBasedReplicator implements Replicator, StreamingIt
       batchThread.add(() -> {
         return runAndClose(this.dataSource.getConnection(), (connection) -> {
           final StopWatch stopWatch = StopWatch.createStarted();
+          this.batchSender.send(records);
           this.recordDAO.changeStatusToProcessed(
               connection,
-              ProducedRecordConverter.toIds(records),
+              records,
               ChangeAgents.REPLICATOR
           );
-          this.batchSender.send(records);
           if (log.isDebugEnabled()) {
             log.debug("status=replicated, records={}, time={}", records.size(), stopWatch.getDisplayTime());
           }

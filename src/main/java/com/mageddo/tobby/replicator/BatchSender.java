@@ -52,12 +52,25 @@ public class BatchSender {
             .stream()
             .map(it -> this.producer.send(toKafkaProducerRecord(it)))
             .collect(Collectors.toList());
-        Threads.get(futures);
+
+        final List<RecordMetadata> metadatas = Threads.get(futures);
+        this.updateMetadata(records, metadatas);
         log.debug("status=sent, records={}, time={}", records.size(), stopWatch.getTime());
         break;
       } catch (UncheckedExecutionException e) {
         log.warn("status=failed-to-post-to-kafka, msg={}", e.getMessage(), e);
       }
+    }
+  }
+
+  private void updateMetadata(List<ProducedRecord> records, List<RecordMetadata> metadatas) {
+    for (int i = 0; i < records.size(); i++) {
+      final ProducedRecord record = records.get(i);
+      final RecordMetadata metadata = metadatas.get(i);
+      record
+          .setSentOffset(metadata.offset())
+          .setSentPartition(metadata.partition())
+      ;
     }
   }
 

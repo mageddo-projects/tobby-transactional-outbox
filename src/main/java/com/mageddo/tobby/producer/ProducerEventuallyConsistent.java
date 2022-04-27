@@ -15,6 +15,8 @@ import com.mageddo.tobby.UncheckedSQLException;
 import com.mageddo.tobby.internal.utils.StopWatch;
 import com.mageddo.tobby.internal.utils.Threads;
 
+import org.apache.kafka.clients.producer.RecordMetadata;
+
 import lombok.extern.slf4j.Slf4j;
 
 import static com.mageddo.db.ConnectionUtils.runAndClose;
@@ -77,10 +79,16 @@ public class ProducerEventuallyConsistent implements Producer {
         .send(toKafkaProducerRecord(producedRecord), (metadata, e) -> {
           pool.submit(() -> {
             try {
-              if (e == null) {
+              if (this.sentWithSuccess(metadata, e)) {
                 final long kafkaSendTime = stopWatch.getTime();
                 stopWatch.split();
+
+                producedRecord
+                    .setSentOffset(metadata.offset())
+                    .setSentPartition(metadata.partition())
+                ;
                 this.markRecordAsSent(producedRecord);
+
                 final long updateTime = stopWatch.getSplitTime();
                 if (log.isDebugEnabled()) {
                   log.debug(
@@ -98,6 +106,9 @@ public class ProducerEventuallyConsistent implements Producer {
         });
   }
 
+  private boolean sentWithSuccess(RecordMetadata metadata, Exception e) {
+    return e == null && metadata.partition() != RecordMetadata.UNKNOWN_PARTITION;
+  }
 
   private org.apache.kafka.clients.producer.Producer<byte[], byte[]> getKafkaProducer() {
     return this.kafkaProducer;
@@ -106,7 +117,7 @@ public class ProducerEventuallyConsistent implements Producer {
   private void markRecordAsSent(ProducedRecord producedRecord) {
     try {
       runAndClose(this.dataSource.getConnection(), (conn) -> {
-        this.recordDAO.changeStatusToProcessed(conn, producedRecord.getId(), ChangeAgents.CALLBACK);
+        this.recordDAO.changeStatusToProcessed(conn, producedRecord, ChangeAgents.CALLBACK);
         return null;
       });
     } catch (SQLException e2) {
