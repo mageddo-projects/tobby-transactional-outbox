@@ -85,9 +85,9 @@ dependencies {
   compileOnly(project(":adapter"))
 
   testImplementation group: "org.flywaydb", name: "flyway-core", version: "7.6.0"
-  testImplementation("io.zonky.test:embedded-postgres:1.2.9")
   testImplementation("org.jdbi:jdbi3-core:3.0.0")
-  testRuntimeOnly enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:10.4.0")
+  testImplementation("io.zonky.test:embedded-postgres:1.3.1")
+  testRuntimeOnly enforcedPlatform("io.zonky.test.postgres:embedded-postgres-binaries-bom:11.13.0")
 
   testImplementation group: "org.postgresql", name: "postgresql", version: "42.2.19"
   testImplementation group: "org.hsqldb", name: "hsqldb", version: "2.5.1"
