@@ -12,6 +12,8 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import static com.mageddo.tobby.Headers.isTobbyHeader;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HeadersConverter {
 
@@ -33,6 +35,9 @@ public class HeadersConverter {
   public static <K, V> com.mageddo.tobby.Headers fromKafkaHeaders(ProducerRecord<K, V> record) {
     final List<com.mageddo.tobby.Header> headers = new ArrayList<>();
     for (Header header : record.headers()) {
+      if(isTobbyHeader(header.key())){
+        continue;
+      }
       headers.add(fromKafkaHeader(header));
     }
     return new com.mageddo.tobby.Headers(headers);

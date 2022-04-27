@@ -53,9 +53,9 @@ public class ProducedRecordConverter {
     return Base64.decode(base64);
   }
 
-  public static ProducedRecord from(UUID id, ProducerRecord record) {
+  public static ProducedRecord from(ProducerRecord record) {
     return ProducedRecord.builder()
-        .id(id)
+        .id(record.getId())
         .topic(record.getTopic())
         .partition(record.getPartition())
         .key(record.getKey())

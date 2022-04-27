@@ -1,6 +1,9 @@
 package templates;
 
 import java.util.List;
+import java.util.UUID;
+
+import com.mageddo.tobby.internal.utils.KafkaHeaders;
 
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -56,5 +59,21 @@ public class KafkaProducerRecordTemplates {
 
   public static ProducerRecord<String, String> mango() {
     return new ProducerRecord<>("fruit", "Mango");
+  }
+
+  public static ProducerRecord<String, String> withCustomEventID(UUID eventId) {
+    return new ProducerRecord<String, String>(
+        "fruit", null, null, "Orange",
+        KafkaHeaders.withEventId(eventId)
+    );
+  }
+
+  public static ProducerRecord<String, String> withCustomEventIDAndAnotherHeader(UUID eventId) {
+    return new ProducerRecord<String, String>(
+        "fruit", null, null, "Orange",
+        KafkaHeaders
+            .withEventId(eventId)
+            .add("X-KEY", "1".getBytes())
+    );
   }
 }

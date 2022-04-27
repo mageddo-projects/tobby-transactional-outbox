@@ -1,5 +1,7 @@
 package com.mageddo.tobby;
 
+import java.util.Arrays;
+
 public class Header {
 
   private final String key;
@@ -24,5 +26,10 @@ public class Header {
 
   public byte[] getValue() {
     return value;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("(%s, %s)", this.key, new String(this.value));
   }
 }
