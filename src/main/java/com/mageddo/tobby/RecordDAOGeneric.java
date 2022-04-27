@@ -321,11 +321,11 @@ public class RecordDAOGeneric implements RecordDAO {
       stm.setString(i++, Status.OK.name());
       stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.now()));
       stm.setString(i++, changeAgent);
+      stm.setInt(i++, record.getSentPartition());
+      stm.setLong(i++, record.getSentOffset());
       stm.setString(i++, String.valueOf(id));
       stm.setTimestamp(i++, this.timeToStartScan());
       stm.setTimestamp(i++, Timestamp.valueOf(LocalDateTimes.daysInTheFuture(1)));
-      stm.setInt(i++, record.getSentPartition());
-      stm.setLong(i++, record.getSentOffset());
       final int affected = stm.executeUpdate();
       final boolean success = affected == 1;
       if (log.isTraceEnabled()) {
