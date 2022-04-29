@@ -14,10 +14,9 @@ import com.mageddo.tobby.replicator.Replicator;
 import com.mageddo.tobby.replicator.StreamingIterator;
 
 /**
- * @deprecated Relational databases don't work great of deletion of batches of rows
+ * Relational databases don't work great of deletion of batches of rows
  * mainly when the size of a single row is considerably large, like a blob or clob.
  */
-@Deprecated
 public class BatchDeleteIdempotenceBasedReplicator implements Replicator, StreamingIterator {
 
   private final RecordDAO recordDAO;
