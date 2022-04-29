@@ -141,7 +141,7 @@ class UpdateIdempotenceBasedReplicatorTest {
   void mustSendReplicateThenUpdateRecords() throws Exception {
 
     // arrange
-    final Future<RecordMetadata> future = mock(Future.class);
+    final var future = mock(Future.class);
     doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
         .when(future)
         .get();

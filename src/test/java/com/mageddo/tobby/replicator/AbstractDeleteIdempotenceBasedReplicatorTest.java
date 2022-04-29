@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import templates.ProducerRecordTemplates;
+import templates.RecordMetadataTemplates;
 import testing.DBMigration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,10 +60,15 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecord() {
+  void mustSendReplicateThenDeleteRecord() throws Exception {
 
     // arrange
-    doReturn(mock(Future.class))
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
         .when(this.producer)
         .send(any());
 
@@ -80,10 +86,15 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
   }
 
   @Test
-  void mustSendReplicateThenDeleteRecords() {
+  void mustSendReplicateThenDeleteRecords() throws Exception {
 
     // arrange
-    doReturn(mock(Future.class))
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
         .when(this.producer)
         .send(any());
 
