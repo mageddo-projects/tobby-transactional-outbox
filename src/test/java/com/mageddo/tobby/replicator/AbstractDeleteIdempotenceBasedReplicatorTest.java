@@ -1,16 +1,8 @@
 package com.mageddo.tobby.replicator;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.Future;
-
-import javax.sql.DataSource;
-
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +13,15 @@ import org.mockito.Mock;
 import templates.ProducerRecordTemplates;
 import templates.RecordMetadataTemplates;
 import testing.DBMigration;
+
+import javax.sql.DataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,7 +50,12 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyFactory.build(this.dataSource);
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.producer)
+        .build()
+    );
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildStrategy();
   }
@@ -72,6 +78,10 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
         .when(this.producer)
         .send(any());
 
+    doReturn(future)
+        .when(this.producer)
+        .send(any(), any());
+
     final var record = ProducerRecordTemplates.coconut();
     final var savedRecord = this.jdbcProducer.send(record);
     assertNotNull(this.findRecord(savedRecord.getId()));
@@ -82,7 +92,6 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
     // assert
     assertNull(this.findRecord(savedRecord.getId()));
     assertNull(this.findProcessedRecord(savedRecord.getId()));
-
   }
 
   @Test
@@ -97,6 +106,10 @@ abstract class AbstractDeleteIdempotenceBasedReplicatorTest {
     doReturn(future)
         .when(this.producer)
         .send(any());
+
+    doReturn(future)
+        .when(this.producer)
+        .send(any(), any());
 
     final int count = 1001;
 

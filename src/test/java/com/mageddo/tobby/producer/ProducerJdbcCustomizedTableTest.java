@@ -1,14 +1,7 @@
 package com.mageddo.tobby.producer;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.UUID;
-
-import javax.sql.DataSource;
-
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
-
 import com.mageddo.tobby.dagger.TobbyFactory;
 
 import org.jdbi.v3.core.Jdbi;
@@ -16,11 +9,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import templates.ProducerRecordTemplates;
 import testing.DBMigration;
 import testing.PostgresExtension;
+
+import javax.sql.DataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,10 +38,16 @@ class ProducerJdbcCustomizedTableTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedPostgres();
     this.connection = this.dataSource.getConnection();
-    this.tobby = TobbyFactory.build(this.dataSource, Tobby.Config
-        .builder()
-        .recordTableName("TTO_RECORD_V2")
-        .build()
+    this.tobby = TobbyFactory.build(
+        ProducerConfig
+            .builder()
+            .producer(Mockito.mock(org.apache.kafka.clients.producer.Producer.class))
+            .dataSource(this.dataSource)
+            .build(),
+        Tobby.Config
+            .builder()
+            .recordTableName("TTO_RECORD_V2")
+            .build()
     );
     this.jdbcProducer = tobby.producer();
     this.jdbi = Jdbi.create(this.dataSource);

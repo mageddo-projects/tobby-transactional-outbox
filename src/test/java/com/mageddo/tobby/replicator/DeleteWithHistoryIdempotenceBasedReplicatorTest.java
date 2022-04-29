@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
+import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import templates.ProducerRecordTemplates;
+import templates.RecordMetadataTemplates;
 import testing.DBMigration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,7 +50,12 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
   void beforeEach() throws SQLException {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = dataSource.getConnection();
-    this.tobby = TobbyFactory.build(dataSource);
+    this.tobby = TobbyFactory.build(ProducerConfig
+        .builder()
+        .dataSource(this.dataSource)
+        .producer(this.producer)
+        .build()
+    );
     this.jdbcProducer = tobby.producer();
     this.replicator = this.buildDefaultDeleteWithHistoryReplicator();
   }
@@ -59,12 +66,23 @@ class DeleteWithHistoryIdempotenceBasedReplicatorTest {
   }
 
   @Test
-  void mustSendDeleteAndTrackRecordHistory() {
+  void mustSendDeleteAndTrackRecordHistory() throws Exception {
 
     // arrange
 
-    doReturn(mock(Future.class)).when(this.producer)
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
+        .when(this.producer)
         .send(any());
+
+    doReturn(future)
+        .when(this.producer)
+        .send(any(), any());
+
 
     final var record = ProducerRecordTemplates.coconut();
     final var savedRecord = this.jdbcProducer.send(record);
