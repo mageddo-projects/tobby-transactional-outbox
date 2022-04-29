@@ -26,9 +26,11 @@ public class ProducedRecordConverter {
           .createdAt(rs.getTimestamp("DAT_CREATED")
               .toLocalDateTime())
           .id(UUID.fromString(rs.getString("IDT_TTO_RECORD")))
-          .partition(getInteger(rs))
+          .partition(getInteger(rs, "NUM_PARTITION"))
           .headers(HeadersConverter.decodeFromBase64(rs.getString("TXT_HEADERS")))
           .status(mapStatus(rs))
+          .sentPartition(getInteger(rs, "NUM_SENT_PARTITION"))
+          .sentOffset(getLong(rs, "NUM_SENT_OFFSET"))
           .build();
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
@@ -43,8 +45,13 @@ public class ProducedRecordConverter {
     return Status.valueOf(status);
   }
 
-  private static Integer getInteger(ResultSet rs) throws SQLException {
-    final int v = rs.getInt("NUM_PARTITION");
+  private static Integer getInteger(ResultSet rs, String column) throws SQLException {
+    final int v = rs.getInt(column);
+    return rs.wasNull() ? null : v;
+  }
+
+  private static Long getLong(ResultSet rs, String column) throws SQLException {
+    final long v = rs.getLong(column);
     return rs.wasNull() ? null : v;
   }
 
