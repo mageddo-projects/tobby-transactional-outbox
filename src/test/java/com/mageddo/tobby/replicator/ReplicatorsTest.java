@@ -14,6 +14,7 @@ import com.mageddo.tobby.internal.utils.Threads;
 import com.mageddo.tobby.producer.ProducerConfig;
 
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import lombok.SneakyThrows;
 import templates.ProducerRecordTemplates;
+import templates.RecordMetadataTemplates;
 import testing.DBMigration;
 import testing.PostgresExtension;
 
@@ -60,10 +62,17 @@ class ReplicatorsTest {
   }
 
   @Test
-  void mustStopWhenZeroRecordsWereProcessedOnWave() {
+  void mustStopWhenZeroRecordsWereProcessedOnWave() throws Exception {
     // arrange
-    doReturn(mock(Future.class)).when(this.mockProducer)
+    final Future<RecordMetadata> future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
+        .when(this.mockProducer)
         .send(any());
+
     final var send = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
