@@ -163,8 +163,8 @@ class UpdateIdempotenceBasedReplicatorTest {
       final var foundRecord = this.findRecord(savedRecord.getId());
       assertNotNull(foundRecord);
       assertEquals(Status.WAIT, foundRecord.getStatus());
-//      assertNotNull(foundRecord.getSentOffset());
-//      assertNotNull(foundRecord.getSentPartition());
+      assertNull(foundRecord.getSentOffset());
+      assertNull(foundRecord.getSentPartition());
       ids.add(savedRecord.getId());
 
     }

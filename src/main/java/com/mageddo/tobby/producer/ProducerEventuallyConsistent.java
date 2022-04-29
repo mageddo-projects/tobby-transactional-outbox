@@ -110,7 +110,7 @@ public class ProducerEventuallyConsistent implements Producer {
     return e == null && metadata.partition() != RecordMetadata.UNKNOWN_PARTITION;
   }
 
-  org.apache.kafka.clients.producer.Producer<byte[], byte[]> getKafkaProducer() {
+  private org.apache.kafka.clients.producer.Producer<byte[], byte[]> getKafkaProducer() {
     return this.kafkaProducer;
   }
 
