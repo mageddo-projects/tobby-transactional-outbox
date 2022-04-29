@@ -3,6 +3,7 @@ package com.mageddo.tobby.replicator;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -93,10 +94,16 @@ class ReplicatorsTest {
   }
 
   @Test
-  void mustReplicateDataToKafka() {
+  void mustReplicateDataToKafka() throws Exception {
     // arrange
-    doReturn(mock(Future.class)).when(this.mockProducer)
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+    doReturn(future)
+        .when(this.mockProducer)
         .send(any());
+
     this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
@@ -108,11 +115,16 @@ class ReplicatorsTest {
   }
 
   @Test
-  void mustNotProcessAlreadyAcquiredRecords() throws SQLException {
+  void mustNotProcessAlreadyAcquiredRecords() throws Exception {
     // arrange
-    doReturn(mock(Future.class))
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+    doReturn(future)
         .when(this.mockProducer)
         .send(any());
+
     final var sent = this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
     try (final var connection = this.dataSource.getConnection()) {
@@ -128,13 +140,17 @@ class ReplicatorsTest {
   }
 
   @Test
-  void mustHaveNoTroublesWhenReplicateWithLockingAndHavingNoConcurrency() {
+  void mustHaveNoTroublesWhenReplicateWithLockingAndHavingNoConcurrency() throws Exception {
 
     // arrange
-    doReturn(mock(Future.class))
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+    doReturn(future)
         .when(this.mockProducer)
-        .send(any())
-    ;
+        .send(any());
+
     this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
@@ -148,26 +164,32 @@ class ReplicatorsTest {
   }
 
   @Test
-  void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach() {
+  void allThreadsMustHaveSuccessOnReplicatingWhenOneTreadEndsBeforeQueryTimeoutUsingLockingApproach() throws Exception {
     // arrange
     final var workers = 3;
     final var executorService = Threads.newPool(workers);
-    doReturn(mock(Future.class))
+
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
         .when(this.mockProducer)
-        .send(any())
-    ;
+        .send(any());
+
     this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
     final var futures = new ArrayList<Future<Boolean>>();
     for (int i = 0; i < workers; i++) {
-      final var future =
+      final var theFuture =
           executorService.submit(() -> {
             return this.buildDefaultReplicator(Duration.ofMillis(150))
                 .replicateLocking();
           });
-      futures.add(future);
+      futures.add(theFuture);
     }
 
     final var replicationResult = futures
@@ -184,23 +206,28 @@ class ReplicatorsTest {
   }
 
   @Test
-  void onlyOneThreadMustReplicateWithSuccessWhenUsingLockingApproach() {
+  void onlyOneThreadMustReplicateWithSuccessWhenUsingLockingApproach() throws Exception {
 
     // arrange
     final var workers = 3;
     final var executorService = Threads.newPool(workers);
-    doReturn(mock(Future.class))
+
+    final Future<RecordMetadata> future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+
+    doReturn(future)
         .when(this.mockProducer)
-        .send(any())
-    ;
+        .send(any());
+
     this.producer.send(ProducerRecordTemplates.strawberry());
     this.producer.send(ProducerRecordTemplates.coconut());
 
     // act
     final var futures = new ArrayList<Future<Boolean>>();
     for (int i = 0; i < workers; i++) {
-      final var future = executorService.submit(() -> this.replicateLocking(Duration.ofSeconds(8)));
-      futures.add(future);
+      futures.add(executorService.submit(() -> this.replicateLocking(Duration.ofSeconds(8))));
     }
 
     final var replicationResult = futures
@@ -218,10 +245,16 @@ class ReplicatorsTest {
   }
 
   @Test
-  void mustReplicateDataToKafEvenWhenValueAndKeyAreNull() {
+  void mustReplicateDataToKafEvenWhenValueAndKeyAreNull() throws Exception {
     // arrange
-    doReturn(mock(Future.class)).when(this.mockProducer)
+    final var future = mock(Future.class);
+    doReturn(RecordMetadataTemplates.timestampBasedRecordMetadata())
+        .when(future)
+        .get();
+    doReturn(future)
+        .when(this.mockProducer)
         .send(any());
+
     this.producer.send(ProducerRecordTemplates.banana());
 
     // act
