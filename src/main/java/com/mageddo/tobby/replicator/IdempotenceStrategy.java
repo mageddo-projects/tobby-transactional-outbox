@@ -1,10 +1,8 @@
 package com.mageddo.tobby.replicator;
 
-import lombok.Builder;
-
 public enum IdempotenceStrategy {
   /**
-   * Search for records that are at TTO_RECORD but aren't at TTO_RECORD_PROCESSED, the try to insert records
+   * Search for records that are at TTO_RECORD but aren't at TTO_RECORD_PROCESSED, then try to insert records
    * on TTO_RECORD_PROCESSED, if success try to send to kafka, if success commit the transaction.
    */
   INSERT,
@@ -25,7 +23,6 @@ public enum IdempotenceStrategy {
    * Works just like {@link IdempotenceStrategy#DELETE} but do the delete in batch
    * considering ReplicatorConfig#getBufferSize()
    */
-  @Deprecated
   BATCH_DELETE,
 
   /**
