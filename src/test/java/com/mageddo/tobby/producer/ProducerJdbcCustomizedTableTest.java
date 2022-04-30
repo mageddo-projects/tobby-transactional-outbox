@@ -1,5 +1,11 @@
 package com.mageddo.tobby.producer;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
 import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
@@ -16,12 +22,7 @@ import templates.ProducerRecordTemplates;
 import testing.DBMigration;
 import testing.PostgresExtension;
 
-import javax.sql.DataSource;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.UUID;
-
+import static com.mageddo.tobby.Tobby.Config.TOBBY_RECORD_TABLE_NAME_PROP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -56,6 +57,7 @@ class ProducerJdbcCustomizedTableTest {
   @AfterEach
   void afterEach() throws SQLException {
     this.connection.close();
+    System.clearProperty(TOBBY_RECORD_TABLE_NAME_PROP);
   }
 
   @Test
