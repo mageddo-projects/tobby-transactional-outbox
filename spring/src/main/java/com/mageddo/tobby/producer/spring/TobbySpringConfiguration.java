@@ -91,4 +91,9 @@ public class TobbySpringConfiguration {
     return tobbyFactory.recordDAO();
   }
 
+  @Bean
+  public TobbyProducerJMX tobbyProducerJMX(TobbyFactory tobbyFactory){
+    return new TobbyProducerJMX(tobbyFactory.producerJMX());
+  }
+
 }

@@ -71,4 +71,5 @@ public interface RecordDAO {
 
   void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent);
 
+  List<ProducedRecord> findAll(Connection connection);
 }

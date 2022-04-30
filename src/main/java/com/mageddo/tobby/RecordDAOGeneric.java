@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -335,6 +336,22 @@ public class RecordDAOGeneric implements RecordDAO {
         );
       }
       Validator.isTrue(success, "Couldn't update record: %s", id);
+    } catch (SQLException e) {
+      throw new UncheckedSQLException(e);
+    }
+  }
+
+  @Override
+  public List<ProducedRecord> findAll(Connection connection) {
+    final String sql = this.withTableName("SELECT * FROM %s ORDER BY DAT_CREATED ASC");
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+      try (ResultSet rs = stm.executeQuery()) {
+        final List<ProducedRecord> records = new ArrayList<>();
+        while (rs.next()) {
+          records.add(ProducedRecordConverter.map(rs));
+        }
+        return records;
+      }
     } catch (SQLException e) {
       throw new UncheckedSQLException(e);
     }

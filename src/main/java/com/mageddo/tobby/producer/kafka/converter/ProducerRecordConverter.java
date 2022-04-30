@@ -1,5 +1,6 @@
 package com.mageddo.tobby.producer.kafka.converter;
 
+import com.mageddo.tobby.ProducedRecord;
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.internal.utils.StringUtils;
 
@@ -51,4 +52,15 @@ public class ProducerRecordConverter {
     }
   }
 
+  public static ProducerRecord of(ProducedRecord record) {
+    return ProducerRecord
+        .builder()
+        .id(UUID.randomUUID())
+        .topic(record.getTopic())
+        .headers(record.getHeaders())
+        .key(record.getKey())
+        .value(record.getValue())
+        .partition(record.getPartition())
+        .build();
+  }
 }
