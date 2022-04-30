@@ -98,7 +98,7 @@ public class DBMigration {
 
   public static DataSource cleanAndMigrate(Flyway flyway) {
     flyway.clean();
-    flyway.migrate();
+    final var migrateResult = flyway.migrate();
     return flyway.getConfiguration()
         .getDataSource();
   }
