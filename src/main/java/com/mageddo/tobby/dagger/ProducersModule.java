@@ -7,6 +7,8 @@ import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 import com.mageddo.tobby.producer.ProducerJdbc;
 
+import com.mageddo.tobby.producer.jmx.TobbyProducerJMX;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 
@@ -43,6 +45,12 @@ class ProducersModule {
       return this.producerConfig.getProducer();
     }
     return new KafkaProducer<>(this.producerConfig.getProducerConfigs());
+  }
+
+  @Provides
+  @Singleton
+  public TobbyProducerJMX producerJMX(RecordDAO recordDAO, com.mageddo.tobby.producer.Producer producer){
+    return new TobbyProducerJMX(recordDAO, this.producerConfig.getDataSource(), producer);
   }
 
 }
