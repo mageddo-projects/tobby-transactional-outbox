@@ -2,6 +2,7 @@ package com.mageddo.tobby.producer.spring;
 
 import javax.sql.DataSource;
 
+import com.mageddo.RecordRecordCustomTableDAO;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
@@ -87,8 +88,8 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
-  public RecordDAO recordDAO(TobbyFactory tobbyFactory) {
-    return tobbyFactory.recordDAO();
+  public RecordRecordCustomTableDAO recordDAO(TobbyFactory tobbyFactory) {
+    return tobbyFactory.recordDAOCustomTable();
   }
 
   @Bean
