@@ -366,7 +366,7 @@ public class RecordDAOGeneric implements RecordRecordCustomTableDAO {
 
   @Override
   public void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent) {
-    this.changeStatusToProcessed(connection, record, changeAgent, this.withTableName("UPDATE %s SET \n", getTableName()));
+    this.changeStatusToProcessed(connection, record, changeAgent, getTableName());
   }
 
   @Override
