@@ -377,7 +377,7 @@ public class RecordDAOGeneric implements RecordRecordCustomTableDAO {
       log.trace("status=changing-status, id={}", id);
     }
     final StringBuilder sql = new StringBuilder()
-        .append(table)
+        .append(this.withTableName("UPDATE %s SET \n", table))
         .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=?, NUM_SENT_PARTITION=?, NUM_SENT_OFFSET=? \n")
         .append("WHERE IDT_TTO_RECORD = ? \n")
         .append("AND DAT_CREATED BETWEEN ? AND ? \n");
