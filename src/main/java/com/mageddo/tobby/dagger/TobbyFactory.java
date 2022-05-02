@@ -3,6 +3,7 @@ package com.mageddo.tobby.dagger;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.RecordRecordCustomTableDAO;
 import com.mageddo.db.SimpleDataSource;
 import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordProcessedDAO;
@@ -32,6 +33,8 @@ public interface TobbyFactory {
   com.mageddo.tobby.producer.Producer producer();
 
   RecordDAO recordDAO();
+
+  RecordRecordCustomTableDAO recordDAOCustomTable();
 
   RecordProcessedDAO recordProcessedDAO();
 

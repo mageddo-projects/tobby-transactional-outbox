@@ -17,6 +17,7 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.mageddo.RecordRecordCustomTableDAO;
 import com.mageddo.db.DB;
 import com.mageddo.db.DuplicatedRecordException;
 import com.mageddo.tobby.ProducedRecord.Status;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.mageddo.tobby.internal.utils.LocalDateTimes.minutesAgo;
 
 @Slf4j
-public class RecordDAOGeneric implements RecordDAO {
+public class RecordDAOGeneric implements RecordRecordCustomTableDAO {
 
   private final DB db;
   private final ExecutorService pool;
@@ -44,9 +45,14 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public ProducedRecord save(Connection connection, ProducerRecord record) {
+    return this.save(connection, record, getTableName());
+  }
+
+  @Override
+  public ProducedRecord save(Connection connection, ProducerRecord record, String table) {
     final StopWatch stopWatch = StopWatch.createStarted();
     final StringBuilder sql = new StringBuilder()
-        .append(this.withTableName("INSERT INTO %s ( \n"))
+        .append(this.withTableName("INSERT INTO %s ( \n", table))
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, IND_STATUS, \n")
         .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
         .append(") VALUES ( \n")
@@ -68,7 +74,12 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public ProducedRecord find(Connection connection, UUID id) {
-    final String sql = this.withTableName("SELECT * FROM %s WHERE IDT_TTO_RECORD = ?");
+    return this.find(connection, id, getTableName());
+  }
+
+  @Override
+  public ProducedRecord find(Connection connection, UUID id, String table) {
+    final String sql = this.withTableName("SELECT * FROM %s WHERE IDT_TTO_RECORD = ?", table);
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, id.toString());
       try (ResultSet rs = stm.executeQuery()) {
@@ -86,7 +97,15 @@ public class RecordDAOGeneric implements RecordDAO {
   public void iterateNotProcessedRecordsUsingInsertIdempotence(
       Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, LocalDateTime from
   ) {
-    final String sql = new StringBuilder(this.withTableName("SELECT * FROM %s R \n"))
+    this.iterateNotProcessedRecordsUsingInsertIdempotence(connection, fetchSize, consumer, from, getTableName()
+    );
+  }
+
+  @Override
+  public void iterateNotProcessedRecordsUsingInsertIdempotence(
+      Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, LocalDateTime from, String table
+  ) {
+    final String sql = new StringBuilder(this.withTableName("SELECT * FROM %s R \n", table))
         .append("WHERE DAT_CREATED > ? \n")
         .append("AND DAT_CREATED < ? \n")
         .append("AND NOT EXISTS ( \n")
@@ -140,8 +159,15 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void iterateOverRecords(Connection connection, int fetchSize, Consumer<ProducedRecord> consumer) {
+    this.iterateOverRecords(connection, fetchSize, consumer, getTableName());
+  }
+
+  @Override
+  public void iterateOverRecords(
+      Connection connection, int fetchSize, Consumer<ProducedRecord> consumer, String table
+  ) {
     final StopWatch stopWatch = StopWatch.createStarted();
-    final String sql = this.withTableName("SELECT * FROM %s");
+    final String sql = this.withTableName("SELECT * FROM %s", table);
     try (PreparedStatement stm = this.createStreamingStatement(connection, sql, fetchSize)) {
       try (ResultSet rs = stm.executeQuery()) {
         if (log.isDebugEnabled()) {
@@ -160,10 +186,20 @@ public class RecordDAOGeneric implements RecordDAO {
   public void iterateOverRecordsInWaitingStatus(
       Connection connection, int fetchSize, Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer
   ) {
+    this.iterateOverRecordsInWaitingStatus(connection, fetchSize, timeToWaitBeforeReplicate, consumer, getTableName());
+  }
+
+  @Override
+  public void iterateOverRecordsInWaitingStatus(
+      Connection connection, int fetchSize, Duration timeToWaitBeforeReplicate, Consumer<ProducedRecord> consumer,
+      String table
+  ) {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (PreparedStatement stm = this.createStreamingStatement(
         connection,
-        this.withTableName("SELECT * FROM %s WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?"),
+        this.withTableName(
+            "SELECT * FROM %s WHERE IND_STATUS=? AND DAT_CREATED > ? AND DAT_CREATED < ?", table
+        ),
         fetchSize
     )) {
       stm.setString(1, Status.WAIT.name());
@@ -188,6 +224,10 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds) {
+    this.acquireDeletingUsingThreads(connection, recordIds, getTableName());
+  }
+
+  private void acquireDeletingUsingThreads(Connection connection, List<UUID> recordIds, String table) {
     if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("m=acquireDeletingUsingThreads, status=noRecordsToDelete");
@@ -197,7 +237,7 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     final List<Future> promises = recordIds
         .stream()
-        .map(id -> this.pool.submit(() -> this.acquireDeleting(connection, id)))
+        .map(id -> this.pool.submit(() -> this.acquireDeleting(connection, id, table)))
         .collect(Collectors.toList());
 
     promises.forEach(future -> {
@@ -217,6 +257,10 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds) {
+    this.acquireDeletingUsingIn(connection, recordIds, getTableName());
+  }
+
+  private void acquireDeletingUsingIn(Connection connection, List<UUID> recordIds, String table) {
     final StopWatch stopWatch = StopWatch.createStarted();
     if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
@@ -228,7 +272,7 @@ public class RecordDAOGeneric implements RecordDAO {
     while (true) {
 
       final List<String> params = this.subList(recordIds, skip);
-      final StringBuilder sql = new StringBuilder(this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD IN ("))
+      final StringBuilder sql = new StringBuilder(this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD IN (", table))
           .append(this.buildBinds(params))
           .append(")");
       if (params.isEmpty()) {
@@ -256,11 +300,15 @@ public class RecordDAOGeneric implements RecordDAO {
         log.debug("status=acquireDeleteUsingIn, records={}, time={}", recordIds.size(), stopWatch.getDisplayTime());
       }
     }
-
   }
 
   @Override
   public void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds) {
+    this.acquireDeletingUsingBatch(connection, recordIds, getTableName());
+  }
+
+
+  public void acquireDeletingUsingBatch(Connection connection, List<UUID> recordIds, String table) {
     if (recordIds.isEmpty()) {
       if (log.isTraceEnabled()) {
         log.trace("status=noRecordsToDelete");
@@ -270,7 +318,7 @@ public class RecordDAOGeneric implements RecordDAO {
     final StopWatch stopWatch = StopWatch.createStarted();
     try (Statement stm = connection.createStatement()) {
       for (final UUID recordId : recordIds) {
-        stm.addBatch(String.format("DELETE FROM %s WHERE IDT_TTO_RECORD = '%s'", getTableName(), recordId));
+        stm.addBatch(String.format("DELETE FROM %s WHERE IDT_TTO_RECORD = '%s'", table, recordId));
       }
       final int affected = stm.executeBatch().length;
       Validator.isTrue(
@@ -287,7 +335,11 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void acquireDeleting(Connection connection, UUID id) {
-    final String sql = this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD = ? ");
+    this.acquireDeleting(connection, id, getTableName());
+  }
+
+  public void acquireDeleting(Connection connection, UUID id, String table) {
+    final String sql = this.withTableName("DELETE FROM %s WHERE IDT_TTO_RECORD = ? ", table);
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       stm.setString(1, String.valueOf(id));
       final int affected = stm.executeUpdate();
@@ -302,18 +354,30 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public void changeStatusToProcessed(Connection connection, List<ProducedRecord> records, String changeAgent) {
-    records.forEach(record -> this.changeStatusToProcessed(connection, record, changeAgent));
+    this.changeStatusToProcessed(connection, records, changeAgent, getTableName());
+  }
+
+  @Override
+  public void changeStatusToProcessed(
+      Connection connection, List<ProducedRecord> records, String changeAgent, String table
+  ) {
+    records.forEach(record -> this.changeStatusToProcessed(connection, record, changeAgent, table));
   }
 
   @Override
   public void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent) {
+    this.changeStatusToProcessed(connection, record, changeAgent, getTableName());
+  }
+
+  @Override
+  public void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent, String table) {
     final StopWatch stopWatch = StopWatch.createStarted();
     final UUID id = record.getId();
     if (log.isTraceEnabled()) {
       log.trace("status=changing-status, id={}", id);
     }
     final StringBuilder sql = new StringBuilder()
-        .append(this.withTableName("UPDATE %s SET \n"))
+        .append(this.withTableName("UPDATE %s SET \n", table))
         .append("  IND_STATUS=?, DAT_SENT=?, IND_AGENT=?, NUM_SENT_PARTITION=?, NUM_SENT_OFFSET=? \n")
         .append("WHERE IDT_TTO_RECORD = ? \n")
         .append("AND DAT_CREATED BETWEEN ? AND ? \n");
@@ -343,7 +407,7 @@ public class RecordDAOGeneric implements RecordDAO {
 
   @Override
   public List<ProducedRecord> findAll(Connection connection) {
-    final String sql = this.withTableName("SELECT * FROM %s ORDER BY DAT_CREATED ASC");
+    final String sql = this.withTableName("SELECT * FROM %s ORDER BY DAT_CREATED ASC", getTableName());
     try (PreparedStatement stm = connection.prepareStatement(sql)) {
       try (ResultSet rs = stm.executeQuery()) {
         final List<ProducedRecord> records = new ArrayList<>();
@@ -357,8 +421,8 @@ public class RecordDAOGeneric implements RecordDAO {
     }
   }
 
-  private String withTableName(String sql) {
-    return String.format(sql, getTableName());
+  private String withTableName(String sql, String tableName) {
+    return String.format(sql, tableName);
   }
 
   private PreparedStatement createStreamingStatement(Connection con, String sql, int fetchSize) throws SQLException {

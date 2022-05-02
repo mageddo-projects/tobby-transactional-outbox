@@ -3,6 +3,7 @@ package com.mageddo.tobby.dagger;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 
+import com.mageddo.RecordRecordCustomTableDAO;
 import com.mageddo.db.DB;
 import com.mageddo.db.DBUtils;
 import com.mageddo.db.SqlErrorCodes;
@@ -31,8 +32,14 @@ class DaosProducersModule {
 
   @Provides
   @Singleton
-  public RecordDAO recordDAO(DB db) {
-    return DAOFactory.createRecordDao(db);
+  public RecordDAO recordDAO(RecordRecordCustomTableDAO recordTableDAO) {
+    return recordTableDAO;
+  }
+
+  @Provides
+  @Singleton
+  public RecordRecordCustomTableDAO recordRecordCustomTableDAO(DB db) {
+    return DAOFactory.createRecordCustomTableDao(db);
   }
 
 }

@@ -54,7 +54,7 @@ class ProducerEventuallyConsistentTest {
   void before() throws Exception {
     this.dataSource = DBMigration.migrateEmbeddedHSQLDB();
     this.connection = this.dataSource.getConnection();
-    this.recordDao = DAOFactory.createRecordDao(DB.POSTGRESQL);
+    this.recordDao = DAOFactory.createRecordCustomTableDao(DB.POSTGRESQL);
     this.tobbyProducer = new ProducerEventuallyConsistent(
         this.producer,
         this.recordDao,

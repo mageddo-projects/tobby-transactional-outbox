@@ -71,5 +71,10 @@ public interface RecordDAO {
 
   void changeStatusToProcessed(Connection connection, ProducedRecord record, String changeAgent);
 
+  /**
+   * @deprecated This method will not be effective on a world when there is a lot of records because it loads
+   * all the records to the RAM
+   */
+  @Deprecated
   List<ProducedRecord> findAll(Connection connection);
 }
