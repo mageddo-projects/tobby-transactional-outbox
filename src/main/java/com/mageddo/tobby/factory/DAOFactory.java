@@ -1,7 +1,7 @@
 package com.mageddo.tobby.factory;
 
+import com.mageddo.RecordRecordCustomTableDAO;
 import com.mageddo.db.DB;
-import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.RecordDAOGeneric;
 import com.mageddo.tobby.internal.utils.Threads;
 
@@ -9,7 +9,7 @@ public class DAOFactory {
   private DAOFactory() {
   }
 
-  public static RecordDAO createRecordDao(DB db){
+  public static RecordRecordCustomTableDAO createRecordCustomTableDao(DB db){
     switch (db.getName()){
       default:
         return new RecordDAOGeneric(db, Threads.newPool(10));
