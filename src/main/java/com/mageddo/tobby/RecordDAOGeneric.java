@@ -54,10 +54,10 @@ public class RecordDAOGeneric implements RecordRecordCustomTableDAO {
     final StringBuilder sql = new StringBuilder()
         .append(this.withTableName("INSERT INTO %s ( \n", table))
         .append("  IDT_TTO_RECORD, NAM_TOPIC, NUM_PARTITION, IND_STATUS, \n")
-        .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS \n")
+        .append("  TXT_KEY, TXT_VALUE, TXT_HEADERS, DAT_CREATED \n")
         .append(") VALUES ( \n")
         .append("  ?, ?, ?, ?, \n")
-        .append("  ?, ?, ? \n")
+        .append("  ?, ?, ?, ? \n")
         .append(") \n");
     try (final PreparedStatement stm = connection.prepareStatement(sql.toString())) {
       this.fillStatement(record, stm);
@@ -443,6 +443,7 @@ public class RecordDAOGeneric implements RecordRecordCustomTableDAO {
     stm.setString(5, Base64.encodeToString(record.getKey()));
     stm.setString(6, Base64.encodeToString(record.getValue()));
     stm.setString(7, HeadersConverter.encodeBase64(record.getHeaders()));
+    stm.setTimestamp(8, Timestamp.valueOf(record.getCreatedAt()));
   }
 
   private List<String> subList(List<UUID> recordIds, int skip) {
