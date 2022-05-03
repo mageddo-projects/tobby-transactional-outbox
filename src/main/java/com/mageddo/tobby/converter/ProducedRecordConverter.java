@@ -68,6 +68,7 @@ public class ProducedRecordConverter {
         .key(record.getKey())
         .value(record.getValue())
         .headers(record.getHeaders())
+        .createdAt(record.getCreatedAt())
         .build()
         ;
   }
