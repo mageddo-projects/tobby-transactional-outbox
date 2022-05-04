@@ -10,6 +10,7 @@ import com.mageddo.tobby.RecordProcessedDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.factory.SerializerCreator;
 import com.mageddo.tobby.producer.ProducerConfig;
+import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 import com.mageddo.tobby.producer.jmx.TobbyProducerJMX;
 import com.mageddo.tobby.producer.kafka.JdbcKafkaProducerAdapter;
 import com.mageddo.tobby.producer.kafka.SimpleJdbcKafkaProducerAdapter;
@@ -31,6 +32,8 @@ import dagger.Component;
 public interface TobbyFactory {
 
   com.mageddo.tobby.producer.Producer producer();
+
+  ProducerEventuallyConsistent producerEventuallyConsistent();
 
   RecordDAO recordDAO();
 

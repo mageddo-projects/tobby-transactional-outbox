@@ -8,7 +8,8 @@ import java.util.UUID;
 
 import com.mageddo.tobby.ProducerRecord;
 import com.mageddo.tobby.producer.Config;
-import com.mageddo.tobby.producer.MockKafkaProducerProvider;
+
+import com.mageddo.tobby.producer.MockProducerProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +41,7 @@ class ProducerSpringTest {
   JdbcTemplate jdbcTemplate;
 
   @Autowired
-  MockKafkaProducerProvider kafkaProducerProvider;
+  MockProducerProvider producerProvider;
 
   @Autowired
   TransactionalService transactionalService;
@@ -78,7 +79,7 @@ class ProducerSpringTest {
     assertNull(foundRecord.get("NUM_PARTITION"));
     assertNotNull(foundRecord.get("DAT_CREATED"));
 
-    assertEquals(1, this.kafkaProducerProvider.getMockProducer().history().size());
+    assertEquals(1, this.producerProvider.get().history().size());
   }
 
   @Test
