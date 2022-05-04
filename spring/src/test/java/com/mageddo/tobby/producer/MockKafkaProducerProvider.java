@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.springframework.kafka.core.KafkaTemplate;
 
+@Deprecated
 public class MockKafkaProducerProvider implements KafkaProducerProvider {
 
   private final MockProducer mockProducer = new MockProducer();

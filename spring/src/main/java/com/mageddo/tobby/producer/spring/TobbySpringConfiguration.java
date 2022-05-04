@@ -7,12 +7,15 @@ import com.mageddo.tobby.RecordDAO;
 import com.mageddo.tobby.Tobby;
 import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.factory.SerializerCreator;
+import com.mageddo.tobby.producer.ProducerConfig;
 import com.mageddo.tobby.producer.ProducerEventuallyConsistent;
 
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,6 +23,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.KafkaTemplate;
+
+import java.util.Map;
+
+import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 
 @EnableKafka
 @Configuration
@@ -35,8 +43,24 @@ public class TobbySpringConfiguration {
 
   @Bean
   @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-tobby-context", matchIfMissing = true)
-  public TobbyFactory tobbyFactory(DataSource dataSource, Tobby.Config config) {
-    return TobbyFactory.build(dataSource, config);
+  public TobbyFactory tobbyFactory(Tobby.Config config, ProducerConfig producerConfig) {
+    return TobbyFactory.build(producerConfig, config);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(ProducerConfig.class)
+  @ConditionalOnProperty(value = "tobby.transactional.outbox.auto-producer-config", matchIfMissing = true)
+  public ProducerConfig producerConfig(DataSource dataSource, KafkaProperties kafkaProperties) {
+
+    final Map<String, Object> props = kafkaProperties.buildProducerProperties();
+    props.put(KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+    props.put(VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+
+    return ProducerConfig
+        .builder()
+        .dataSource(dataSource)
+        .producerConfigs(props)
+        .build();
   }
 
   @Bean
@@ -54,12 +78,9 @@ public class TobbySpringConfiguration {
 
   @Bean
   public ProducerEventuallyConsistentSpring producerEventualConsistent(
-      RecordDAO recordDAO, DataSource dataSource, KafkaProducerProvider producerProvider
+      TobbyFactory tobbyFactory, DataSource dataSource
   ) {
-    return new ProducerEventuallyConsistentSpring(
-        dataSource,
-        new ProducerEventuallyConsistent(producerProvider.createByteProducer(), recordDAO, dataSource)
-    );
+    return new ProducerEventuallyConsistentSpring(dataSource,  tobbyFactory.producerEventuallyConsistent());
   }
 
   @Bean
