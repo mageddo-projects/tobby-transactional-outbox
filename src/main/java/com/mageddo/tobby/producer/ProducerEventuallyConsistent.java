@@ -23,6 +23,10 @@ import static com.mageddo.db.ConnectionUtils.runAndClose;
 import static com.mageddo.tobby.producer.kafka.converter.ProducedRecordConverter.toKafkaProducerRecord;
 import static com.mageddo.tobby.transaction.TransactionSynchronizationManager.registerSynchronization;
 
+/**
+ * Save the record to TTO_RECORD and returns to caller while tries to send to kafka in async if get succcess,
+ * updates the TTO_RECORD to OK, if not, waits for the replicator do the JOB.
+ */
 @Slf4j
 public class ProducerEventuallyConsistent implements Producer {
 

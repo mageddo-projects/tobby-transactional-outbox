@@ -2,7 +2,6 @@ package com.mageddo.tobby.producer;
 
 import javax.sql.DataSource;
 
-import org.apache.kafka.clients.producer.MockProducer;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

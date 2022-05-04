@@ -32,6 +32,8 @@ public class ProducerConfig {
 
   /**
    * Produce used to post to kafka after save the tto_record, this property will override {@link #producerConfigs}
+   *
+   * @see ProducerEventuallyConsistent
    */
   private Producer<byte[], byte[]> producer;
 
