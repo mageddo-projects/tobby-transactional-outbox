@@ -72,11 +72,6 @@ public class TobbySpringConfiguration {
   }
 
   @Bean
-  public RealKafkaProducerProvider realKafkaProducerProvider(KafkaProperties kafkaProperties) {
-    return new RealKafkaProducerProvider(kafkaProperties);
-  }
-
-  @Bean
   public ProducerEventuallyConsistentSpring producerEventualConsistent(
       TobbyFactory tobbyFactory, DataSource dataSource
   ) {
