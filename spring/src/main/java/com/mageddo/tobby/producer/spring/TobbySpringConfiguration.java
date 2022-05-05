@@ -73,9 +73,12 @@ public class TobbySpringConfiguration {
 
   @Bean
   public ProducerEventuallyConsistentSpring producerEventualConsistent(
-      TobbyFactory tobbyFactory, DataSource dataSource
+      TobbyFactory tobbyFactory, DataSource dataSource, RecordDAO recordDAO
   ) {
-    return new ProducerEventuallyConsistentSpring(dataSource,  tobbyFactory.producerEventuallyConsistent());
+    return new ProducerEventuallyConsistentSpring(
+        dataSource,
+        new ProducerEventuallyConsistent(tobbyFactory.kafkaProducer(), recordDAO, dataSource)
+    );
   }
 
   @Bean

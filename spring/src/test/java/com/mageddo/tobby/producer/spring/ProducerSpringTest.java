@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.mageddo.tobby.ProducerRecord;
+import com.mageddo.tobby.RecordDAO;
+import com.mageddo.tobby.dagger.TobbyFactory;
 import com.mageddo.tobby.producer.Config;
 
 import com.mageddo.tobby.producer.MockProducerProvider;
@@ -45,6 +47,9 @@ class ProducerSpringTest {
 
   @Autowired
   TransactionalService transactionalService;
+
+  @Autowired
+  TobbyFactory tobbyFactory;
 
   @Test
   void mustInjectSpringProducerAsDefault() {
@@ -132,6 +137,13 @@ class ProducerSpringTest {
 
     assertEquals(wantedInvocations, capturedConnections.size());
     assertEquals(1, new HashSet<>(capturedConnections).size());
+
+  }
+
+  @Test
+  void mustUseSpringBeanRecordDAO(){
+
+
 
   }
 

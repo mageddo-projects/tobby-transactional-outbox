@@ -43,6 +43,8 @@ public interface TobbyFactory {
 
   TobbyProducerJMX producerJMX();
 
+  Producer<byte[], byte[]> kafkaProducer();
+
   default <K, V> SimpleJdbcKafkaProducerAdapter<K, V> jdbcProducerAdapter(
       Class<? extends Serializer<K>> keySerializer, Class<? extends Serializer<V>> valueSerializer
   ) {
