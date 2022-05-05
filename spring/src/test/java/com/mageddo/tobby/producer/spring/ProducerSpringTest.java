@@ -48,9 +48,6 @@ class ProducerSpringTest {
   @Autowired
   TransactionalService transactionalService;
 
-  @Autowired
-  TobbyFactory tobbyFactory;
-
   @Test
   void mustInjectSpringProducerAsDefault() {
     // arrange
@@ -137,13 +134,6 @@ class ProducerSpringTest {
 
     assertEquals(wantedInvocations, capturedConnections.size());
     assertEquals(1, new HashSet<>(capturedConnections).size());
-
-  }
-
-  @Test
-  void mustUseSpringBeanRecordDAO(){
-
-
 
   }
 
