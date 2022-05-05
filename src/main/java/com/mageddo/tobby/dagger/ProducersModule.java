@@ -32,15 +32,16 @@ class ProducersModule {
 
   @Provides
   @Singleton
-  public ProducerEventuallyConsistent producerEventualConsistent(RecordDAO recordDAO) {
+  public ProducerEventuallyConsistent producerEventualConsistent(RecordDAO recordDAO, Producer<byte[], byte[]> producer) {
     return new ProducerEventuallyConsistent(
-        this.buildProducer(),
-        recordDAO,
+        producer, recordDAO,
         this.producerConfig.getDataSource()
     );
   }
 
-  private Producer<byte[], byte[]> buildProducer() {
+  @Provides
+  @Singleton
+  public Producer<byte[], byte[]> buildProducer() {
     if (this.producerConfig.getProducer() != null) {
       return this.producerConfig.getProducer();
     }
