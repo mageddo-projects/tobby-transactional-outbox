@@ -1,5 +1,5 @@
-apply plugin: "maven"
-apply from: "${rootDir}/nexus.gradle"
+//apply plugin: "maven"
+//apply from: "${rootDir}/nexus.gradle"
 
 dependencies {
   api(project(":"))
@@ -11,7 +11,7 @@ dependencies {
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.4.3'
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version:'2.4.3'
   testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '7.6.0'
-  testCompile group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.6.6'
+  testImplementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.6.6'
   testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
 
 }

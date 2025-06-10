@@ -29,7 +29,8 @@ allprojects {
     compileOnly("org.projectlombok:lombok:1.18.16")
     annotationProcessor("org.projectlombok:lombok:1.18.16")
 
-    implementation ("org.apache.kafka:kafka-clients:0.11.0.3")
+//    implementation ("org.apache.kafka:kafka-clients:0.11.0.3")
+    implementation ("org.apache.kafka:kafka-clients:4.0.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
     testImplementation("org.mockito:mockito-junit-jupiter:3.7.7")
@@ -55,9 +56,8 @@ allprojects {
 
 }
 
-apply plugin: "maven"
 apply plugin: "net.researchgate.release"
-apply from: "${rootDir}/nexus.gradle"
+//apply from: "${rootDir}/nexus.gradle"
 
 
 release {

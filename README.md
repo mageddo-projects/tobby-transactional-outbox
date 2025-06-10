@@ -11,7 +11,7 @@ Tobby - A transactional outbox implementation
 
 ##### Configure the deps
 ```bash
-implementation 'com.mageddo.tobby-transactional-outbox:spring:2.1.5-alpha-alpha-alpha-alpha-alpha'
+implementation 'com.mageddo.tobby-transactional-outbox:spring:2.1.6-alpha'
 ```
 
 ##### Configure the database tables

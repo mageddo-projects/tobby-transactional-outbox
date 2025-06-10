@@ -1,5 +1,5 @@
-apply plugin: "maven"
-apply from: "${rootDir}/nexus.gradle"
+//apply plugin: "maven"
+//apply from: "${rootDir}/nexus.gradle"
 
 dependencies {
   api(project(":"))
