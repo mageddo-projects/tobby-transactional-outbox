@@ -16,7 +16,9 @@ import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.errors.ProducerFencedException;
+import org.apache.kafka.common.metrics.KafkaMetric;
 
 public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
 
@@ -51,6 +53,11 @@ public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   }
 
   @Override
+  public Uuid clientInstanceId(Duration timeout) {
+    return null;
+  }
+
+  @Override
   public void flush() {
     this.kafkaDelegate.flush();
   }
@@ -80,7 +87,6 @@ public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
     this.jdbcDelegate.initTransactions();
   }
 
-  @Override
   public void sendOffsetsToTransaction(
       Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId
   ) {
@@ -100,6 +106,16 @@ public class JdbcKafkaProducerAdapter<K, V> implements Producer<K, V> {
   @Override
   public void abortTransaction() throws ProducerFencedException {
     this.jdbcDelegate.initTransactions();
+  }
+
+  @Override
+  public void registerMetricForSubscription(KafkaMetric metric) {
+    this.kafkaDelegate.registerMetricForSubscription(metric);
+  }
+
+  @Override
+  public void unregisterMetricFromSubscription(KafkaMetric metric) {
+    this.kafkaDelegate.unregisterMetricFromSubscription(metric);
   }
 
 }

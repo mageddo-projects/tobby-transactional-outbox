@@ -15,7 +15,7 @@ allprojects {
 
   repositories {
     mavenLocal()
-    jcenter()
+    mavenCentral()
   }
 
   sourceCompatibility = JavaVersion.VERSION_1_8
@@ -23,11 +23,12 @@ allprojects {
 
   dependencies {
 
+    implementation 'org.slf4j:slf4j-api:2.0.17'
     implementation("com.google.dagger:dagger:2.33")
     annotationProcessor("com.google.dagger:dagger-compiler:2.33")
 
-    compileOnly("org.projectlombok:lombok:1.18.16")
-    annotationProcessor("org.projectlombok:lombok:1.18.16")
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
 
 //    implementation ("org.apache.kafka:kafka-clients:0.11.0.3")
     implementation ("org.apache.kafka:kafka-clients:4.0.0")
@@ -37,8 +38,8 @@ allprojects {
     testImplementation(project(":templates"))
     testImplementation("ch.qos.logback:logback-classic:1.2.3")
 
-    testCompileOnly "org.projectlombok:lombok:1.18.16"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.16"
+    testCompileOnly "org.projectlombok:lombok:1.18.38"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.38"
   }
 
   test {
